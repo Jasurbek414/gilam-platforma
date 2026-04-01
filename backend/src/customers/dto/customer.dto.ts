@@ -1,0 +1,41 @@
+import { IsEnum, IsNotEmpty, IsOptional, IsString, IsUUID } from 'class-validator';
+
+export class CreateCustomerDto {
+  @IsUUID()
+  @IsNotEmpty()
+  companyId: string;
+
+  @IsString()
+  @IsNotEmpty()
+  fullName: string;
+
+  @IsString()
+  @IsNotEmpty()
+  phone1: string;
+
+  @IsOptional()
+  @IsString()
+  phone2?: string;
+
+  @IsOptional()
+  @IsString()
+  address?: string;
+}
+
+export class UpdateCustomerDto {
+  @IsOptional()
+  @IsString()
+  fullName?: string;
+
+  @IsOptional()
+  @IsString()
+  phone1?: string;
+
+  @IsOptional()
+  @IsString()
+  phone2?: string;
+
+  @IsOptional()
+  @IsString()
+  address?: string;
+}

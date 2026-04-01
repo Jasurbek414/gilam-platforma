@@ -110,6 +110,13 @@ export class OrdersService {
     return this.findOne(savedOrder.id);
   }
 
+  async findAll() {
+    return this.orderRepository.find({
+      relations: ['customer', 'driver', 'operator', 'items', 'items.service', 'company'],
+      order: { createdAt: 'DESC' },
+    });
+  }
+
   async findAllByCompany(companyId: string) {
     return this.orderRepository.find({
       where: { companyId },

@@ -12,6 +12,11 @@ export class OrdersController {
     return this.ordersService.create(createOrderDto);
   }
 
+  @Get()
+  findAll() {
+    return this.ordersService.findAll();
+  }
+
   @Get('company/:companyId')
   findAllByCompany(@Param('companyId', ParseUUIDPipe) companyId: string) {
     return this.ordersService.findAllByCompany(companyId);

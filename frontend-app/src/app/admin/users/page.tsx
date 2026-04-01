@@ -1,52 +1,63 @@
 'use client';
 
-import React, { useState } from 'react';
-import { MdAdd, MdSearch, MdFilterList, MdMoreVert, MdPerson, MdEmail, MdBadge, MdBusiness, MdLock } from 'react-icons/md';
+import React, { useState, useEffect } from 'react';
+import { MdAdd, MdSearch, MdFilterList, MdPerson, MdEmail, MdBadge, MdBusiness, MdLock, MdPhone } from 'react-icons/md';
 import Modal from '@/components/ui/Modal';
-
-const initialUsers = [
-  { id: '1', name: 'Alisher Otabekov', email: 'alisher@example.uz', role: 'SUPER_ADMIN', status: 'ACTIVE', company: 'Tizim' },
-  { id: '2', name: 'Sardorbek Rahimov', email: 'sardor@example.uz', role: 'OPERATOR', status: 'ACTIVE', company: '"Pokiza" MChJ' },
-  { id: '3', name: 'Zilola Ganiyeva', email: 'zilola@example.uz', role: 'OPERATOR', status: 'INACTIVE', company: '"Toza Makon" LC' },
-];
-
-const companies = [
-  { id: '0', name: 'Tizim (Super Admin)' },
-  { id: '1', name: '"Pokiza" MChJ' },
-  { id: '2', name: '"Toza Makon" LC' },
-  { id: '3', name: 'Yulduz Gilam' },
-];
+import { usersApi, companiesApi } from '@/lib/api';
 
 export default function UsersPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<any>(null);
-  const [users, setUsers] = useState(initialUsers);
+  const [users, setUsers] = useState<any[]>([]);
+  const [companies, setCompanies] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
   const [search, setSearch] = useState('');
+  
   const [formData, setFormData] = useState({ 
-    name: '', 
-    email: '', 
+    fullName: '', 
+    phone: '', 
     password: '',
     role: 'OPERATOR', 
     status: 'ACTIVE',
     companyId: ''
   });
 
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  async function loadData() {
+    try {
+      const [usersData, companiesData] = await Promise.all([
+        usersApi.getAll(),
+        companiesApi.getAll()
+      ]);
+      setUsers(usersData);
+      setCompanies(companiesData);
+    } catch (err) {
+      console.error('Ma\'lumotlarni yuklashda xato:', err);
+    } finally {
+      setLoading(false);
+    }
+  }
+
   const handleOpenModal = (user: any = null) => {
     if (user) {
       setEditingUser(user);
       setFormData({
-        name: user.name,
-        email: user.email,
+        fullName: user.fullName,
+        phone: user.phone || '',
         password: '', // Password not shown for security
         role: user.role,
         status: user.status,
-        companyId: companies.find(c => c.name === user.company)?.id || ''
+        companyId: user.companyId || ''
       });
     } else {
       setEditingUser(null);
       setFormData({ 
-        name: '', 
-        email: '', 
+        fullName: '', 
+        phone: '', 
         password: '', 
         role: 'OPERATOR', 
         status: 'ACTIVE',
@@ -56,50 +67,71 @@ export default function UsersPage() {
     setIsModalOpen(true);
   };
 
-  const handleCreateOrUpdateUser = (e: React.FormEvent) => {
+  const handleCreateOrUpdateUser = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (editingUser) {
-      setUsers(users.map(u => 
-        u.id === editingUser.id 
-          ? { ...u, ...formData } 
-          : u
-      ));
-      alert('Foydalanuvchi ma\'lumotlari va holati yangilandi! ✅');
-    } else {
-      const newUser = {
-        id: (new Date().getTime()).toString(),
-        name: formData.name,
-        email: formData.email,
-        role: formData.role,
-        status: formData.status,
-        company: companies.find(c => c.id === formData.companyId)?.name || 'Noma\'lum'
-      };
-      setUsers([...users, newUser]);
-      alert('Yangi foydalanuvchi muvaffaqiyatli qo\'shildi va login-parol biriktirildi! ✅');
+    setSaving(true);
+    try {
+      if (editingUser) {
+        const updateData: any = { ...formData };
+        if (!updateData.password) delete updateData.password;
+        await usersApi.update(editingUser.id, updateData);
+        alert('Foydalanuvchi ma\'lumotlari yangilandi! ✅');
+      } else {
+        await usersApi.create(formData);
+        alert('Yangi foydalanuvchi muvaffaqiyatli qo\'shildi! ✅');
+      }
+      setIsModalOpen(false);
+      await loadData();
+    } catch (err: any) {
+      alert('Xatolik: ' + err.message);
+    } finally {
+      setSaving(false);
     }
-    setIsModalOpen(false);
-    setFormData({ name: '', email: '', password: '', role: 'OPERATOR', status: 'ACTIVE', companyId: '' });
-    setEditingUser(null);
   };
 
-  const handleDeleteUser = (id: string) => {
+  const handleDeleteUser = async (id: string) => {
     if (confirm('Ushbu foydalanuvchini tizimdan o\'chirishni tasdiqlaysizmi?')) {
-      setUsers(users.filter(u => u.id !== id));
+      try {
+        await usersApi.remove(id);
+        await loadData();
+      } catch (err: any) {
+        alert('Xatolik: ' + err.message);
+      }
     }
   };
 
-  const handleToggleStatus = (id: string) => {
-    setUsers(users.map(u => 
-      u.id === id 
-        ? { ...u, status: u.status === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE' } 
-        : u
-    ));
+  const handleToggleStatus = async (user: any) => {
+    const newStatus = user.status === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE';
+    try {
+      await usersApi.update(user.id, { status: newStatus });
+      await loadData();
+    } catch (err: any) {
+      alert('Xatolik: ' + err.message);
+    }
   };
 
   const filteredUsers = users.filter(user => 
-    user.name.toLowerCase().includes(search.toLowerCase()) || 
-    user.email.toLowerCase().includes(search.toLowerCase())
+    (user.fullName || '').toLowerCase().includes(search.toLowerCase()) || 
+    (user.phone || '').includes(search)
   );
+
+  const roleLabels: Record<string, string> = {
+    SUPER_ADMIN: 'Super Admin',
+    COMPANY_ADMIN: 'Korxona Boshlig\'i',
+    OPERATOR: 'Operator',
+    DRIVER: 'Haydovchi',
+    WASHER: 'Yuvuvchi',
+    FINISHER: 'Dazmolchi',
+    CUSTOMER: 'Mijoz',
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="w-10 h-10 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -108,7 +140,7 @@ export default function UsersPage() {
           <h1 className="text-2xl font-bold border-b-2 border-blue-500 inline-block pb-1 text-slate-800">
             Foydalanuvchilar Boshqaruvi
           </h1>
-          <p className="text-slate-500 mt-2 text-sm">Tizimdagi barcha adminlar va operatorlar ro'yxati</p>
+          <p className="text-slate-500 mt-2 text-sm">Tizimdagi barcha foydalanuvchilar ro'yxati</p>
         </div>
         <button 
           onClick={() => handleOpenModal()}
@@ -124,7 +156,7 @@ export default function UsersPage() {
           <MdSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xl" />
           <input 
             type="text" 
-            placeholder="Ism yoki email bo'yicha qidirish..."
+            placeholder="Ism yoki telefon bo'yicha qidirish..."
             className="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
@@ -142,7 +174,7 @@ export default function UsersPage() {
               <tr className="bg-slate-50 border-b border-slate-100 text-slate-500 text-sm">
                 <th className="font-semibold py-4 px-6">Ism-sharif</th>
                 <th className="font-semibold py-4 px-6 text-center">Tizim / Korxona</th>
-                <th className="font-semibold py-4 px-6">Email</th>
+                <th className="font-semibold py-4 px-6">Telefon</th>
                 <th className="font-semibold py-4 px-6 text-center">Roli</th>
                 <th className="font-semibold py-4 px-6 text-center">Holati</th>
                 <th className="font-semibold py-4 px-6 text-right">Amallar</th>
@@ -151,21 +183,21 @@ export default function UsersPage() {
             <tbody className="divide-y divide-slate-100">
               {filteredUsers.map(user => (
                 <tr key={user.id} className="hover:bg-slate-50/50 transition-colors group">
-                  <td className="py-4 px-6 font-semibold text-slate-800">{user.name}</td>
+                  <td className="py-4 px-6 font-semibold text-slate-800">{user.fullName || 'Noma\'lum'}</td>
                   <td className="py-4 px-6 text-center">
                     <span className="text-xs font-bold text-slate-500 bg-slate-50 px-2 py-1 rounded-lg border border-slate-100">
-                      {user.company}
+                      {user.company ? user.company.name : 'Tizim / Barcha'}
                     </span>
                   </td>
-                  <td className="py-4 px-6 text-slate-600 text-sm">{user.email}</td>
+                  <td className="py-4 px-6 text-slate-600 text-sm">{user.phone}</td>
                   <td className="py-4 px-6 text-center">
                     <span className="text-[10px] font-bold px-2 py-1 rounded-md bg-slate-100 text-slate-600 tracking-tighter border border-slate-200 uppercase">
-                      {user.role.replace('_', ' ')}
+                      {roleLabels[user.role] || user.role}
                     </span>
                   </td>
                   <td className="py-4 px-6 text-center">
                     <button 
-                      onClick={() => handleToggleStatus(user.id)}
+                      onClick={() => handleToggleStatus(user)}
                       className={`inline-block px-3 py-1 rounded-full text-[10px] font-bold tracking-tighter transition-all hover:scale-110 active:scale-95 ${
                         user.status === 'ACTIVE' 
                           ? 'bg-emerald-100 text-emerald-700 border border-emerald-200' 
@@ -178,7 +210,7 @@ export default function UsersPage() {
                   </td>
                   <td className="py-4 px-6 text-right">
                     <div className="flex justify-end gap-2">
-                      <button 
+                       <button 
                         onClick={() => handleOpenModal(user)}
                         className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors text-xs font-bold"
                       >
@@ -196,6 +228,11 @@ export default function UsersPage() {
               ))}
             </tbody>
           </table>
+          {filteredUsers.length === 0 && (
+            <div className="p-8 text-center text-slate-500 font-medium">
+              Foydalanuvchilar topilmadi
+            </div>
+          )}
         </div>
       </div>
 
@@ -237,20 +274,20 @@ export default function UsersPage() {
             <input 
               required
               className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-blue-500 outline-none"
-              value={formData.name}
-              onChange={(e) => setFormData({...formData, name: e.target.value})}
+              value={formData.fullName}
+              onChange={(e) => setFormData({...formData, fullName: e.target.value})}
             />
           </div>
           <div className="space-y-1">
             <label className="text-sm font-semibold text-slate-700 flex items-center gap-2">
-              <MdEmail className="text-blue-500" /> Email manzili
+              <MdPhone className="text-blue-500" /> Telefon raqami
             </label>
             <input 
               required
-              type="email"
+              type="tel"
               className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-blue-500 outline-none"
-              value={formData.email}
-              onChange={(e) => setFormData({...formData, email: e.target.value})}
+              value={formData.phone}
+              onChange={(e) => setFormData({...formData, phone: e.target.value})}
             />
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -265,6 +302,9 @@ export default function UsersPage() {
               >
                 <option value="OPERATOR">Operator</option>
                 <option value="SUPER_ADMIN">Super Admin</option>
+                <option value="COMPANY_ADMIN">Korxona Boshlig'i</option>
+                <option value="DRIVER">Haydovchi</option>
+                <option value="WASHER">Yuvuvchi</option>
               </select>
             </div>
             <div className="space-y-1">
@@ -272,12 +312,11 @@ export default function UsersPage() {
                 <MdBusiness className="text-blue-500" /> Biriktirilgan Korxona
               </label>
               <select 
-                required
                 className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-blue-500 outline-none bg-white font-bold"
-                value={formData.companyId}
+                value={formData.companyId || ''}
                 onChange={(e) => setFormData({...formData, companyId: e.target.value})}
               >
-                <option value="">Tanlang...</option>
+                <option value="">Tizim (Super Admin uchun)</option>
                 {companies.map(c => (
                   <option key={c.id} value={c.id}>{c.name}</option>
                 ))}
@@ -298,8 +337,8 @@ export default function UsersPage() {
               onChange={(e) => setFormData({...formData, password: e.target.value})}
             />
           </div>
-          <button type="submit" className="w-full py-4 bg-blue-600 text-white font-bold rounded-2xl mt-4 hover:shadow-lg transition-all">
-            {editingUser ? "Saqlash" : "Foydalanuvchini qo'shish"}
+          <button type="submit" disabled={saving} className="w-full py-4 bg-blue-600 text-white font-bold rounded-2xl mt-4 hover:shadow-lg transition-all disabled:opacity-50">
+            {saving ? 'Saqlanmoqda...' : editingUser ? "Saqlash" : "Foydalanuvchini qo'shish"}
           </button>
         </form>
       </Modal>

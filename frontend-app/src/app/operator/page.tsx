@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect } from 'react';
 import { 
-  MdCall, 
   MdShoppingCart, 
   MdLocalShipping, 
   MdVerifiedUser, 
@@ -11,38 +10,63 @@ import {
   MdFiberManualRecord
 } from 'react-icons/md';
 import { motion, AnimatePresence } from 'framer-motion';
-
 import { useRouter } from 'next/navigation';
+import { ordersApi, getUser } from '@/lib/api';
 
 export default function OperatorDashboard() {
   const [currentTime, setCurrentTime] = useState(new Date());
-  const [timeRange, setTimeRange] = useState<'today' | 'week' | 'month'>('today');
+  const [timeRange, setTimeRange] = useState<'today' | 'week' | 'month'>('week');
   const router = useRouter();
+
+  const [orders, setOrders] = useState<any[]>([]);
+  const [user, setUser] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
     return () => clearInterval(timer);
   }, []);
 
+  useEffect(() => {
+    const currentUser = getUser();
+    if (!currentUser || !currentUser.company) {
+      router.push('/');
+      return;
+    }
+    setUser(currentUser);
+    loadData(currentUser.company.id);
+  }, [router]);
+
+  async function loadData(companyId: string) {
+    try {
+      const data = await ordersApi.getByCompany(companyId);
+      setOrders(data);
+    } catch (err) {
+      console.error('Xato:', err);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  const newOrdersCount = orders.filter(o => o.status === 'NEW').length;
+  const inProgressCount = orders.filter(o => ['WASHING', 'DRYING', 'AT_FACILITY'].includes(o.status)).length;
+  const deliveryCount = orders.filter(o => ['OUT_FOR_DELIVERY', 'DRIVER_ASSIGNED', 'PICKED_UP'].includes(o.status)).length;
+  const completedCount = orders.filter(o => o.status === 'DELIVERED').length;
+
   const stats = [
-    { title: 'Bugungi Qo\'ng\'iroqlar', value: '124', change: '+12%', icon: <MdCall className="text-indigo-400" />, color: 'bg-indigo-50' },
-    { title: 'Yangi Buyurtmalar', value: '42', change: '+5%', icon: <MdShoppingCart className="text-emerald-400" />, color: 'bg-emerald-50' },
-    { title: 'Yo\'ldagi Haydovchilar', value: '8', change: 'Faol', icon: <MdLocalShipping className="text-amber-400" />, color: 'bg-amber-50' },
-    { title: 'Xursand Mijozlar', value: '98%', change: 'NPS', icon: <MdVerifiedUser className="text-rose-400" />, color: 'bg-rose-50' },
+    { title: 'Barcha Buyurtmalar', value: orders.length.toString(), change: 'Jami', icon: <MdHistory className="text-indigo-400" />, color: 'bg-indigo-50' },
+    { title: 'Yangi Buyurtmalar', value: newOrdersCount.toString(), change: 'Kutilyapti', icon: <MdShoppingCart className="text-emerald-400" />, color: 'bg-emerald-50' },
+    { title: 'Logistika (Yo\'lda)', value: deliveryCount.toString(), change: 'Faol', icon: <MdLocalShipping className="text-amber-400" />, color: 'bg-amber-50' },
+    { title: 'Yakunlangan', value: completedCount.toString(), change: 'Tayyor', icon: <MdVerifiedUser className="text-rose-400" />, color: 'bg-rose-50' },
   ];
 
-  const recentCalls = [
-    { id: 1, phone: '+998 90 123 45 67', customer: 'Aliyev Vali', status: 'COMPLETED', time: '18:15' },
-    { id: 2, phone: '+998 93 321 65 43', customer: 'Unknown', status: 'MISSED', time: '17:45' },
-    { id: 3, phone: '+998 90 999 88 77', customer: 'Karimov Anvar', status: 'COMPLETED', time: '17:20' },
-  ];
+  const recentOrders = orders.slice(0, 5);
 
-  // Helper for simulated data
   const getChartData = () => {
     if (timeRange === 'today') {
       return {
-        labels: ['8:00', '9:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00', '18:00', '19:00'],
-        values: [45, 60, 30, 80, 55, 90, 70, 40, 65, 85, 50, 75]
+        labels: ['8:00', '10:00', '12:00', '14:00', '16:00', '18:00'],
+        values: [10, 20, 15, 30, 25, 35]
       };
     } else if (timeRange === 'week') {
       return {
@@ -52,19 +76,26 @@ export default function OperatorDashboard() {
     } else {
       return {
         labels: ['1-hafta', '2-hafta', '3-hafta', '4-hafta'],
-        values: [65, 80, 75, 90]
+        values: [120, 180, 150, 190]
       };
     }
   };
 
   const chartData = getChartData();
 
+  if (loading || !user) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="w-10 h-10 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin"></div>
+      </div>
+    );
+  }
+
   return (
-    <div className="space-y-8">
-      {/* Welcome Section */}
+    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white p-8 rounded-[40px] border border-slate-100 shadow-sm relative overflow-hidden">
         <div className="relative z-10">
-          <h1 className="text-3xl font-black text-slate-800 tracking-tight">Xayrli kech, Operator! 👋</h1>
+          <h1 className="text-3xl font-black text-slate-800 tracking-tight">Xayrli kun, {user.fullName.split(' ')[0]}! 👋</h1>
           <p className="text-slate-500 font-medium mt-1">Ko'rsatkichlar va jonli holatlar paneli</p>
         </div>
         <div className="text-right relative z-10">
@@ -74,7 +105,6 @@ export default function OperatorDashboard() {
         <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-50 rounded-full -mr-32 -mt-32 opacity-50"></div>
       </div>
 
-      {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {stats.map((stat, i) => (
           <motion.div 
@@ -89,7 +119,7 @@ export default function OperatorDashboard() {
             </div>
             <p className="text-xs font-black text-slate-400 uppercase tracking-widest leading-none mb-1">{stat.title}</p>
             <div className="flex items-center justify-between">
-              <h3 className="text-2xl font-black text-slate-800 tracking-tight">{stat.value}</h3>
+              <h3 className="text-3xl font-black text-slate-800 tracking-tight">{stat.value}</h3>
               <span className="text-[10px] font-black bg-emerald-50 text-emerald-600 px-2 py-1 rounded-lg">
                 {stat.change}
               </span>
@@ -99,31 +129,15 @@ export default function OperatorDashboard() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Live Call Feed */}
         <div className="lg:col-span-2 bg-white rounded-[40px] border border-slate-100 shadow-sm overflow-hidden flex flex-col">
-          <div className="px-8 py-6 border-b border-slate-50 flex items-center justify-between">
+          <div className="px-8 py-6 border-b border-slate-50 flex items-center justify-between flex-wrap gap-4">
             <h2 className="text-lg font-black text-slate-800 tracking-tight flex items-center gap-3">
               <MdTrendingUp className="text-indigo-600" /> Faoliyat Grafigi
             </h2>
             <div className="flex bg-slate-50 p-1 rounded-xl gap-1">
-               <button 
-                onClick={() => setTimeRange('today')}
-                className={`px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${timeRange === 'today' ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
-               >
-                 Kunlik
-               </button>
-               <button 
-                onClick={() => setTimeRange('week')}
-                className={`px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${timeRange === 'week' ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
-               >
-                 Haftalik
-               </button>
-               <button 
-                onClick={() => setTimeRange('month')}
-                className={`px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${timeRange === 'month' ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
-               >
-                 Oylik
-               </button>
+               <button onClick={() => setTimeRange('today')} className={`px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${timeRange === 'today' ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}>Kunlik</button>
+               <button onClick={() => setTimeRange('week')} className={`px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${timeRange === 'week' ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}>Haftalik</button>
+               <button onClick={() => setTimeRange('month')} className={`px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${timeRange === 'month' ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}>Oylik</button>
             </div>
           </div>
           <div className="p-8 flex-1 flex flex-col justify-end min-h-[300px]">
@@ -146,36 +160,37 @@ export default function OperatorDashboard() {
           </div>
         </div>
 
-        {/* Recent Notifications / Calls */}
         <div className="bg-slate-900 rounded-[40px] p-8 text-white relative overflow-hidden shadow-xl shadow-indigo-900/20">
            <div className="relative z-10 h-full flex flex-col">
               <h2 className="text-lg font-black tracking-tight mb-6 flex items-center gap-3">
-                <MdHistory className="text-indigo-400" /> So'nggi Qo'ng'iroqlar
+                <MdHistory className="text-indigo-400" /> So'nggi Buyurtmalar
               </h2>
               <div className="space-y-4 flex-1">
-                {recentCalls.map((call) => (
-                  <div key={call.id} className="flex items-center justify-between p-4 bg-white/5 border border-white/5 rounded-2xl hover:bg-white/10 transition-all cursor-pointer">
+                {recentOrders.length > 0 ? recentOrders.map((order) => (
+                  <div key={order.id} onClick={() => router.push('/operator/orders')} className="flex items-center justify-between p-4 bg-white/5 border border-white/5 rounded-2xl hover:bg-white/10 transition-all cursor-pointer">
                     <div className="flex items-center gap-4">
-                      <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-black ${call.status === 'COMPLETED' ? 'bg-indigo-500/20 text-indigo-400' : 'bg-rose-500/20 text-rose-400'}`}>
-                        {call.customer[0]}
+                      <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-black ${order.status === 'NEW' ? 'bg-indigo-500/20 text-indigo-400' : 'bg-emerald-500/20 text-emerald-400'}`}>
+                        {order.customer?.fullName[0] || '?'}
                       </div>
                       <div>
-                        <p className="text-sm font-black tracking-tight">{call.phone}</p>
-                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">{call.customer}</p>
+                        <p className="text-sm font-black tracking-tight">{order.customer?.phone1}</p>
+                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">{order.customer?.fullName || 'Noma\'lum'}</p>
                       </div>
                     </div>
                     <div className="text-right">
-                       <p className="text-[10px] font-black text-slate-500 mb-1">{call.time}</p>
-                       <MdFiberManualRecord className={call.status === 'COMPLETED' ? 'text-emerald-500' : 'text-rose-500'} />
+                       <p className="text-[10px] font-black text-slate-500 mb-1">{new Date(order.createdAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</p>
+                       <MdFiberManualRecord className={order.status === 'NEW' ? 'text-indigo-500' : 'text-emerald-500'} />
                     </div>
                   </div>
-                ))}
+                )) : (
+                  <div className="text-slate-500 text-sm font-bold text-center mt-10">Buyurtmalar yo'q</div>
+                )}
               </div>
               <button 
-                onClick={() => router.push('/operator/calls')}
+                onClick={() => router.push('/operator/orders')}
                 className="mt-8 w-full py-4 bg-indigo-600 rounded-2xl font-black text-xs uppercase tracking-[0.2em] shadow-lg shadow-indigo-500/20 hover:shadow-indigo-500/40 hover:-translate-y-1 transition-all"
               >
-                Barcha Tarixni Ko'rish
+                Barcha Buyurtmalar
               </button>
            </div>
            <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/5 rounded-full blur-3xl -mr-16 -mt-16"></div>

@@ -1,91 +1,169 @@
 'use client';
 
-import React, { useState } from 'react';
-import { MdAdd, MdSearch, MdFilterList, MdMoreVert, MdShoppingCart, MdPerson, MdPhone, MdLocationOn, MdAttachMoney, MdDateRange } from 'react-icons/md';
+import React, { useState, useEffect } from 'react';
+import { MdAdd, MdSearch, MdFilterList, MdShoppingCart, MdPerson, MdPhone, MdLocationOn, MdAttachMoney, MdClose, MdBusinessCenter } from 'react-icons/md';
 import Modal from '@/components/ui/Modal';
-
-const initialOrders = [
-  { id: 'ORD-101', customer: 'Aliyev Vali', phone: '+998 90 123 45 67', status: 'NEW', total: '0', date: '20.10.2023' },
-  { id: 'ORD-102', customer: 'Zilola', phone: '+998 94 444 55 66', status: 'WASHING', total: '120,000', date: '19.10.2023' },
-  { id: 'ORD-103', customer: 'Botir Gani', phone: '+998 93 987 65 43', status: 'FINISHED', total: '85,000', date: '18.10.2023' },
-];
+import { ordersApi, customersApi, servicesApi, getUser } from '@/lib/api';
+import { useRouter } from 'next/navigation';
 
 export default function CompanyOrdersPage() {
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editingOrder, setEditingOrder] = useState<any>(null);
-  const [orders, setOrders] = useState(initialOrders);
+  const router = useRouter();
+  const [orders, setOrders] = useState<any[]>([]);
+  const [customers, setCustomers] = useState<any[]>([]);
+  const [services, setServices] = useState<any[]>([]);
+  const [user, setUser] = useState<any>(null);
+  
+  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [filterStatus, setFilterStatus] = useState('ALL');
-  const [formData, setFormData] = useState({ 
-    customer: '', 
-    phone: '', 
-    address: '', 
-    service: 'oddiy',
-    status: 'NEW'
+
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [formData, setFormData] = useState<any>({ 
+    customerId: '', 
+    notes: '',
+    items: [{ serviceId: '', width: '', height: '', quantity: 1, notes: '' }]
   });
 
-  const handleOpenModal = (order: any = null) => {
-    if (order) {
-      setEditingOrder(order);
-      setFormData({
-        customer: order.customer,
-        phone: order.phone,
-        address: order.address || '',
-        service: order.service || 'oddiy',
-        status: order.status
-      });
-    } else {
-      setEditingOrder(null);
-      setFormData({ customer: '', phone: '', address: '', service: 'oddiy', status: 'NEW' });
+  useEffect(() => {
+    const currentUser = getUser();
+    if (!currentUser || !currentUser.company) {
+      router.push('/');
+      return;
     }
+    setUser(currentUser);
+    loadData(currentUser.company.id);
+  }, [router]);
+
+  async function loadData(companyId: string) {
+    try {
+      const [ordData, custData, servData] = await Promise.all([
+        ordersApi.getByCompany(companyId),
+        customersApi.getByCompany(companyId),
+        servicesApi.getByCompany(companyId)
+      ]);
+      setOrders(ordData);
+      setCustomers(custData);
+      setServices(servData);
+    } catch (err) {
+      console.error('Data loading error:', err);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  const handleOpenModal = () => {
+    setFormData({ 
+      customerId: '', 
+      notes: '',
+      items: [{ serviceId: '', width: '', height: '', quantity: 1, notes: '' }] 
+    });
     setIsModalOpen(true);
   };
 
-  const handleCreateOrUpdateOrder = (e: React.FormEvent) => {
+  const handleAddItem = () => {
+    setFormData({
+      ...formData,
+      items: [...formData.items, { serviceId: '', width: '', height: '', quantity: 1, notes: '' }]
+    });
+  };
+
+  const handleRemoveItem = (index: number) => {
+    const newItems = formData.items.filter((_: any, i: number) => i !== index);
+    setFormData({ ...formData, items: newItems });
+  };
+
+  const handleItemChange = (index: number, field: string, value: string | number) => {
+    const newItems = [...formData.items];
+    newItems[index][field] = value;
+    setFormData({ ...formData, items: newItems });
+  };
+
+  const handleCreateOrder = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (editingOrder) {
-      setOrders(orders.map(o => 
-        o.id === editingOrder.id 
-          ? { ...o, ...formData } 
-          : o
-      ));
-      alert('Buyurtma muvaffaqiyatli yangilandi! ✅');
-    } else {
-      const newOrder = {
-        id: `ORD-${orders.length + 101}`,
-        customer: formData.customer,
-        phone: formData.phone,
-        address: formData.address,
-        service: formData.service,
-        status: 'NEW',
-        total: '0',
-        date: new Date().toLocaleDateString()
-      };
-      setOrders([newOrder, ...orders]);
-      alert('Yangi buyurtma muvaffaqiyatli yaratildi! ✅');
+    if (!formData.customerId) return alert('Mijozni tanlang!');
+    
+    // Format items
+    const formattedItems = formData.items
+      .filter((item: any) => item.serviceId)
+      .map((item: any) => ({
+        serviceId: item.serviceId,
+        width: item.width ? Number(item.width) : undefined,
+        height: item.height ? Number(item.height) : undefined,
+        quantity: item.quantity ? Number(item.quantity) : 1,
+        notes: item.notes
+      }));
+
+    if (formattedItems.length === 0) return alert('Kamida bitta xizmatni tanlang!');
+
+    setSaving(true);
+    try {
+      await ordersApi.create({
+        customerId: formData.customerId,
+        notes: formData.notes,
+        operatorId: user.id, // Current operator/company admin creating the order
+        items: formattedItems
+      });
+      alert('Yangi buyurtma muvaffaqiyatli saqlandi! ✅');
+      await loadData(user.company.id);
+      setIsModalOpen(false);
+    } catch (err: any) {
+      alert('Xatolik: ' + err.message);
+    } finally {
+      setSaving(false);
     }
-    setIsModalOpen(false);
-    setFormData({ customer: '', phone: '', address: '', service: 'oddiy', status: 'NEW' });
-    setEditingOrder(null);
   };
 
-  const handleDeleteOrder = (id: string) => {
-    if (confirm('Ushbu buyurtmani o\'chirishni tasdiqlaysizmi?')) {
-      setOrders(orders.filter(o => o.id !== id));
+  const handleUpdateStatus = async (orderId: string, newStatus: string) => {
+    try {
+      await ordersApi.updateStatus(orderId, { status: newStatus });
+      await loadData(user.company.id);
+    } catch (err: any) {
+      alert('Status o\'zgartirishda xato: ' + err.message);
     }
-  };
-
-  const statusColors: Record<string, string> = {
-    'NEW': 'bg-blue-100 text-blue-700',
-    'WASHING': 'bg-amber-100 text-amber-700',
-    'FINISHED': 'bg-emerald-100 text-emerald-700',
   };
 
   const statusLabels: Record<string, string> = {
     'NEW': 'Yangi',
+    'DRIVER_ASSIGNED': 'Haydovchi kutilyapti',
+    'PICKED_UP': 'Olib ketildi',
+    'AT_FACILITY': 'Korxonada',
     'WASHING': 'Yuvilmoqda',
-    'FINISHED': 'Tayyor',
+    'DRYING': 'Quritilmoqda',
+    'READY_FOR_DELIVERY': 'Tayyor',
+    'OUT_FOR_DELIVERY': 'Yetkazilmoqda',
+    'DELIVERED': 'Yopilgan',
+    'CANCELLED': 'Bekor qilingan',
   };
+
+  const statusColors: Record<string, string> = {
+    'NEW': 'slate',
+    'DRIVER_ASSIGNED': 'amber',
+    'PICKED_UP': 'orange',
+    'AT_FACILITY': 'yellow',
+    'WASHING': 'blue',
+    'DRYING': 'fuchsia',
+    'READY_FOR_DELIVERY': 'purple',
+    'OUT_FOR_DELIVERY': 'indigo',
+    'DELIVERED': 'emerald',
+    'CANCELLED': 'red',
+  };
+
+  const filteredOrders = orders.filter(order => {
+    const custName = order.customer?.fullName?.toLowerCase() || '';
+    const custPhone = order.customer?.phone1 || '';
+    const matchesSearch = custName.includes(search.toLowerCase()) || custPhone.includes(search) || order.id.includes(search);
+    const matchesStatus = filterStatus === 'ALL' || order.status === filterStatus;
+    return matchesSearch && matchesStatus;
+  });
+
+  if (loading) {
+     return (
+        <div className="flex items-center justify-center min-h-[400px]">
+          <div className="w-10 h-10 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin"></div>
+        </div>
+      );
+  }
 
   return (
     <div className="space-y-6">
@@ -97,8 +175,8 @@ export default function CompanyOrdersPage() {
           <p className="text-slate-500 mt-2 text-sm font-medium">Barcha buyurtmalarni kuzatish va holatini yangilash</p>
         </div>
         <button 
-          onClick={() => handleOpenModal()}
-          className="flex items-center gap-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-5 py-3 rounded-2xl font-bold shadow-lg shadow-blue-500/30 hover:shadow-blue-500/50 transition-all active:scale-95"
+          onClick={handleOpenModal}
+          className="flex items-center gap-2 bg-blue-600 text-white px-5 py-3 rounded-2xl font-bold shadow-lg shadow-blue-500/20 hover:shadow-blue-500/40 hover:-translate-y-0.5 transition-all text-sm active:scale-95"
         >
           <MdAdd className="text-xl" />
           Yangi Buyurtma
@@ -110,24 +188,24 @@ export default function CompanyOrdersPage() {
           <MdSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-xl" />
           <input 
             type="text" 
-            placeholder="Mijoz ismi yoki ID..."
-            className="w-full pl-12 pr-4 py-3 bg-slate-50 border border-slate-100 rounded-xl focus:ring-2 focus:ring-blue-500/20 outline-none transition-all font-medium"
+            placeholder="Mijoz ismi, raqami yoki ID..."
+            className="w-full pl-12 pr-4 py-3 bg-slate-50 border border-slate-100 rounded-xl focus:ring-2 focus:ring-blue-500/20 outline-none transition-all font-medium text-sm text-slate-700"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
         </div>
-        <div className="flex gap-2">
-          <div className="relative group">
+        <div className="flex items-center gap-3">
+          <div className="relative">
             <MdFilterList className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-xl pointer-events-none" />
             <select 
+              className="pl-12 pr-10 py-3 bg-slate-50 border border-slate-100 rounded-xl focus:ring-2 focus:ring-blue-500/20 outline-none transition-all font-bold text-sm text-slate-600 appearance-none cursor-pointer"
               value={filterStatus}
               onChange={(e) => setFilterStatus(e.target.value)}
-              className="pl-12 pr-6 py-3 bg-slate-50 border border-slate-100 rounded-xl focus:ring-2 focus:ring-blue-500/20 outline-none transition-all font-bold text-sm text-slate-600 appearance-none cursor-pointer hover:bg-slate-100"
             >
               <option value="ALL">Barcha Holatlar</option>
-              <option value="NEW">Yangi</option>
-              <option value="WASHING">Yuvilmoqda</option>
-              <option value="FINISHED">Tayyor</option>
+              {Object.keys(statusLabels).map(k => (
+                <option key={k} value={k}>{statusLabels[k]}</option>
+              ))}
             </select>
           </div>
         </div>
@@ -138,171 +216,164 @@ export default function CompanyOrdersPage() {
           <table className="w-full text-left">
             <thead>
               <tr className="bg-slate-50/80 border-b border-slate-100 text-slate-400 text-xs font-black uppercase tracking-widest">
-                <th className="py-5 px-8">Buyurtma ID / Mijoz</th>
-                <th className="py-5 px-8">Telefon</th>
-                <th className="py-5 px-8">Holati</th>
-                <th className="py-5 px-8">Summa</th>
-                <th className="py-5 px-8 text-right">Amallar</th>
+                <th className="py-5 px-6">Buyurtma ID & Sana</th>
+                <th className="py-5 px-6">Mijoz / Telefon</th>
+                <th className="py-5 px-6 text-center">Xizmatlar (Soni)</th>
+                <th className="py-5 px-6 text-center">Joriy Holat</th>
+                <th className="py-5 px-6 text-right">Summa (so'm)</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {orders
-                .filter(o => 
-                  (filterStatus === 'ALL' || o.status === filterStatus) &&
-                  (o.customer.toLowerCase().includes(search.toLowerCase()) || 
-                   o.id.toLowerCase().includes(search.toLowerCase()))
-                )
-                .map(order => (
-                <tr key={order.id} className="hover:bg-slate-50/50 transition-colors group">
-                  <td className="py-5 px-8">
-                    <div className="flex flex-col">
-                      <span className="font-black text-slate-800 text-sm tracking-tight">{order.id}</span>
-                      <span className="text-slate-500 text-xs font-bold">{order.customer}</span>
-                    </div>
-                  </td>
-                  <td className="py-5 px-8 text-slate-600 text-sm font-bold">{order.phone}</td>
-                  <td className="py-5 px-8">
-                    <span className={`px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-tighter ${statusColors[order.status] || 'bg-slate-100'}`}>
-                      {statusLabels[order.status] || order.status}
-                    </span>
-                  </td>
-                  <td className="py-5 px-8 font-black text-slate-800 text-sm">
-                    {order.total} sum
-                  </td>
-                  <td className="py-5 px-8 text-right">
-                    <div className="flex justify-end gap-2">
-                      <button 
-                        onClick={() => handleOpenModal(order)}
-                        className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all font-bold text-xs"
+              {filteredOrders.length > 0 ? filteredOrders.map((order) => {
+                const color = statusColors[order.status] || 'slate';
+                return (
+                  <tr key={order.id} className="hover:bg-slate-50/50 transition-colors group">
+                    <td className="py-5 px-6">
+                      <div className="flex flex-col">
+                        <span className="font-black text-slate-800 tracking-tight text-sm">
+                          #{order.id.split('-')[0].substring(0,8).toUpperCase()}
+                        </span>
+                        <span className="text-xs font-bold text-slate-400 mt-1">
+                          {new Date(order.createdAt).toLocaleDateString()}
+                        </span>
+                      </div>
+                    </td>
+                    <td className="py-5 px-6">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-full bg-slate-100 text-slate-600 flex items-center justify-center font-black text-sm">
+                          <MdPerson className="text-xl" />
+                        </div>
+                        <div>
+                          <p className="font-bold text-slate-800 text-sm">{order.customer?.fullName || 'Anonim'}</p>
+                          <p className="text-xs text-slate-500 font-medium flex items-center gap-1 mt-0.5">
+                            <MdPhone className="text-slate-400 text-[10px]" /> {order.customer?.phone1}
+                          </p>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="py-5 px-6 text-center">
+                      <span className="font-black text-slate-700 bg-slate-100 px-3 py-1.5 rounded-lg text-xs">
+                        {order.items?.length || 0} ta
+                      </span>
+                    </td>
+                    <td className="py-5 px-6 text-center">
+                      <select 
+                        className={`px-3 py-1.5 rounded-lg text-xs font-black tracking-wider uppercase border border-transparent hover:border-${color}-300 bg-${color}-100 text-${color}-700 cursor-pointer outline-none transition-colors appearance-none text-center`}
+                        value={order.status}
+                        onChange={(e) => handleUpdateStatus(order.id, e.target.value)}
                       >
-                        Tahrirlash
-                      </button>
-                      <button 
-                        onClick={() => handleDeleteOrder(order.id)}
-                        className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all font-bold text-xs"
-                      >
-                        O'chirish
-                      </button>
-                    </div>
-                  </td>
+                        {Object.keys(statusLabels).map(k => (
+                          <option key={k} value={k}>{statusLabels[k]}</option>
+                        ))}
+                      </select>
+                    </td>
+                    <td className="py-5 px-6 text-right">
+                      <span className="font-black text-slate-800 text-sm">
+                        {Number(order.totalAmount).toLocaleString()}
+                      </span>
+                    </td>
+                  </tr>
+                );
+              }) : (
+                <tr>
+                   <td colSpan={5} className="py-12 text-center text-slate-500 font-bold border-none">
+                     <MdShoppingCart className="text-6xl text-slate-200 mx-auto mb-3" />
+                     Buyurtmalar ro'yxati bo'sh
+                   </td>
                 </tr>
-              ))}
+              )}
             </tbody>
           </table>
         </div>
       </div>
 
-      <Modal 
-        isOpen={isModalOpen} 
-        onClose={() => setIsModalOpen(false)} 
-        title={editingOrder ? "Buyurtmani Tahrirlash" : "Yangi Buyurtma Yaratish"}
-      >
-        <form onSubmit={handleCreateOrUpdateOrder} className="space-y-5">
-          <div className="space-y-1.5">
-            <label className="text-xs font-black text-slate-500 uppercase tracking-widest pl-1">Mijoz Ism-sharifi</label>
+      <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title="Yangi Buyurtma Yaratish" size="lg">
+        <form onSubmit={handleCreateOrder} className="space-y-6">
+          <div className="space-y-2">
+            <label className="text-xs font-black text-slate-400 uppercase tracking-widest">Mijozni Tanlang</label>
             <div className="relative">
               <MdPerson className="absolute left-4 top-1/2 -translate-y-1/2 text-blue-500 text-xl" />
-              <input 
-                required
-                className="w-full pl-12 pr-4 py-4 rounded-2xl border border-slate-200 focus:border-blue-500 outline-none font-bold text-slate-800"
-                value={formData.customer}
-                onChange={(e) => setFormData({...formData, customer: e.target.value})}
-              />
-            </div>
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-1.5">
-              <label className="text-xs font-black text-slate-500 uppercase tracking-widest pl-1">Telefon raqami</label>
-              <div className="relative">
-                <MdPhone className="absolute left-4 top-1/2 -translate-y-1/2 text-blue-500 text-xl" />
-                <input 
-                  required
-                  className="w-full pl-12 pr-4 py-4 rounded-2xl border border-slate-200 focus:border-blue-500 outline-none font-bold text-slate-800"
-                  value={formData.phone}
-                  onChange={(e) => setFormData({...formData, phone: e.target.value})}
-                />
-              </div>
-            </div>
-            {editingOrder && (
-              <div className="space-y-1.5">
-                <label className="text-xs font-black text-slate-500 uppercase tracking-widest pl-1">Holati</label>
-                <select 
-                  className="w-full px-4 py-4 rounded-2xl border border-slate-200 focus:border-blue-500 outline-none font-bold text-slate-800 bg-white"
-                  value={formData.status}
-                  onChange={(e) => setFormData({...formData, status: e.target.value})}
-                >
-                  <option value="NEW">Yangi</option>
-                  <option value="WASHING">Yuvilmoqda</option>
-                  <option value="FINISHED">Tayyor</option>
-                </select>
-              </div>
-            )}
-          </div>
-
-          <div className="space-y-1.5">
-            <label className="text-xs font-black text-slate-500 uppercase tracking-widest pl-1">Olib ketish manzili</label>
-            <div className="relative">
-              <MdLocationOn className="absolute left-4 top-4 text-blue-500 text-xl" />
-              <textarea 
-                required
-                rows={2}
-                className="w-full pl-12 pr-4 py-4 rounded-2xl border border-slate-200 focus:border-blue-500 outline-none font-bold text-slate-800 resize-none"
-                value={formData.address}
-                onChange={(e) => setFormData({...formData, address: e.target.value})}
-              />
-            </div>
-          </div>
-
-          <div className="space-y-1.5">
-            <label className="text-xs font-black text-slate-500 uppercase tracking-widest pl-1">Xizmat Turi & Narxlar</label>
-            <div className="relative group">
-              <MdAttachMoney className="absolute left-4 top-1/2 -translate-y-1/2 text-blue-500 text-xl" />
               <select 
-                className="w-full pl-12 pr-4 py-4 rounded-2xl border border-slate-200 focus:border-blue-500 outline-none font-bold text-slate-800 bg-white appearance-none"
-                value={formData.service}
-                onChange={(e) => setFormData({...formData, service: e.target.value})}
+                required
+                className="w-full pl-12 pr-4 py-4 rounded-2xl border border-slate-200 focus:border-blue-500 outline-none font-bold text-slate-800 appearance-none bg-slate-50 hover:bg-white transition-colors"
+                value={formData.customerId}
+                onChange={(e) => setFormData({...formData, customerId: e.target.value})}
               >
-                <optgroup label="Gilamlar (1kv.m)">
-                  <option value="oddiy">Oddiy gilam (12,000-13,000)</option>
-                  <option value="qubbali">Qubbali gilam (14,000)</option>
-                  <option value="rayhon">Rayhon gilam (15,000)</option>
-                  <option value="lux">Hukmdor, Sheyx, Troya (16,000)</option>
-                  <option value="shaggi">Shaggi, Makaron (17,000)</option>
-                  <option value="nozik">Xitoy, Turkiya nozik (18,000)</option>
-                  <option value="polos">Polos / Daroshka</option>
-                </optgroup>
-                <optgroup label="Boshqa buyumlar">
-                  <option value="korpacha">Ko'rpacha (25,000)</option>
-                  <option value="odeyal">Odeyal (50,000-70,000)</option>
-                  <option value="korpa">Ko'rpa</option>
-                  <option value="parda">Pardalar (1kg / 25,000-35,000)</option>
-                </optgroup>
-                <optgroup label="Maxsus xizmatlar">
-                  <option value="mebel">Yumshoq mebel (1 o'rindiq / 50-70 ming)</option>
-                  <option value="matras">Matras yuvish</option>
-                  <option value="fasad">Fasad yuvish</option>
-                  <option value="bruschatka">Bruschatka yuvish</option>
-                  <option value="dazmol">Dazmollash (1m / 5,000)</option>
-                </optgroup>
+                <option value="">-- Mijozni tanlang (yoki Mijozlar bo'limidan qo'shing) --</option>
+                {customers.map(c => (
+                  <option key={c.id} value={c.id}>{c.fullName} ({c.phone1}) - {c.address}</option>
+                ))}
               </select>
             </div>
           </div>
 
-          <div className="flex gap-3 mt-4">
-            <button 
-              type="button"
-              onClick={() => setIsModalOpen(false)}
-              className="flex-1 py-4 bg-slate-100 text-slate-600 font-black rounded-2xl transition-all"
-            >
-              BEKOR QILISH
-            </button>
-            <button 
-              type="submit" 
-              className="flex-1 py-4 bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-black rounded-2xl shadow-xl shadow-blue-500/30 active:scale-95 transition-all"
-            >
-              {editingOrder ? "SAQLASH" : "TASDIQLASH"}
-            </button>
+          <div className="space-y-4">
+            <div className="flex justify-between items-center">
+               <label className="text-xs font-black text-slate-400 uppercase tracking-widest">Buyurtma qismlari (Xizmatlar)</label>
+               <button type="button" onClick={handleAddItem} className="text-xs font-bold text-blue-600 bg-blue-50 px-3 py-1.5 rounded-lg hover:bg-blue-100 flex items-center gap-1">
+                 <MdAdd /> Qator qo'shish
+               </button>
+            </div>
+            
+            <div className="space-y-3 max-h-[300px] overflow-y-auto pr-2">
+              {formData.items.map((item: any, idx: number) => (
+                <div key={idx} className="bg-slate-50 p-4 rounded-2xl border border-slate-100 flex flex-wrap lg:flex-nowrap gap-3 items-end relative">
+                  <div className="w-full lg:w-1/3 space-y-1.5">
+                    <label className="text-[10px] uppercase font-black text-slate-400">Xizmat</label>
+                    <select
+                      required
+                      className="w-full px-3 py-2.5 rounded-xl border border-slate-200 outline-none text-sm font-bold bg-white"
+                      value={item.serviceId}
+                      onChange={(e) => handleItemChange(idx, 'serviceId', e.target.value)}
+                    >
+                      <option value="">Tanlang...</option>
+                      {services.map(s => (
+                        <option key={s.id} value={s.id}>{s.name} ({s.unit === 'SQM' ? 'kv.m' : s.unit})</option>
+                      ))}
+                    </select>
+                  </div>
+                  
+                  {/* Agar SQM bo'lsa Eni/Bo'yi, aks holda Soni kirgizilishi kerak - soddalashtirilgan view */}
+                  <div className="w-1/3 lg:w-20 space-y-1.5">
+                    <label className="text-[10px] uppercase font-black text-slate-400">Eni(m)</label>
+                    <input type="number" step="0.01" className="w-full px-3 py-2.5 rounded-xl border border-slate-200 outline-none text-sm font-bold placeholder:text-slate-300" placeholder="0.0" value={item.width} onChange={(e) => handleItemChange(idx, 'width', e.target.value)} />
+                  </div>
+                  <div className="w-1/3 lg:w-20 space-y-1.5">
+                    <label className="text-[10px] uppercase font-black text-slate-400">Bo'yi(m)</label>
+                    <input type="number" step="0.01" className="w-full px-3 py-2.5 rounded-xl border border-slate-200 outline-none text-sm font-bold placeholder:text-slate-300" placeholder="0.0" value={item.height} onChange={(e) => handleItemChange(idx, 'height', e.target.value)} />
+                  </div>
+                  <div className="w-1/3 lg:w-20 space-y-1.5">
+                    <label className="text-[10px] uppercase font-black text-slate-400">Soni(kg/dona)</label>
+                    <input type="number" className="w-full px-3 py-2.5 rounded-xl border border-slate-200 outline-none text-sm font-bold placeholder:text-slate-300" placeholder="1" value={item.quantity} onChange={(e) => handleItemChange(idx, 'quantity', e.target.value)} />
+                  </div>
+
+                  {idx > 0 && (
+                    <button type="button" onClick={() => handleRemoveItem(idx)} className="absolute top-3 right-3 text-red-400 hover:text-red-600 p-1 bg-white rounded-md shadow-sm">
+                      <MdClose />
+                    </button>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="space-y-1.5">
+             <label className="text-xs font-black text-slate-400 uppercase tracking-widest pl-1">Qo'shimcha izoh</label>
+             <textarea 
+               className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-blue-500 outline-none font-medium text-sm text-slate-700 bg-slate-50 hover:bg-white focus:bg-white transition-all resize-none min-h-[80px]"
+               placeholder="Buyurtma uchun izohlar..."
+               value={formData.notes}
+               onChange={(e) => setFormData({...formData, notes: e.target.value})}
+             />
+          </div>
+
+          <div className="pt-4 flex gap-3">
+             <button type="button" onClick={() => setIsModalOpen(false)} className="flex-1 py-4 text-sm font-bold text-slate-500 bg-slate-100 rounded-2xl hover:bg-slate-200 active:scale-95 transition-all">
+               BEKOR QILISH
+             </button>
+             <button type="submit" disabled={saving} className="flex-1 py-4 text-sm font-black tracking-widest uppercase text-white bg-blue-600 rounded-2xl shadow-xl shadow-blue-500/20 hover:shadow-blue-500/40 hover:-translate-y-0.5 active:scale-95 transition-all disabled:opacity-50">
+               {saving ? 'SAQLANMOQDA...' : 'YANGI BUYURTMA'}
+             </button>
           </div>
         </form>
       </Modal>

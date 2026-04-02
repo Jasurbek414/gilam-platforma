@@ -10,7 +10,7 @@ async function bootstrap() {
 
   // CORS — frontenddan so'rov qabul qilish
   app.enableCors({
-    origin: ['http://localhost:3000', 'http://localhost:3001', 'http://localhost:5173'],
+    origin: true, // Har qanday domendan (Tunnel, Ngrok) kirishga ruxsat beradi
     credentials: true,
   });
 

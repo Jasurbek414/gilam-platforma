@@ -2,7 +2,9 @@
 
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
+import { useState } from 'react';
 import { cn } from '@/lib/utils';
+import Modal from '@/components/ui/Modal';
 import {
   MdDashboard,
   MdShoppingCart,
@@ -27,10 +29,15 @@ export default function CompanySidebar() {
   const pathname = usePathname();
   const router = useRouter();
 
+  const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
+
   const handleLogout = () => {
-    if (confirm('Tizimdan chiqishni tasdiqlaysizmi?')) {
-      router.push('/');
-    }
+    setIsLogoutModalOpen(true);
+  };
+
+  const confirmLogout = () => {
+    localStorage.removeItem('token');
+    router.push('/');
   };
 
   return (
@@ -80,6 +87,28 @@ export default function CompanySidebar() {
           <span className="font-medium">Tizimdan chiqish</span>
         </button>
       </div>
+
+      <Modal isOpen={isLogoutModalOpen} onClose={() => setIsLogoutModalOpen(false)} title="Tizimdan chiqish">
+        <div className="space-y-6">
+          <p className="text-slate-600 font-medium">
+            Siz haqiqatan ham tizimdan (akkauntdan) chiqmoqchimisiz?
+          </p>
+          <div className="flex gap-3">
+            <button 
+              onClick={() => setIsLogoutModalOpen(false)}
+              className="flex-1 py-4 bg-slate-100 text-slate-500 font-bold rounded-2xl hover:bg-slate-200 transition-all"
+            >
+              Yo'q, qolaman
+            </button>
+            <button 
+              onClick={confirmLogout}
+              className="flex-1 py-4 bg-rose-600 text-white font-bold rounded-2xl shadow-lg shadow-rose-500/20 hover:bg-rose-700 transition-all font-black hover:-translate-y-1"
+            >
+              Ha, chiqish
+            </button>
+          </div>
+        </div>
+      </Modal>
     </aside>
   );
 }

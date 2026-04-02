@@ -1,13 +1,16 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { MdAdd, MdPhone, MdBusiness } from 'react-icons/md';
+import { MdAdd, MdPhone, MdBusiness, MdEdit, MdDeleteOutline } from 'react-icons/md';
 import Modal from '@/components/ui/Modal';
 import { companiesApi } from '@/lib/api';
+import toast from 'react-hot-toast';
 
 export default function CompaniesPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [editingCompany, setEditingCompany] = useState<any>(null);
+  const [companyToDelete, setCompanyToDelete] = useState<any>(null);
   const [companies, setCompanies] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -55,27 +58,36 @@ export default function CompaniesPage() {
     try {
       if (editingCompany) {
         await companiesApi.update(editingCompany.id, formData);
+        toast.success('Korxona yangilandi');
       } else {
         await companiesApi.create(formData);
+        toast.success('Yangi korxona qo\'shildi');
       }
       await loadCompanies();
       setIsModalOpen(false);
       setEditingCompany(null);
     } catch (err: any) {
-      alert('Xatolik: ' + err.message);
+      toast.error('Xatolik: ' + err.message);
     } finally {
       setSaving(false);
     }
   };
 
-  const handleDelete = async (id: string) => {
-    if (confirm('Ushbu korxonani o\'chirishni tasdiqlaysizmi?')) {
-      try {
-        await companiesApi.remove(id);
-        await loadCompanies();
-      } catch (err: any) {
-        alert('Xatolik: ' + err.message);
-      }
+  const handleDelete = (company: any) => {
+    setCompanyToDelete(company);
+    setIsDeleteModalOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!companyToDelete) return;
+    try {
+      await companiesApi.remove(companyToDelete.id);
+      setIsDeleteModalOpen(false);
+      setCompanyToDelete(null);
+      await loadCompanies();
+      toast.success('Korxona o\'chirildi');
+    } catch (err: any) {
+      toast.error('Xatolik: ' + err.message);
     }
   };
 
@@ -84,8 +96,9 @@ export default function CompaniesPage() {
     try {
       await companiesApi.update(company.id, { status: newStatus });
       await loadCompanies();
+      toast.success('Holati o\'zgartirildi');
     } catch (err: any) {
-      alert('Xatolik: ' + err.message);
+      toast.error('Xatolik: ' + err.message);
     }
   };
 
@@ -248,15 +261,17 @@ export default function CompaniesPage() {
                     <div className="flex justify-end gap-2">
                       <button
                         onClick={() => handleOpenModal(company)}
-                        className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors text-xs font-bold"
+                        className="w-10 h-10 flex items-center justify-center rounded-xl bg-slate-50 text-slate-400 hover:bg-indigo-50 hover:text-indigo-600 hover:shadow-lg hover:shadow-indigo-500/20 hover:-translate-y-0.5 transition-all group relative"
                       >
-                        Tahrirlash
+                        <MdEdit className="text-xl" />
+                        <span className="absolute -top-10 scale-0 group-hover:scale-100 transition-transform bg-slate-900 text-white text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded-lg shadow-xl pointer-events-none">Tahrirlash</span>
                       </button>
                       <button
-                        onClick={() => handleDelete(company.id)}
-                        className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors text-xs font-bold"
+                        onClick={() => handleDelete(company)}
+                        className="w-10 h-10 flex items-center justify-center rounded-xl bg-slate-50 text-slate-400 hover:bg-rose-50 hover:text-rose-600 hover:shadow-lg hover:shadow-rose-500/20 hover:-translate-y-0.5 transition-all group relative"
                       >
-                        O&apos;chirish
+                        <MdDeleteOutline className="text-xl" />
+                        <span className="absolute -top-10 scale-0 group-hover:scale-100 transition-transform bg-slate-900 text-white text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded-lg shadow-xl pointer-events-none">O'chirish</span>
                       </button>
                     </div>
                   </td>
@@ -269,6 +284,31 @@ export default function CompaniesPage() {
           Jami: {companies.length} ta korxona
         </div>
       </div>
+
+      {/* Delete Confirmation Modal */}
+      <Modal isOpen={isDeleteModalOpen} onClose={() => setIsDeleteModalOpen(false)} title="Korxonani o'chirish">
+        <div className="space-y-6">
+          <p className="text-slate-600 font-medium">
+            Siz haqiqatan ham jadvaldagi <span className="font-black text-slate-800">"{companyToDelete?.name}"</span> korxonasini tizimdan o'chirmoqchimisiz?
+            <br />
+            <span className="text-xs text-rose-500 mt-2 block">Diqqat! Bu amal korxonaga tegishli barcha buyurtmalar, hisobotlar va xodimlarni butunlay o'chirib yuborishi mumkin.</span>
+          </p>
+          <div className="flex gap-3">
+            <button 
+              onClick={() => setIsDeleteModalOpen(false)}
+              className="flex-1 py-4 bg-slate-100 text-slate-500 font-bold rounded-2xl hover:bg-slate-200 transition-all"
+            >
+              Yo'q, bekor qilish
+            </button>
+            <button 
+              onClick={confirmDelete}
+              className="flex-1 py-4 bg-rose-600 text-white font-bold rounded-2xl shadow-lg shadow-rose-500/20 hover:bg-rose-700 transition-all font-black hover:-translate-y-1"
+            >
+              Ha, o'chirilsin
+            </button>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 }

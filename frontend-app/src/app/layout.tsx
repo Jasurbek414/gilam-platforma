@@ -7,6 +7,8 @@ export const metadata: Metadata = {
   description: 'Gilam yuvish faolyatini zamonaviy boshqarish tizimi',
 };
 
+import { Toaster } from 'react-hot-toast';
+
 export default function RootLayout({
   children,
 }: {
@@ -16,6 +18,7 @@ export default function RootLayout({
     <html lang="uz">
       <body className={`${inter.className} min-h-screen font-sans antialiased bg-slate-50`}>
         {children}
+        <Toaster position="top-right" toastOptions={{ className: 'font-bold' }} />
       </body>
     </html>
   );

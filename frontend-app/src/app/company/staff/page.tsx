@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { MdAdd, MdSearch, MdPeople, MdLocalShipping, MdPerson, MdPhone, MdMoreVert } from 'react-icons/md';
+import { MdAdd, MdSearch, MdPeople, MdLocalShipping, MdPerson, MdPhone, MdMoreVert, MdEdit, MdBlock, MdDeleteOutline, MdCheckCircle } from 'react-icons/md';
 import Modal from '@/components/ui/Modal';
 
 const initialStaff = [
@@ -111,22 +111,22 @@ export default function StaffPage() {
                     <div className="absolute top-full right-0 mt-1 w-48 bg-white rounded-2xl shadow-2xl border border-slate-100 z-50 p-2 animate-in fade-in zoom-in-95 duration-200">
                       <button 
                         onClick={() => handleOpenEdit(member)}
-                        className="w-full text-left px-4 py-2.5 text-xs font-bold text-slate-700 hover:bg-indigo-50 hover:text-indigo-600 rounded-xl transition-all"
+                        className="w-full text-left px-4 py-2.5 text-xs font-bold text-slate-700 hover:bg-indigo-50 hover:text-indigo-600 rounded-xl transition-all flex items-center gap-2"
                       >
-                        Tahrirlash
+                        <MdEdit className="text-lg" /> Tahrirlash
                       </button>
                       <button 
                         onClick={() => toggleStatus(member.id)}
-                        className={`w-full text-left px-4 py-2.5 text-xs font-bold ${member.status === 'ACTIVE' ? 'text-amber-600 hover:bg-amber-50' : 'text-emerald-600 hover:bg-emerald-50'} rounded-xl transition-all`}
+                        className={`w-full text-left px-4 py-2.5 text-xs font-bold ${member.status === 'ACTIVE' ? 'text-amber-600 hover:bg-amber-50' : 'text-emerald-600 hover:bg-emerald-50'} rounded-xl transition-all flex items-center gap-2`}
                       >
-                        {member.status === 'ACTIVE' ? 'To\'xtatish (Deactive)' : 'Faollashtirish'}
+                        {member.status === 'ACTIVE' ? <><MdBlock className="text-lg" /> To'xtatish</> : <><MdCheckCircle className="text-lg" /> Faollashtirish</>}
                       </button>
                       <div className="h-px bg-slate-100 my-1 mx-2"></div>
                       <button 
                         onClick={() => { setMemberToDelete(member); setIsDeleteModalOpen(true); setShowMenuId(null); }}
-                        className="w-full text-left px-4 py-2.5 text-xs font-bold text-rose-600 hover:bg-rose-50 rounded-xl transition-all"
+                        className="w-full text-left px-4 py-2.5 text-xs font-bold text-rose-600 hover:bg-rose-50 rounded-xl transition-all flex items-center gap-2"
                       >
-                        O'chirish
+                        <MdDeleteOutline className="text-lg" /> O'chirish
                       </button>
                     </div>
                   )}

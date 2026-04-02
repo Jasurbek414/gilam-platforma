@@ -1,13 +1,16 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { MdAdd, MdSearch, MdFilterList, MdPerson, MdEmail, MdBadge, MdBusiness, MdLock, MdPhone } from 'react-icons/md';
+import { MdAdd, MdSearch, MdFilterList, MdPerson, MdEmail, MdBadge, MdBusiness, MdLock, MdPhone, MdEdit, MdDeleteOutline } from 'react-icons/md';
 import Modal from '@/components/ui/Modal';
 import { usersApi, companiesApi } from '@/lib/api';
+import toast from 'react-hot-toast';
 
 export default function UsersPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<any>(null);
+  const [userToDelete, setUserToDelete] = useState<any>(null);
   const [users, setUsers] = useState<any[]>([]);
   const [companies, setCompanies] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -75,28 +78,35 @@ export default function UsersPage() {
         const updateData: any = { ...formData };
         if (!updateData.password) delete updateData.password;
         await usersApi.update(editingUser.id, updateData);
-        alert('Foydalanuvchi ma\'lumotlari yangilandi! ✅');
+        toast.success('Foydalanuvchi ma\'lumotlari yangilandi! ✅');
       } else {
         await usersApi.create(formData);
-        alert('Yangi foydalanuvchi muvaffaqiyatli qo\'shildi! ✅');
+        toast.success('Yangi foydalanuvchi muvaffaqiyatli qo\'shildi! ✅');
       }
       setIsModalOpen(false);
       await loadData();
     } catch (err: any) {
-      alert('Xatolik: ' + err.message);
+      toast.error('Xatolik: ' + err.message);
     } finally {
       setSaving(false);
     }
   };
 
-  const handleDeleteUser = async (id: string) => {
-    if (confirm('Ushbu foydalanuvchini tizimdan o\'chirishni tasdiqlaysizmi?')) {
-      try {
-        await usersApi.remove(id);
-        await loadData();
-      } catch (err: any) {
-        alert('Xatolik: ' + err.message);
-      }
+  const handleDeleteUser = (user: any) => {
+    setUserToDelete(user);
+    setIsDeleteModalOpen(true);
+  };
+
+  const confirmDeleteUser = async () => {
+    if (!userToDelete) return;
+    try {
+      await usersApi.remove(userToDelete.id);
+      setIsDeleteModalOpen(false);
+      setUserToDelete(null);
+      await loadData();
+      toast.success('Foydalanuvchi o\'chirildi');
+    } catch (err: any) {
+      toast.error('Xatolik: ' + err.message);
     }
   };
 
@@ -212,15 +222,17 @@ export default function UsersPage() {
                     <div className="flex justify-end gap-2">
                        <button 
                         onClick={() => handleOpenModal(user)}
-                        className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors text-xs font-bold"
+                        className="w-10 h-10 flex items-center justify-center rounded-xl bg-slate-50 text-slate-400 hover:bg-blue-50 hover:text-blue-600 hover:shadow-lg hover:shadow-blue-500/20 hover:-translate-y-0.5 transition-all group relative"
                       >
-                        Tahrirlash
+                        <MdEdit className="text-xl" />
+                        <span className="absolute -top-10 scale-0 group-hover:scale-100 transition-transform bg-slate-900 text-white text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded-lg shadow-xl pointer-events-none z-10 whitespace-nowrap">Tahrirlash</span>
                       </button>
                       <button 
-                        onClick={() => handleDeleteUser(user.id)}
-                        className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors text-xs font-bold"
+                        onClick={() => handleDeleteUser(user)}
+                        className="w-10 h-10 flex items-center justify-center rounded-xl bg-slate-50 text-slate-400 hover:bg-rose-50 hover:text-rose-600 hover:shadow-lg hover:shadow-rose-500/20 hover:-translate-y-0.5 transition-all group relative"
                       >
-                        O'chirish
+                        <MdDeleteOutline className="text-xl" />
+                        <span className="absolute -top-10 scale-0 group-hover:scale-100 transition-transform bg-slate-900 text-white text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded-lg shadow-xl pointer-events-none z-10 whitespace-nowrap">O'chirish</span>
                       </button>
                     </div>
                   </td>
@@ -341,6 +353,32 @@ export default function UsersPage() {
             {saving ? 'Saqlanmoqda...' : editingUser ? "Saqlash" : "Foydalanuvchini qo'shish"}
           </button>
         </form>
+
+      </Modal>
+
+      {/* Delete Confirmation Modal */}
+      <Modal isOpen={isDeleteModalOpen} onClose={() => setIsDeleteModalOpen(false)} title="Foydalanuvchini o'chirish">
+        <div className="space-y-6">
+          <p className="text-slate-600 font-medium">
+            Siz haqiqatan ham jadvaldagi <span className="font-black text-slate-800">{userToDelete?.fullName}</span> foydalanuvchisini tizimdan o'chirmoqchimisiz?
+            <br />
+            <span className="text-xs text-rose-500 mt-2 block">Ushbu amalni ortga qaytarib bo'lmaydi va xodim barcha ma'lumotlari zaxiradan olib tashlanadi.</span>
+          </p>
+          <div className="flex gap-3">
+            <button 
+              onClick={() => setIsDeleteModalOpen(false)}
+              className="flex-1 py-4 bg-slate-100 text-slate-500 font-bold rounded-2xl hover:bg-slate-200 transition-all"
+            >
+              Yo'q, bekor qilish
+            </button>
+            <button 
+              onClick={confirmDeleteUser}
+              className="flex-1 py-4 bg-rose-600 text-white font-bold rounded-2xl shadow-lg shadow-rose-500/20 hover:bg-rose-700 transition-all font-black hover:-translate-y-1"
+            >
+              Ha, o'chirilsin
+            </button>
+          </div>
+        </div>
       </Modal>
     </div>
   );

@@ -47,7 +47,10 @@ export default function CompanySidebar() {
         </p>
         
         {companyLinks.map((link) => {
-          const isActive = pathname === link.href || pathname.startsWith(`${link.href}/`);
+          const isBasePath = link.href === '/company';
+          const isActive = isBasePath 
+            ? pathname === link.href 
+            : (pathname === link.href || pathname.startsWith(`${link.href}/`));
           const Icon = link.icon;
 
           return (

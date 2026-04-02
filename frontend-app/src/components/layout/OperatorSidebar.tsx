@@ -44,8 +44,11 @@ export default function OperatorSidebar() {
 
       <nav className="flex-1 px-4 space-y-1">
         {operatorLinks.map((link) => {
+          const isBasePath = link.href === '/operator';
+          const isActive = isBasePath 
+            ? pathname === link.href 
+            : (pathname === link.href || pathname.startsWith(`${link.href}/`));
           const Icon = link.icon;
-          const isActive = pathname === link.href;
           
           return (
             <Link

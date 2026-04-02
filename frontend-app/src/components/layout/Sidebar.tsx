@@ -46,7 +46,10 @@ export default function Sidebar() {
         </p>
         
         {superAdminLinks.map((link) => {
-          const isActive = pathname === link.href || pathname.startsWith(`${link.href}/`);
+          const isBasePath = link.href === '/admin';
+          const isActive = isBasePath 
+            ? pathname === link.href 
+            : (pathname === link.href || pathname.startsWith(`${link.href}/`));
           const Icon = link.icon;
 
           return (

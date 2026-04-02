@@ -216,8 +216,8 @@ export default function CompaniesPage() {
             <thead>
               <tr className="bg-slate-50/80 border-b border-slate-100 text-slate-400 text-xs font-black uppercase tracking-widest">
                 <th className="py-5 px-8">Korxona</th>
+                <th className="py-5 px-6">Shaxsiy Linki</th>
                 <th className="py-5 px-6">Telefon</th>
-                <th className="py-5 px-6">Xodimlar</th>
                 <th className="py-5 px-6 text-center">Holati</th>
                 <th className="py-5 px-8 text-right">Amallar</th>
               </tr>
@@ -237,13 +237,21 @@ export default function CompaniesPage() {
                     </div>
                   </td>
                   <td className="py-5 px-6">
-                    <div className="flex items-center gap-2 text-slate-600 text-sm font-bold">
-                      <MdPhone className="text-slate-400" />
-                      {company.phoneNumber || '—'}
+                    <div className="flex flex-col">
+                      <a href={`https://${company.name.toLowerCase().replace(/[^a-z0-9]/g, '')}.gilamsaas.uz`} target="_blank" className="text-sm font-bold text-indigo-600 hover:text-indigo-800 hover:underline">
+                        {company.name.toLowerCase().replace(/[^a-z0-9]/g, '')}.gilamsaas.uz
+                      </a>
+                      <span className="text-[10px] text-slate-400 font-bold uppercase mt-0.5">Tizimga kirish manzili</span>
                     </div>
                   </td>
-                  <td className="py-5 px-6 font-black text-slate-700">
-                    {company.users?.length || 0}
+                  <td className="py-5 px-6">
+                    <div className="flex flex-col">
+                      <div className="flex items-center gap-2 text-slate-600 text-sm font-bold">
+                        <MdPhone className="text-slate-400" />
+                        {company.phoneNumber || '—'}
+                      </div>
+                      <span className="text-[10px] text-slate-400 font-bold uppercase mt-0.5">{company.users?.length || 0} ta xodim ishlaydi</span>
+                    </div>
                   </td>
                   <td className="py-5 px-6 text-center">
                     <button

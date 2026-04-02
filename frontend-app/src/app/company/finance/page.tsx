@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   MdTrendingUp, 
   MdTrendingDown, 
@@ -10,6 +10,7 @@ import {
   MdLibraryBooks
 } from 'react-icons/md';
 import Modal from '@/components/ui/Modal';
+import toast from 'react-hot-toast';
 
 export default function CompanyFinancePage() {
   const [period, setPeriod] = useState<'daily' | 'weekly' | 'monthly'>('daily'); 
@@ -19,10 +20,21 @@ export default function CompanyFinancePage() {
   const [expenseSearch, setExpenseSearch] = useState('');
   const [expenseCategory, setExpenseCategory] = useState('ALL');
 
-  const [expenses, setExpenses] = useState([
-    { id: 1, title: 'Yoqilg\'i', amount: '150,000', category: 'Logistika', comment: 'Isuzu uchun dizel', date: '2026-03-09' },
-    { id: 2, title: 'Xodim haqi', amount: '450,000', category: 'Ish haqi', comment: 'Kunlik to\'lovlar', date: '2026-03-08' },
-  ]);
+  const [expenses, setExpenses] = useState<any[]>([]);
+  
+  useEffect(() => {
+    const saved = localStorage.getItem('company_expenses');
+    if (saved) {
+      setExpenses(JSON.parse(saved));
+    } else {
+      const defaultExp = [
+        { id: 1, title: 'Yoqilg\'i', amount: '150,000', category: 'Logistika', comment: 'Isuzu uchun dizel', date: new Date().toISOString().split('T')[0] },
+        { id: 2, title: 'Xodim haqi', amount: '450,000', category: 'Ish haqi', comment: 'Kunlik to\'lovlar', date: new Date().toISOString().split('T')[0] },
+      ];
+      setExpenses(defaultExp);
+      localStorage.setItem('company_expenses', JSON.stringify(defaultExp));
+    }
+  }, []);
 
   const [newExpense, setNewExpense] = useState({
     title: '',
@@ -38,10 +50,12 @@ export default function CompanyFinancePage() {
       ...newExpense,
       date: new Date().toISOString().split('T')[0]
     };
-    setExpenses([expense, ...expenses]);
+    const updated = [expense, ...expenses];
+    setExpenses(updated);
+    localStorage.setItem('company_expenses', JSON.stringify(updated));
     setIsExpenseModalOpen(false);
     setNewExpense({ title: '', amount: '', category: 'Boshqa', comment: '' });
-    alert('Xarajat muvaffaqiyatli saqlandi! ✅');
+    toast.success('Xarajat muvaffaqiyatli saqlandi! ✅');
   };
 
   const revenueData = {

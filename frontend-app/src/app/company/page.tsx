@@ -58,8 +58,7 @@ export default function CompanyDashboardPage() {
 
   const handleCreateOrder = (e: React.FormEvent) => {
     e.preventDefault();
-    alert('Yangi buyurtma qo\'shish to\'liq jarayoni Tez kunda! Hozircha "Buyurtmalar" bo\'limidan mijoz va xizmatlarni bog\'lash kerak.');
-    setIsModalOpen(false);
+    router.push('/company/orders?action=new');
   };
 
   if (loading || !user) {

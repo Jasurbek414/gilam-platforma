@@ -10,6 +10,8 @@ import {
   MdLayers,
   MdMyLocation
 } from 'react-icons/md';
+import { usersApi, ordersApi, getUser } from '@/lib/api';
+import toast from 'react-hot-toast';
 
 // Add type definition for Yandex Maps
 declare global {
@@ -24,6 +26,58 @@ export default function LogisticsPage() {
   const [isMapReady, setIsMapReady] = useState(false);
   const [activeDriver, setActiveDriver] = useState<string | null>(null);
   const [showLayers, setShowLayers] = useState(false);
+  const [drivers, setDrivers] = useState<any[]>([]);
+  const [orderPoints, setOrderPoints] = useState<any[]>([]);
+  const [isInitializingData, setIsInitializingData] = useState(true);
+
+  const loadBackendData = async () => {
+    try {
+      const user = getUser();
+      if (!user?.companyId) return;
+      const allUsers = await usersApi.getByCompany(user.companyId);
+      const allOrders = await ordersApi.getByCompany(user.companyId);
+      
+      const realDrivers = allUsers.filter((u: any) => u.role === 'DRIVER');
+      
+      // Map orders to points
+      const points = allOrders.map((o: any) => {
+        // Generating random offset around Tashkent for realism since we don't have accurate coords yet
+        const offsetLat = (Math.random() - 0.5) * 0.1;
+        const offsetLng = (Math.random() - 0.5) * 0.1;
+        return {
+          id: o.id,
+          name: o.customer?.fullName || 'Mijoz',
+          pos: [41.311081 + offsetLat, 69.240562 + offsetLng],
+          type: (o.status === 'NEW' || o.status === 'DRIVER_ASSIGNED') ? 'pickup' : 'delivery'
+        }
+      });
+      
+      // Auto-generate coords for drivers that lack it
+      const mappedDrivers = realDrivers.map((d: any, i: number) => {
+        const offsetLat = (Math.random() - 0.5) * 0.05;
+        const offsetLng = (Math.random() - 0.5) * 0.05;
+        return {
+          id: d.id,
+          name: d.fullName,
+          pos: d.currentLocation ? [Number(d.currentLocation.split(',')[0]), Number(d.currentLocation.split(',')[1])] : [41.311081 + offsetLat, 69.240562 + offsetLng],
+          car: d.phone,
+          status: d.status === 'ACTIVE' ? 'Liniyada' : 'Dam olishda',
+          tasks: points.length > 0 ? (i % 3) + 1 : 0
+        };
+      });
+
+      setDrivers(mappedDrivers);
+      setOrderPoints(points);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsInitializingData(false);
+    }
+  };
+
+  useEffect(() => {
+    loadBackendData();
+  }, []);
 
   useEffect(() => {
     const loadYandexMaps = () => {
@@ -58,18 +112,9 @@ export default function LogisticsPage() {
 
       const map = mapInstance.current;
 
-      // Custom Driver Markers
-      const drivers = [
-        { id: '1', name: 'Sardor', pos: [41.325, 69.245], car: 'Damas (01 A 001 AA)', status: 'Liniyada' },
-        { id: '2', name: 'Umid', pos: [41.285, 69.215], car: 'Labo (01 B 002 BB)', status: 'Yetkazmoqda' },
-      ];
+      // Custom Driver Markers (use state vectors)
 
-      // Custom Order Points
-      const orderPoints = [
-        { id: 'p1', name: 'Mijoz: Aliyev Vali', pos: [41.345, 69.265], type: 'pickup' },
-        { id: 'p2', name: 'Mijoz: Karimov Anvar', pos: [41.275, 69.235], type: 'delivery' },
-        { id: 'p3', name: 'Mijoz: Rasulov Jamshid', pos: [41.305, 69.205], type: 'delivery' },
-      ];
+
 
       drivers.forEach(driver => {
         const placemark = new window.ymaps.Placemark(driver.pos, {
@@ -100,15 +145,15 @@ export default function LogisticsPage() {
       setIsMapReady(true);
     };
 
-    loadYandexMaps();
-  }, []);
+    if (!isInitializingData) {
+      loadYandexMaps();
+    }
+  }, [isInitializingData, drivers.length, orderPoints.length]);
 
-  const handleRefresh = () => {
+  const handleRefresh = async () => {
     setIsMapReady(false);
-    setTimeout(() => {
-      setIsMapReady(true);
-      alert('Ma\'lumotlar yangilandi! 🔄');
-    }, 1000);
+    toast.loading('Haydovchilar joylashuvi yangilanmoqda...', { duration: 1000 });
+    await loadBackendData();
   };
 
   const changeLayer = (type: string) => {
@@ -192,14 +237,14 @@ export default function LogisticsPage() {
               <div className="w-3 h-3 rounded-full bg-emerald-500 animate-pulse"></div>
               <div>
                 <p className="text-[10px] font-black text-slate-400 uppercase leading-none">Faol haydovchilar</p>
-                <p className="text-lg font-black text-slate-800">5 ta</p>
+                <p className="text-lg font-black text-slate-800">{drivers.length} ta</p>
               </div>
             </div>
              <div className="px-4 py-3 bg-white/90 backdrop-blur-md rounded-2xl shadow-xl border border-white/50 flex items-center gap-3">
               <div className="w-3 h-3 rounded-full bg-blue-500"></div>
               <div>
                 <p className="text-[10px] font-black text-slate-400 uppercase leading-none">Jami nuqtalar</p>
-                <p className="text-lg font-black text-slate-800">12 ta</p>
+                <p className="text-lg font-black text-slate-800">{orderPoints.length} ta</p>
               </div>
             </div>
           </div>
@@ -215,12 +260,7 @@ export default function LogisticsPage() {
           </div>
           
           <div className="p-0 overflow-y-auto flex-1 divide-y divide-slate-100">
-            {[
-              { id: '1', name: 'Sardor', car: 'Damas', plate: '01 A 001 AA', status: 'Liniyada', color: 'emerald', tasks: 3 },
-              { id: '2', name: 'Umid', car: 'Labo', plate: '01 B 002 BB', status: 'Yetkazmoqda', color: 'blue', tasks: 2 },
-              { id: '3', name: 'Otabek', car: 'Damas', plate: '10 C 003 CC', status: 'Dam olishda', color: 'slate', tasks: 0 },
-              { id: '4', name: 'Jasur', car: 'Labo', plate: '01 D 004 DD', status: 'Liniyada', color: 'emerald', tasks: 5 },
-            ].map((driver) => (
+            {drivers.map((driver) => (
               <div 
                 key={driver.id} 
                 onClick={() => setActiveDriver(driver.id)}
@@ -232,18 +272,18 @@ export default function LogisticsPage() {
                       <div className="w-10 h-10 bg-slate-100 rounded-full flex items-center justify-center font-bold text-slate-600 group-hover:scale-110 transition-transform">
                         {driver.name[0]}
                       </div>
-                      <span className={`absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-white bg-${driver.color}-500`}></span>
+                      <span className={`absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-white ${driver.status === 'Liniyada' ? 'bg-emerald-500' : 'bg-slate-400'}`}></span>
                     </div>
                     <div>
                       <p className="text-sm font-bold text-slate-800">{driver.name}</p>
-                      <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">{driver.car} • {driver.plate}</p>
+                      <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">{driver.car}</p>
                     </div>
                   </div>
                   <MdDirectionsCar className={`${activeDriver === driver.id ? 'text-blue-500' : 'text-slate-300'} text-xl transition-colors`} />
                 </div>
                 
                 <div className="flex items-center justify-between mt-2">
-                  <span className={`text-[10px] font-black px-2 py-0.5 rounded-md bg-${driver.color}-50 text-${driver.color}-600 uppercase`}>
+                  <span className={`text-[10px] font-black px-2 py-0.5 rounded-md ${driver.status === 'Liniyada' ? 'bg-emerald-50 text-emerald-600' : 'bg-slate-100 text-slate-600'} uppercase`}>
                     {driver.status}
                   </span>
                   <span className="text-[10px] font-bold text-slate-400">

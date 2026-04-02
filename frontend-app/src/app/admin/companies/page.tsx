@@ -238,7 +238,15 @@ export default function CompaniesPage() {
                   </td>
                   <td className="py-5 px-6">
                     <div className="flex flex-col">
-                      <a href={`https://${company.name.toLowerCase().replace(/[^a-z0-9]/g, '')}.gilamsaas.uz`} target="_blank" className="text-sm font-bold text-indigo-600 hover:text-indigo-800 hover:underline">
+                      <a 
+                        href={`https://${company.name.toLowerCase().replace(/[^a-z0-9]/g, '')}.gilamsaas.uz`} 
+                        onClick={(e) => {
+                          e.preventDefault();
+                          navigator.clipboard.writeText(`https://${company.name.toLowerCase().replace(/[^a-z0-9]/g, '')}.gilamsaas.uz`);
+                          toast.success('Domen tarmog\'i nusxalandi (Localhost uchun)');
+                        }}
+                        className="text-sm font-bold text-indigo-600 hover:text-indigo-800 hover:underline cursor-pointer"
+                      >
                         {company.name.toLowerCase().replace(/[^a-z0-9]/g, '')}.gilamsaas.uz
                       </a>
                       <span className="text-[10px] text-slate-400 font-bold uppercase mt-0.5">Tizimga kirish manzili</span>

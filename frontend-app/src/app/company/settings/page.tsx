@@ -1,19 +1,104 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { MdSettings, MdPerson, MdLock, MdNotifications, MdLanguage, MdSave } from 'react-icons/md';
+import { servicesApi, usersApi, getUser } from '@/lib/api';
+import toast from 'react-hot-toast';
 
 export default function SettingsPage() {
   const [activeTab, setActiveTab] = useState('profile');
+  const [user, setUser] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+
   const [formData, setFormData] = useState({
-    fullName: 'Azizbek Rahimov',
-    email: 'azizbek@example.uz',
-    phone: '+998 90 111 22 33'
+    fullName: '',
+    phone: ''
   });
 
-  const handleSave = (e: React.FormEvent) => {
+  const [passwords, setPasswords] = useState({
+    currentPassword: '',
+    newPassword: '',
+    confirmPassword: ''
+  });
+  const [servicesList, setServicesList] = useState<any[]>([]);
+
+  useEffect(() => {
+    const initData = async () => {
+      const currentUser = getUser();
+      if (!currentUser) return;
+      setUser(currentUser);
+      setFormData({
+        fullName: currentUser.fullName || '',
+        phone: currentUser.phone || ''
+      });
+
+      if (currentUser.companyId) {
+        try {
+          const s = await servicesApi.getByCompany(currentUser.companyId);
+          setServicesList(s);
+        } catch (err) {
+          console.error(err);
+        }
+      }
+      setLoading(false);
+    };
+    initData();
+  }, []);
+
+  const handleSaveProfile = async (e: React.FormEvent) => {
     e.preventDefault();
-    alert('Sozlamalar muvaffaqiyatli saqlandi! ✅');
+    try {
+      await usersApi.update(user.id, {
+        fullName: formData.fullName,
+        phone: formData.phone
+      });
+      toast.success('Profil muvaffaqiyatli saqlandi! ✅');
+      
+      // Update local storage user slightly
+      const stored = localStorage.getItem('user');
+      if (stored) {
+        const p = JSON.parse(stored);
+        p.fullName = formData.fullName;
+        p.phone = formData.phone;
+        localStorage.setItem('user', JSON.stringify(p));
+      }
+    } catch (err) {
+      toast.error('Saqlashda xatolik yuz berdi');
+    }
+  };
+
+  const handleSavePassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (passwords.newPassword !== passwords.confirmPassword) {
+      toast.error('Yangi parollar mos tushmadi!');
+      return;
+    }
+    if (passwords.newPassword.length < 6) {
+      toast.error('Parol kamida 6ta belgi bo\'lishi kerak');
+      return;
+    }
+    try {
+      await usersApi.update(user.id, {
+        password: passwords.newPassword
+      });
+      toast.success('Parol muvaffaqiyatli yangilandi! 🔐');
+      setPasswords({ currentPassword: '', newPassword: '', confirmPassword: '' });
+    } catch (err) {
+      toast.error('Parolni yangilashda xatolik qildi');
+    }
+  };
+
+  const handleSaveServices = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      const promises = servicesList.map(s => 
+        servicesApi.update(s.id, { price: s.price })
+      );
+      await Promise.all(promises);
+      toast.success('Narxlar muvaffaqiyatli saqlandi! 💰');
+    } catch (err) {
+      toast.error('Narxlarni saqlashda xatolik yuz berdi');
+    }
   };
 
   const tabs = [
@@ -23,50 +108,13 @@ export default function SettingsPage() {
     { id: 'notifications', name: 'Bildirishnomalar', icon: MdNotifications },
   ];
 
-  const [serviceGroups, setServiceGroups] = useState([
-    {
-      category: 'Gilamlar (kv.m)',
-      services: [
-        { id: '1-1', name: 'Oddiy gilam', price: 12000, unit: 'kv.m' },
-        { id: '1-2', name: 'Qubbali gilam', price: 14000, unit: 'kv.m' },
-        { id: '1-3', name: 'Rayhon gilam', price: 15000, unit: 'kv.m' },
-        { id: '1-4', name: 'Hukmdor / Sheyx / Troya', price: 16000, unit: 'kv.m' },
-        { id: '1-5', name: 'Shaggi / Makaron', price: 17000, unit: 'kv.m' },
-        { id: '1-6', name: 'Xitoy / Turkiya nozik', price: 18000, unit: 'kv.m' },
-        { id: '1-7', name: 'Polos / Daroshka', price: 12000, unit: 'kv.m' },
-      ]
-    },
-    {
-      category: 'Boshqa buyumlar',
-      services: [
-        { id: '2-1', name: 'Ko\'rpacha', price: 25000, unit: 'metr' },
-        { id: '2-2-1', name: 'Odeyal (1 kishilik yupqa)', price: 40000, unit: 'dona' },
-        { id: '2-2-2', name: 'Odeyal (1 kishilik qalin)', price: 50000, unit: 'dona' },
-        { id: '2-2-3', name: 'Odeyal (2 kishilik yupqa)', price: 60000, unit: 'dona' },
-        { id: '2-2-4', name: 'Odeyal (2 kishilik qalin)', price: 70000, unit: 'dona' },
-        { id: '2-3', name: 'Ko\'rpa', price: 30000, unit: 'kv.m' },
-        { id: '2-4', name: 'Pardalar', price: 30000, unit: 'kg' },
-      ]
-    },
-    {
-      category: 'Maxsus xizmatlar',
-      services: [
-        { id: '3-1', name: 'Yumshoq mebel', price: 60000, unit: 'o\'rindiq' },
-        { id: '3-2', name: 'Matras yuvish', price: 80000, unit: 'dona' },
-        { id: '3-3', name: 'Fasad yuvish', price: 15000, unit: 'kv.m' },
-        { id: '3-4', name: 'Bruschatka yuvish', price: 10000, unit: 'kv.m' },
-        { id: '3-5', name: 'Dazmollash', price: 5000, unit: 'metr' },
-      ]
-    }
-  ]);
-
-  const handleUpdatePrice = (groupIdx: number, serviceId: string, newPrice: number) => {
-    const updatedGroups = [...serviceGroups];
-    updatedGroups[groupIdx].services = updatedGroups[groupIdx].services.map(s => 
+  const handleUpdatePrice = (serviceId: string, newPrice: number) => {
+    setServicesList(servicesList.map(s => 
       s.id === serviceId ? { ...s, price: newPrice } : s
-    );
-    setServiceGroups(updatedGroups);
+    ));
   };
+
+  if (loading) return <div>Yuklanmoqda...</div>;
 
   return (
     <div className="space-y-6">
@@ -102,7 +150,7 @@ export default function SettingsPage() {
         {/* Form Content */}
         <div className="flex-1 bg-white rounded-3xl shadow-sm border border-slate-100 p-8">
           {activeTab === 'profile' && (
-            <form onSubmit={handleSave} className="space-y-6 max-w-xl">
+            <form onSubmit={handleSaveProfile} className="space-y-6 max-w-xl">
               <div className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-1.5">
@@ -140,37 +188,32 @@ export default function SettingsPage() {
                 <p className="text-slate-500 text-sm mt-1">Order yaratishda ishlatiladigan narxlarni shu yerdan sozlashingiz mumkin.</p>
               </div>
 
-              <div className="space-y-8">
-                {serviceGroups.map((group, groupIdx) => (
-                  <div key={group.category} className="space-y-4">
-                    <h4 className="text-xs font-black text-indigo-600 uppercase tracking-[0.2em] pl-1 border-l-4 border-indigo-600 ml-1">
-                      {group.category}
-                    </h4>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      {group.services.map(item => (
-                        <div key={item.id} className="flex items-center justify-between p-5 bg-slate-50 rounded-2xl border border-slate-100 group hover:border-indigo-200 transition-all">
-                          <div className="flex flex-col">
-                            <span className="font-bold text-slate-800 text-sm">{item.name}</span>
-                            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-0.5">O'lchov: {item.unit}</span>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <input 
-                              type="number" 
-                              className="w-24 px-3 py-2 rounded-xl border border-slate-200 text-right font-black text-slate-800 outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/5 transition-all"
-                              value={item.price}
-                              onChange={(e) => handleUpdatePrice(groupIdx, item.id, parseInt(e.target.value) || 0)}
-                            />
-                            <span className="text-[10px] font-black text-slate-400 uppercase">so'm</span>
-                          </div>
-                        </div>
-                      ))}
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {servicesList.length === 0 ? (
+                    <div className="text-slate-400">Xizmatlar topilmadi.</div>
+                  ) : servicesList.map(item => (
+                    <div key={item.id} className="flex items-center justify-between p-5 bg-slate-50 rounded-2xl border border-slate-100 group hover:border-indigo-200 transition-all">
+                      <div className="flex flex-col">
+                        <span className="font-bold text-slate-800 text-sm">{item.name}</span>
+                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-0.5">O'lchov: {item.measurementUnit === 'SQM' ? 'kv.m' : item.measurementUnit === 'PIECE' ? 'dona' : item.measurementUnit}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <input 
+                          type="number" 
+                          className="w-24 px-3 py-2 rounded-xl border border-slate-200 text-right font-black text-slate-800 outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/5 transition-all"
+                          value={item.price}
+                          onChange={(e) => handleUpdatePrice(item.id, parseInt(e.target.value) || 0)}
+                        />
+                        <span className="text-[10px] font-black text-slate-400 uppercase">so'm</span>
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
 
               <div className="pt-4">
-                <button onClick={handleSave} className="flex items-center gap-2 bg-indigo-600 text-white px-8 py-4 rounded-2xl font-black shadow-xl shadow-indigo-900/20 hover:shadow-indigo-900/40 hover:-translate-y-1 transition-all">
+                <button onClick={handleSaveServices} className="flex items-center gap-2 bg-indigo-600 text-white px-8 py-4 rounded-2xl font-black shadow-xl shadow-indigo-900/20 hover:shadow-indigo-900/40 hover:-translate-y-1 transition-all">
                   <MdSave className="text-xl" />
                   Narxlarni Tasdiqlash
                 </button>
@@ -185,28 +228,36 @@ export default function SettingsPage() {
                 <p className="text-slate-500 text-sm mt-1">Parol va hisob xavfsizligini boshqaring.</p>
               </div>
 
-              <form className="space-y-5" onSubmit={(e) => { e.preventDefault(); alert('Parol yangilandi! 🔐'); }}>
+              <form className="space-y-5" onSubmit={handleSavePassword}>
                 <div className="space-y-1.5">
-                  <label className="text-xs font-black text-slate-400 uppercase tracking-widest pl-1">Joriy Parol</label>
+                  <label className="text-xs font-black text-slate-400 uppercase tracking-widest pl-1">Joriy Parol (Ixtiyoriy)</label>
                   <input 
                     type="password"
                     placeholder="••••••••"
+                    value={passwords.currentPassword}
+                    onChange={e => setPasswords({...passwords, currentPassword: e.target.value})}
                     className="w-full px-5 py-4 rounded-2xl border border-slate-200 focus:border-indigo-500 outline-none font-bold text-slate-800 transition-all focus:ring-4 focus:ring-indigo-500/5"
                   />
                 </div>
                 <div className="space-y-1.5">
                   <label className="text-xs font-black text-slate-400 uppercase tracking-widest pl-1">Yangi Parol</label>
                   <input 
+                    required
                     type="password"
                     placeholder="••••••••"
+                    value={passwords.newPassword}
+                    onChange={e => setPasswords({...passwords, newPassword: e.target.value})}
                     className="w-full px-5 py-4 rounded-2xl border border-slate-200 focus:border-indigo-500 outline-none font-bold text-slate-800 transition-all focus:ring-4 focus:ring-indigo-500/5"
                   />
                 </div>
                 <div className="space-y-1.5">
                   <label className="text-xs font-black text-slate-400 uppercase tracking-widest pl-1">Yangi Parolni Tasdiqlang</label>
                   <input 
+                    required
                     type="password"
                     placeholder="••••••••"
+                    value={passwords.confirmPassword}
+                    onChange={e => setPasswords({...passwords, confirmPassword: e.target.value})}
                     className="w-full px-5 py-4 rounded-2xl border border-slate-200 focus:border-indigo-500 outline-none font-bold text-slate-800 transition-all focus:ring-4 focus:ring-indigo-500/5"
                   />
                 </div>
@@ -267,7 +318,7 @@ export default function SettingsPage() {
               </div>
 
               <div className="pt-6">
-                <button onClick={() => alert('Bildirishnoma sozlamalari saqlandi! 🔔')} className="flex items-center gap-2 bg-indigo-600 text-white px-8 py-4 rounded-2xl font-black shadow-xl shadow-indigo-900/20 hover:shadow-indigo-900/40 hover:-translate-y-1 transition-all">
+                <button onClick={() => toast.success('Bildirishnoma sozlamalari saqlandi! 🔔')} className="flex items-center gap-2 bg-indigo-600 text-white px-8 py-4 rounded-2xl font-black shadow-xl shadow-indigo-900/20 hover:shadow-indigo-900/40 hover:-translate-y-1 transition-all">
                   <MdSave className="text-xl" />
                   Sozlamalarni Saqlash
                 </button>

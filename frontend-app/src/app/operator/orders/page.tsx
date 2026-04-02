@@ -17,6 +17,7 @@ import {
 } from 'react-icons/md';
 import Modal from '@/components/ui/Modal';
 import { ordersApi, customersApi, servicesApi, getUser } from '@/lib/api';
+import toast from 'react-hot-toast';
 
 function OrderContent() {
   const router = useRouter();
@@ -107,7 +108,7 @@ function OrderContent() {
 
   const handleCreateOrder = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.customerId) return alert('Mijozni tanlang!');
+    if (!formData.customerId) return toast.error('Mijozni tanlang!');
     
     const formattedItems = formData.items
       .filter((item: any) => item.serviceId)
@@ -119,17 +120,21 @@ function OrderContent() {
         notes: item.notes
       }));
 
-    if (formattedItems.length === 0) return alert('Kamida bitta xizmat qatorini to\'ldiring!');
+    if (formattedItems.length === 0) return toast.error('Kamida bitta xizmatni tanlang!');
 
     setSaving(true);
     try {
+      if (!user?.company?.id) {
+        toast.error('Kompaniya topilmadi');
+        return;
+      }
       await ordersApi.create({
         customerId: formData.customerId,
         notes: formData.notes,
         operatorId: user.id, // Operator ID is captured
         items: formattedItems
       });
-      alert('Buyurtma saqlandi! ✅');
+      toast.success('Buyurtma saqlandi! ✅');
       await loadData(user.company.id);
       setIsModalOpen(false);
     } catch (err: any) {
@@ -293,7 +298,7 @@ function OrderContent() {
         </div>
       </div>
 
-      <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title="Yangi Buyurtma Qabul Qilish" size="lg">
+      <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title="Yangi Buyurtma Berish">
         <form onSubmit={handleCreateOrder} className="space-y-6">
           <div className="space-y-2">
             <label className="text-xs font-black text-slate-400 uppercase tracking-widest">Mijozni Tanlang</label>

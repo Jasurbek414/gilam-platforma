@@ -5,6 +5,7 @@ import { MdAdd, MdSearch, MdFilterList, MdShoppingCart, MdPerson, MdPhone, MdLoc
 import Modal from '@/components/ui/Modal';
 import { ordersApi, customersApi, servicesApi, getUser } from '@/lib/api';
 import { useRouter } from 'next/navigation';
+import toast from 'react-hot-toast';
 
 export default function CompanyOrdersPage() {
   const router = useRouter();
@@ -81,7 +82,7 @@ export default function CompanyOrdersPage() {
 
   const handleCreateOrder = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.customerId) return alert('Mijozni tanlang!');
+    if (!formData.customerId) return toast.error('Mijozni tanlang!');
     
     // Format items
     const formattedItems = formData.items
@@ -94,21 +95,27 @@ export default function CompanyOrdersPage() {
         notes: item.notes
       }));
 
-    if (formattedItems.length === 0) return alert('Kamida bitta xizmatni tanlang!');
+    if (formattedItems.length === 0) return toast.error('Kamida bitta xizmatni tanlang!');
 
     setSaving(true);
     try {
+      if (!user?.company?.id) {
+        toast.error('Kompaniya topilmadi');
+        return;
+      }
       await ordersApi.create({
+        companyId: user.company.id,
         customerId: formData.customerId,
         notes: formData.notes,
-        operatorId: user.id, // Current operator/company admin creating the order
-        items: formattedItems
+        items: formattedItems,
+        status: 'NEW'
       });
-      alert('Yangi buyurtma muvaffaqiyatli saqlandi! ✅');
-      await loadData(user.company.id);
+      
+      toast.success('Buyurtma muvaffaqiyatli saqlandi! 🎉');
       setIsModalOpen(false);
+      await loadData(user.company.id);
     } catch (err: any) {
-      alert('Xatolik: ' + err.message);
+      toast.error('Xatolik: ' + err.message);
     } finally {
       setSaving(false);
     }
@@ -117,9 +124,10 @@ export default function CompanyOrdersPage() {
   const handleUpdateStatus = async (orderId: string, newStatus: string) => {
     try {
       await ordersApi.updateStatus(orderId, { status: newStatus });
+      toast.success('Holati yangilandi');
       await loadData(user.company.id);
     } catch (err: any) {
-      alert('Status o\'zgartirishda xato: ' + err.message);
+      toast.error('Xatolik: ' + err.message);
     }
   };
 
@@ -287,7 +295,7 @@ export default function CompanyOrdersPage() {
         </div>
       </div>
 
-      <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title="Yangi Buyurtma Yaratish" size="lg">
+      <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title="Yangi Buyurtma Qo'shish">
         <form onSubmit={handleCreateOrder} className="space-y-6">
           <div className="space-y-2">
             <label className="text-xs font-black text-slate-400 uppercase tracking-widest">Mijozni Tanlang</label>

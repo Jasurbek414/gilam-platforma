@@ -122,3 +122,13 @@ export const ordersApi = {
   create: (data: any) => request<any>('/orders', { method: 'POST', body: JSON.stringify(data) }),
   updateStatus: (id: string, data: any) => request<any>(`/orders/${id}/status`, { method: 'PATCH', body: JSON.stringify(data) }),
 };
+
+// ===== NOTIFICATIONS API =====
+export const notificationsApi = {
+  getSuperadmin: () => request<any[]>('/notifications/superadmin'),
+  getByCompany: (companyId: string) => request<any[]>(`/notifications/company/${companyId}`),
+  getByUser: (userId: string) => request<any[]>(`/notifications/user/${userId}`),
+  markAsRead: (id: string) => request<any>(`/notifications/${id}/read`, { method: 'PATCH' }),
+  markAllAsReadCompany: (companyId: string) => request<any>(`/notifications/company/${companyId}/read-all`, { method: 'PATCH' }),
+  markAllAsReadSuperAdmin: () => request<any>('/notifications/superadmin/read-all', { method: 'PATCH' }),
+};

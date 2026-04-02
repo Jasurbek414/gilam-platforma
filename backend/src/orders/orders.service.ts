@@ -6,6 +6,7 @@ import { OrderItem } from './entities/order-item.entity';
 import { Service, MeasurementUnit } from '../services/entities/service.entity';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { UpdateOrderStatusDto } from './dto/update-order-status.dto';
+import { NotificationsService } from '../notifications/notifications.service';
 
 @Injectable()
 export class OrdersService {
@@ -16,6 +17,7 @@ export class OrdersService {
     private orderItemRepository: Repository<OrderItem>,
     @InjectRepository(Service)
     private serviceRepository: Repository<Service>,
+    private readonly notificationsService: NotificationsService,
   ) {}
 
   /**
@@ -107,6 +109,14 @@ export class OrdersService {
     savedOrder.totalAmount = totalAmount;
     await this.orderRepository.save(savedOrder);
 
+    // Xabarnoma qoldirish
+    await this.notificationsService.create({
+      companyId: savedOrder.companyId,
+      title: 'Yangi buyurtma',
+      text: `Yangi buyurtma qabul qilindi. Mijoz: ${savedOrder.customerId}`,
+      type: 'order'
+    });
+
     return this.findOne(savedOrder.id);
   }
 
@@ -148,6 +158,12 @@ export class OrdersService {
       // Haydovchi tayinlanganda status avtomatik o'zgaradi
       if (order.status === OrderStatus.NEW) {
         order.status = OrderStatus.DRIVER_ASSIGNED;
+        await this.notificationsService.create({
+          companyId: order.companyId,
+          title: 'Haydovchi tayinlandi',
+          text: `Buyurtmaga haydovchi biriktirildi.`,
+          type: 'order'
+        });
       }
     }
     if (updateDto.paymentStatus) {
@@ -157,7 +173,18 @@ export class OrdersService {
       order.notes = updateDto.notes;
     }
 
-    return this.orderRepository.save(order);
+    const saved = await this.orderRepository.save(order);
+
+    if (updateDto.status) {
+       await this.notificationsService.create({
+         companyId: order.companyId,
+         title: 'Buyurtma holati o\'zgardi',
+         text: `Holati: ${updateDto.status}`,
+         type: 'order'
+       });
+    }
+
+    return saved;
   }
 
   async getDriverActiveOrders(driverId: string) {

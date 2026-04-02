@@ -3,17 +3,28 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Company } from './entities/company.entity';
 import { CreateCompanyDto, UpdateCompanyDto } from './dto/company.dto';
+import { NotificationsService } from '../notifications/notifications.service';
 
 @Injectable()
 export class CompaniesService {
   constructor(
     @InjectRepository(Company)
     private companyRepository: Repository<Company>,
+    private readonly notificationsService: NotificationsService,
   ) {}
 
   async create(dto: CreateCompanyDto): Promise<Company> {
     const company = this.companyRepository.create(dto);
-    return this.companyRepository.save(company);
+    const saved = await this.companyRepository.save(company);
+    
+    // Notify Super Admin
+    await this.notificationsService.create({
+      title: 'Yangi korxona qo\'shildi!',
+      text: `Tizimda yangi korxona ("${saved.name}") ro'yxatdan o'tdi.`,
+      type: 'system'
+    });
+
+    return saved;
   }
 
   async findAll(): Promise<Company[]> {

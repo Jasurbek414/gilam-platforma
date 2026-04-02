@@ -3,16 +3,40 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { MdNotifications, MdSearch, MdPayment, MdSettings, MdSecurity, MdDoneAll } from 'react-icons/md';
 
+import { notificationsApi, getUser } from '@/lib/api';
+
 export default function Topbar() {
   const [showNotifications, setShowNotifications] = useState(false);
-  const [notifications, setNotifications] = useState([
-    { id: 1, text: '"Pokiza" MChJ oylik to\'lovni amalga oshirdi', time: '5 daqiqa oldin', type: 'payment', isRead: false },
-    { id: 2, text: 'Tizimda yangi korxona ("Nur Gilam") ro\'yxatdan o\'tdi', time: '1 soat oldin', type: 'system', isRead: false },
-    { id: 3, text: 'Alisher Otabekov profil ma\'lumotlarini yangiladi', time: '3 soat oldin', type: 'security', isRead: true },
-    { id: 4, text: '"Toza Makon" korxonasi balansi kamayib bormoqda', time: '5 soat oldin', type: 'system', isRead: false },
-  ]);
-
+  const [notifications, setNotifications] = useState<any[]>([]);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const [user, setUser] = useState<any>(null);
+
+  useEffect(() => {
+    const currentUser = getUser();
+    setUser(currentUser);
+    if (currentUser) {
+      loadNotifications(currentUser);
+      // oddiy polling (har 15 soniyada yangilash, web-socket o'rniga)
+      const interval = setInterval(() => loadNotifications(currentUser), 15000);
+      return () => clearInterval(interval);
+    }
+  }, []);
+
+  async function loadNotifications(currentUser: any) {
+    try {
+      let data;
+      if (currentUser.role === 'SUPER_ADMIN') {
+        data = await notificationsApi.getSuperadmin();
+      } else if (currentUser.company) {
+        data = await notificationsApi.getByCompany(currentUser.company.id);
+      } else {
+        data = await notificationsApi.getByUser(currentUser.id);
+      }
+      setNotifications(data || []);
+    } catch (e) {
+      console.error(e);
+    }
+  }
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -26,12 +50,23 @@ export default function Topbar() {
 
   const unreadCount = notifications.filter(n => !n.isRead).length;
 
-  const markAllAsRead = () => {
-    setNotifications(notifications.map(n => ({ ...n, isRead: true })));
+  const markAllAsRead = async () => {
+    try {
+      if (user?.role === 'SUPER_ADMIN') {
+        await notificationsApi.markAllAsReadSuperAdmin();
+      } else if (user?.company?.id) {
+        await notificationsApi.markAllAsReadCompany(user.company.id);
+      }
+      setNotifications(notifications.map(n => ({ ...n, isRead: true })));
+    } catch (e) { console.error(e); }
   };
 
-  const markAsRead = (id: number) => {
-    setNotifications(notifications.map(n => n.id === id ? { ...n, isRead: true } : n));
+  const markAsRead = async (id: string, currentlyRead: boolean) => {
+    if (currentlyRead) return;
+    try {
+      await notificationsApi.markAsRead(id);
+      setNotifications(notifications.map(n => n.id === id ? { ...n, isRead: true } : n));
+    } catch (e) { console.error(e); }
   };
 
   const getIcon = (type: string) => {
@@ -87,7 +122,7 @@ export default function Topbar() {
                   notifications.map((n) => (
                     <div 
                       key={n.id}
-                      onClick={() => markAsRead(n.id)}
+                      onClick={() => markAsRead(n.id, n.isRead)}
                       className={`p-4 flex gap-4 cursor-pointer hover:bg-slate-50 transition-colors relative border-b border-slate-50 ${!n.isRead ? 'bg-blue-50/30' : ''}`}
                     >
                       {!n.isRead && <div className="absolute left-0 top-0 bottom-0 w-1 bg-blue-500"></div>}
@@ -99,7 +134,7 @@ export default function Topbar() {
                           {n.text}
                         </p>
                         <span className="text-[10px] font-bold text-slate-400 mt-1 block uppercase">
-                          {n.time}
+                          {new Date(n.createdAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
                         </span>
                       </div>
                     </div>
@@ -121,15 +156,19 @@ export default function Topbar() {
           )}
         </div>
         
-        <div className="flex items-center gap-3 border-l border-slate-200 pl-6 cursor-pointer group">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-700 flex items-center justify-center text-white font-black shadow-lg shadow-blue-500/20 group-hover:scale-105 transition-transform">
-            A
+        {user && (
+          <div className="flex items-center gap-3 border-l border-slate-200 pl-6 cursor-pointer group">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-700 flex items-center justify-center text-white font-black shadow-lg shadow-blue-500/20 group-hover:scale-105 transition-transform">
+              {user.fullName[0]?.toUpperCase()}
+            </div>
+            <div className="hidden md:block">
+              <p className="text-sm font-black text-slate-800 leading-tight">{user.fullName}</p>
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">
+                {user.role === 'SUPER_ADMIN' ? 'Super Admin' : (user.company?.name || user.role)}
+              </p>
+            </div>
           </div>
-          <div className="hidden md:block">
-            <p className="text-sm font-black text-slate-800 leading-tight">Admin User</p>
-            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">Super Admin Panel</p>
-          </div>
-        </div>
+        )}
       </div>
     </header>
   );

@@ -13,8 +13,8 @@ export default function OperatorLayout({
       <div className="flex-1 ml-72 flex flex-col min-h-screen">
         <Topbar />
         
-        <main className="flex-1 p-6 md:p-10 overflow-auto bg-slate-50/50">
-          <div className="max-w-7xl mx-auto w-full">
+        <main className="flex-1 p-3 lg:p-4 overflow-auto bg-slate-50/50">
+          <div className="w-full h-full">
             {children}
           </div>
         </main>

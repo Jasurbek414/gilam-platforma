@@ -113,7 +113,12 @@ export default function OperatorCallsPage() {
            <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse shadow-sm" />
            <h1 className="text-[10px] font-black text-slate-800 uppercase tracking-[0.25em]">Qo'ng'iroqlar Markazi &mdash; Online</h1>
         </div>
-        <button onClick={() => setIncomingCall({ phone: '+998 90 777 55 33', customer: 'Siddiqov Ravshan', campaign: 'Test' })} className="text-[8px] font-black text-slate-300 uppercase tracking-[0.3em] hover:text-indigo-500 transition-colors">Event Simulation</button>
+        <button 
+           onClick={() => setIncomingCall({ phone: '+998 90 777 55 33', customer: 'Siddiqov Ravshan', campaign: 'Test Simulation' })} 
+           className="px-4 py-2.5 bg-slate-50 border border-slate-100 rounded-2xl text-[8px] font-black text-slate-400 uppercase tracking-[0.25em] hover:bg-indigo-50 hover:border-indigo-100 hover:text-indigo-600 transition-all shadow-sm active:scale-95"
+        >
+           Generate Simulation
+        </button>
       </div>
 
       {/* 2. TOP GRID: CALL EXPERIENCE & DIALER (Synchronized Height) */}

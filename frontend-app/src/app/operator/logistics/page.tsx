@@ -100,6 +100,28 @@ function LogisticsContent() {
     setIsGlobalMoreOpen(false);
   };
 
+  const sendBroadcast = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!broadcastMsg.trim()) return;
+    const t = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    const m = { id: Date.now(), text: `📢 ${broadcastMsg}`, sender: 'operator', time: t };
+    setMessages(p => {
+      const nh = { ...p };
+      DRIVERS.forEach(dr => { nh[dr.id] = [...(nh[dr.id] || []), m]; });
+      return nh;
+    });
+    setBroadcastMsg('');
+    setShowBroadcast(false);
+  };
+
+  const sendMsg = () => {
+    if (!msg.trim() || !selected) return;
+    const now = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    const m = { id: Date.now(), text: msg, sender: 'operator', time: now };
+    setMessages(p => ({ ...p, [selected.id]: [...(p[selected.id] || []), m] }));
+    setMsg('');
+  };
+
   const unreadCount = (id: number) => (messages[id] || []).filter(m => m.sender === 'driver').length;
 
   return (
@@ -269,6 +291,17 @@ function LogisticsContent() {
                                     </div>
                                  ))}
                               </div>
+                              <div className="p-4 bg-white/10 border-t border-white/10">
+                                 <div className="bg-white/90 border border-white rounded-xl p-1 flex items-center gap-1.5 shadow-sm">
+                                    <input 
+                                      value={msg} onChange={e => setMsg(e.target.value)}
+                                      onKeyDown={e => e.key === 'Enter' && sendMsg()}
+                                      placeholder="Type signal..." 
+                                      className="flex-1 px-3 py-2 bg-transparent text-[10px] font-bold text-slate-900 outline-none placeholder:text-slate-400"
+                                    />
+                                    <button onClick={sendMsg} className="w-8 h-8 bg-indigo-600 text-white rounded-lg flex items-center justify-center shadow-lg hover:bg-indigo-500 transition-all"><MdSend size={14}/></button>
+                                 </div>
+                              </div>
                            </div>
                         ) : (
                            <div className="p-6 h-full flex flex-col gap-6">
@@ -295,7 +328,7 @@ function LogisticsContent() {
       </div>
 
       {/* 4. BROADCAST MODAL */}
-      <Modal isOpen={showBroadcast} onClose={() => setShowBroadcast(false)}>
+      <Modal isOpen={showBroadcast} onClose={() => setShowBroadcast(false)} title="Broadcast Signal">
          <div className="p-10 space-y-8 bg-slate-50">
             <div className="flex flex-col items-center text-center">
                <div className="w-20 h-20 bg-indigo-600 rounded-[32px] flex items-center justify-center text-white text-3xl shadow-2xl animate-pulse mb-6">

@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Put, Delete, Body, Param, ParseUUIDPipe, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Put, Delete, Body, Param, ParseUUIDPipe, UseGuards, UnauthorizedException } from '@nestjs/common';
 import { CompaniesService } from './companies.service';
 import { CreateCompanyDto, UpdateCompanyDto } from './dto/company.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
@@ -20,12 +20,20 @@ export class CompaniesController {
   }
 
   @Get()
-  @Roles(UserRole.SUPER_ADMIN, UserRole.COMPANY_ADMIN)
   async findAll(@CurrentUser() user: User) {
+    if (!user) {
+       throw new UnauthorizedException('Sessiya muddati tugadi');
+    }
+    
     if (user.role === UserRole.SUPER_ADMIN) {
       return this.companiesService.findAll();
     }
-    // If not SuperAdmin, return only their own company in an array
+    
+    // For CompanyAdmin or other authorized personnel within a company
+    if (!user.companyId) {
+       return []; // No company assigned
+    }
+
     const company = await this.companiesService.findOne(user.companyId);
     return [company];
   }

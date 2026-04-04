@@ -91,15 +91,15 @@ export default function DriverMap({ drivers, selected, onSelect, mapType, showTr
   const tileUrl = useMemo(() => {
     switch (mapType) {
       case 'satellite': 
-        return 'https://sat04.maps.yandex.net/tiles?l=sat&x={x}&y={y}&z={z}&lang=ru_RU';
+        return 'https://core-renderer-tiles.maps.yandex.net/tiles?l=sat&x={x}&y={y}&z={z}&lang=ru_RU&scale=1';
       case 'terrain': 
-        return 'https://sat04.maps.yandex.net/tiles?l=sat,skl&x={x}&y={y}&z={z}&lang=ru_RU';
+        return 'https://core-renderer-tiles.maps.yandex.net/tiles?l=sat,skl&x={x}&y={y}&z={z}&lang=ru_RU&scale=1';
       default: 
-        return 'https://vec04.maps.yandex.net/tiles?l=map&x={x}&y={y}&z={z}&lang=ru_RU';
+        return 'https://core-renderer-tiles.maps.yandex.net/tiles?l=map&x={x}&y={y}&z={z}&lang=ru_RU&scale=1';
     }
   }, [mapType]);
 
-  const trafficUrl = 'https://core-jams-rdr-cache.maps.yandex.net/tiles?l=trf&x={x}&y={y}&z={z}&scale=1&lang=ru_RU';
+  const trafficUrl = 'https://core-renderer-tiles.maps.yandex.net/tiles?l=trf,trfe&x={x}&y={y}&z={z}&scale=1&lang=ru_RU';
   
   return (
     <div className="w-full h-full relative group bg-slate-100">

@@ -211,23 +211,23 @@ function LogisticsContent() {
          </div>
       </div>
 
-      {/* FLOATING RIGHT: Selected Driver Stats */}
+      {/* FLOATING RIGHT: Selected Driver Stats (Compacted) */}
       <AnimatePresence>
          {selected && centerTab === 'map' && (
             <motion.div 
                initial={{ x: 50, opacity: 0 }} animate={{ x: 0, opacity: 1 }} exit={{ x: 50, opacity: 0 }}
-               className="absolute top-[120px] right-6 w-[280px] z-20 pointer-events-none"
+               className="absolute top-[120px] right-6 w-[240px] z-20 pointer-events-none"
             >
-               <div className="bg-white/80 backdrop-blur-3xl border border-indigo-50/50 rounded-[40px] shadow-2xl p-6 space-y-6 pointer-events-auto">
+               <div className="bg-white/80 backdrop-blur-3xl border border-indigo-50/50 rounded-[40px] shadow-2xl p-5 space-y-4 pointer-events-auto">
                   <div className="flex items-center justify-between">
-                     <h3 className="text-[9px] font-black text-indigo-400 uppercase tracking-widest flex items-center gap-2">
+                     <h3 className="text-[8px] font-black text-indigo-400 uppercase tracking-widest flex items-center gap-2">
                         <div className="w-1 h-1 rounded-full bg-indigo-400 animate-pulse" /> Stats
                      </h3>
                      <div className="flex bg-slate-100/50 p-1 rounded-lg">
                         {['daily', 'weekly'].map(p => (
                            <button 
                              key={p} onClick={() => setStatPeriod(p)}
-                             className={`px-3 py-1 rounded-md text-[7px] font-black uppercase transition-all ${statPeriod === p ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-400'}`}
+                             className={`px-2.5 py-1 rounded-md text-[6.5px] font-black uppercase transition-all ${statPeriod === p ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-400'}`}
                            >
                               {p}
                            </button>
@@ -235,90 +235,89 @@ function LogisticsContent() {
                      </div>
                   </div>
 
-                  <div className="grid grid-cols-1 gap-3">
+                  <div className="grid grid-cols-1 gap-2.5">
                      {stats.slice(0, 3).map((s: any, i: number) => (
-                        <div key={i} className="px-4 py-3 bg-white/40 rounded-2xl border border-white/50 flex items-center gap-4 group hover:bg-white hover:border-indigo-100 transition-all">
-                           <div className="w-8 h-8 bg-slate-50 rounded-lg flex items-center justify-center text-slate-300 group-hover:text-indigo-500 transition-colors">
-                              <s.icon className="text-base" />
+                        <div key={i} className="px-3.5 py-2.5 bg-white/40 rounded-2xl border border-white/50 flex items-center gap-3 group hover:bg-white transition-all">
+                           <div className="w-7 h-7 bg-slate-50 rounded-lg flex items-center justify-center text-slate-300 group-hover:text-indigo-500">
+                              <s.icon className="text-sm" />
                            </div>
                            <div>
-                              <p className="text-[14px] font-black text-slate-800 leading-none">{s.val}</p>
-                              <p className="text-[8px] font-black text-slate-400 uppercase tracking-wide mt-1">{s.label}</p>
+                              <p className="text-[12px] font-black text-slate-800 leading-none">{s.val}</p>
+                              <p className="text-[7px] font-black text-slate-400 uppercase tracking-wide mt-1">{s.label}</p>
                            </div>
                         </div>
                      ))}
                   </div>
 
-                  <div className="bg-gradient-to-br from-indigo-600 to-indigo-800 rounded-[32px] p-5 text-white relative overflow-hidden shadow-2xl">
+                  <div className="bg-slate-950 rounded-[32px] p-4 text-white relative overflow-hidden shadow-2xl">
                      <div className="relative z-10 flex items-center justify-between">
                         <div className="flex items-center gap-3">
-                           <div className="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center text-xl backdrop-blur-md">{selected.profileImg}</div>
-                           <p className="text-[12px] font-black">{selected.name}</p>
+                           <div className="w-9 h-9 bg-white/10 rounded-xl flex items-center justify-center text-lg backdrop-blur-md">{selected.profileImg}</div>
+                           <div>
+                              <p className="text-[11px] font-black leading-none mb-1.5">{selected.name}</p>
+                              <p className="text-[7px] font-black text-indigo-400 uppercase tracking-wider">{selected.car}</p>
+                           </div>
                         </div>
-                        <a href={`tel:${selected.phone}`} className="w-9 h-9 bg-white text-indigo-600 rounded-xl flex items-center justify-center shadow-2xl hover:scale-110 active:scale-95 transition-all">
-                           <MdPhone className="text-lg" />
-                        </a>
                      </div>
-                     <MdAnalytics className="absolute -bottom-8 -right-8 text-7xl text-white/5 rotate-12" />
                   </div>
                </div>
             </motion.div>
          )}
       </AnimatePresence>
 
-      {/* FLOATING BOTTOM: Selected Driver Chat or Quick View */}
+      {/* FLOATING ACTION BAR: Selected Driver (Compacted & Sleeek) */}
       <AnimatePresence>
          {selected && (
             <motion.div 
                initial={{ y: 100, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 100, opacity: 0 }}
-               className="absolute bottom-6 left-1/2 -translate-x-1/2 z-40 w-full max-w-xl px-4 pointer-events-none"
+               className="absolute bottom-6 left-1/2 -translate-x-1/2 z-40 w-full max-w-lg px-4 pointer-events-none"
             >
-               <div className="bg-slate-950/95 border border-white/10 rounded-[40px] shadow-[0_32px_80px_rgba(0,0,0,0.6)] p-2 backdrop-blur-3xl overflow-hidden pointer-events-auto">
+               <div className="bg-slate-950/95 border border-white/10 rounded-[32px] shadow-[0_24px_60px_rgba(0,0,0,0.5)] p-2 backdrop-blur-3xl overflow-hidden pointer-events-auto">
                   {centerTab === 'chat' ? (
-                     <div className="flex flex-col h-[350px]">
-                        <div className="px-8 py-4 border-b border-white/5 flex items-center justify-between bg-white/[0.02]">
-                           <div className="flex items-center gap-4">
-                              <div className="w-9 h-9 bg-indigo-600 rounded-xl flex items-center justify-center text-white font-black shadow-lg">{selected.name[0]}</div>
-                              <p className="text-xs font-black text-white">{selected.name}</p>
+                     <div className="flex flex-col h-[320px]">
+                        <div className="px-6 py-3 border-b border-white/5 flex items-center justify-between bg-white/[0.02]">
+                           <div className="flex items-center gap-3">
+                              <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center text-white font-black shadow-lg">{selected.name[0]}</div>
+                              <p className="text-[11px] font-black text-white leading-none">{selected.name}</p>
                            </div>
-                           <button onClick={() => setCenterTab('map')} className="p-2.5 bg-white/5 hover:bg-white/10 rounded-xl text-white/40 transition-all"><MdKeyboardArrowRight className="text-xl" /></button>
+                           <button onClick={() => setCenterTab('map')} className="p-2 bg-white/5 hover:bg-white/10 rounded-lg text-white/40 transition-all"><MdKeyboardArrowRight className="text-lg" /></button>
                         </div>
-                        <div className="flex-1 overflow-y-auto p-8 space-y-4 custom-scrollbar">
+                        <div className="flex-1 overflow-y-auto p-6 space-y-4 custom-scrollbar">
                            {(messages[selected.id] || []).map((m: any) => (
                               <div key={m.id} className={`flex ${m.sender === 'operator' ? 'justify-end' : 'justify-start'}`}>
-                                 <div className={`max-w-[75%] p-4 rounded-2xl ${m.sender === 'operator' ? 'bg-indigo-600 text-white rounded-br-sm' : 'bg-white/10 text-white rounded-bl-sm border border-white/5'}`}>
-                                    <p className="text-[12px] font-medium leading-relaxed">{m.text}</p>
-                                    <p className="text-[7px] font-black mt-2 uppercase text-white/30 tracking-widest">{m.time}</p>
+                                 <div className={`max-w-[75%] p-3 rounded-2xl ${m.sender === 'operator' ? 'bg-indigo-600 text-white rounded-br-sm' : 'bg-white/10 text-white rounded-bl-sm border border-white/5'}`}>
+                                    <p className="text-[11px] font-medium leading-relaxed">{m.text}</p>
+                                    <p className="text-[7px] font-black mt-1.5 uppercase text-white/30 tracking-widest">{m.time}</p>
                                  </div>
                               </div>
                            ))}
                         </div>
-                        <div className="p-4 bg-white/[0.03] border-t border-white/5">
+                        <div className="p-3 bg-white/[0.03] border-t border-white/5">
                            <div className="relative">
                               <input 
                                  value={msg} onChange={e => setMsg(e.target.value)}
                                  onKeyDown={e => e.key === 'Enter' && sendMsg()}
                                  placeholder="Type a message..." 
-                                 className="w-full pl-6 pr-14 py-4 bg-white/5 border border-white/5 rounded-2xl outline-none focus:bg-white/10 font-bold text-white transition-all text-xs"
+                                 className="w-full pl-5 pr-12 py-3.5 bg-white/5 border border-white/5 rounded-2xl outline-none focus:bg-white/10 font-bold text-white transition-all text-[11px]"
                               />
-                              <button onClick={sendMsg} className="absolute right-1.5 top-1/2 -translate-y-1/2 w-10 h-10 bg-white text-slate-900 rounded-xl flex items-center justify-center shadow-xl font-black">
-                                 <MdSend />
+                              <button onClick={sendMsg} className="absolute right-1 w-9 h-9 bg-white text-slate-900 rounded-xl flex items-center justify-center shadow-xl font-black">
+                                 <MdSend size={14} />
                               </button>
                            </div>
                         </div>
                      </div>
                   ) : (
-                     <div className="p-5 flex items-center justify-between">
-                        <div className="flex items-center gap-5 px-3">
-                           <div className="w-12 h-12 bg-white/5 rounded-xl flex items-center justify-center text-2xl border border-white/5">{selected.profileImg}</div>
-                           <div>
-                              <h4 className="text-md font-black text-white leading-none mb-1.5">{selected.name}</h4>
-                              <p className="text-[9px] font-black text-indigo-400 uppercase tracking-widest">{selected.car}</p>
+                     <div className="p-2 flex items-center justify-between">
+                        <div className="flex items-center gap-4 px-3">
+                           <div className="w-10 h-10 bg-white/5 rounded-xl flex items-center justify-center text-xl border border-white/5 shrink-0">{selected.profileImg}</div>
+                           <div className="min-w-0">
+                              <h4 className="text-[12px] font-black text-white leading-none mb-1 truncate">{selected.name}</h4>
+                              <p className="text-[7px] font-black text-indigo-400 uppercase tracking-widest">{selected.car}</p>
                            </div>
                         </div>
-                        <div className="flex items-center gap-3 pr-2">
-                           <button onClick={() => setCenterTab('chat')} className="px-6 py-3.5 bg-white/5 text-white border border-white/10 rounded-2xl text-[9px] font-black uppercase tracking-widest hover:bg-white/10 transition-all">Chat</button>
-                           <a href={`tel:${selected.phone}`} className="px-6 py-3.5 bg-indigo-600 text-white rounded-2xl text-[9px] font-black uppercase tracking-widest shadow-xl shadow-indigo-600/20 hover:bg-indigo-500 transition-all">Call</a>
+                        <div className="flex items-center gap-2 pr-1">
+                           <button onClick={() => setCenterTab('chat')} className="px-5 py-3 bg-white/5 text-white border border-white/10 rounded-xl text-[8px] font-black uppercase tracking-widest hover:bg-white/10 transition-all">Chat</button>
+                           <a href={`tel:${selected.phone}`} className="px-5 py-3 bg-indigo-600 text-white rounded-xl text-[8px] font-black uppercase tracking-widest shadow-xl shadow-indigo-600/20 hover:bg-indigo-500 transition-all">Call</a>
                         </div>
                      </div>
                   )}

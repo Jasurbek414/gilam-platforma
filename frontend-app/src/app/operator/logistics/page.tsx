@@ -104,7 +104,7 @@ function LogisticsContent() {
   const unreadCount = (id: number) => (messages[id] || []).filter(m => m.sender === 'driver').length;
 
   return (
-    <div className="flex flex-col h-[calc(100vh-140px)] space-y-16">
+    <div className="flex flex-col space-y-24 pb-20">
       
       {/* Dynamic Header Section */}
       <div className="flex items-center justify-between shrink-0 bg-white p-8 rounded-[48px] border border-slate-100 shadow-sm relative overflow-hidden">
@@ -139,7 +139,7 @@ function LogisticsContent() {
       </div>
 
       {/* Workspace Grid - NEW Balanced Grid Distribution */}
-      <div className="flex-1 grid grid-cols-12 gap-10 min-h-0 overflow-hidden">
+      <div className="grid grid-cols-12 gap-10 min-h-[800px]">
         
         {/* Column 1: Clean Driver List (25% Width) */}
         <div className="col-span-3 bg-white rounded-[56px] border border-slate-100 shadow-sm flex flex-col min-w-0">
@@ -159,7 +159,7 @@ function LogisticsContent() {
             </div>
           </div>
 
-          <div className="flex-1 overflow-y-auto px-6 py-6 space-y-4 custom-scrollbar">
+          <div className="flex-1 px-6 py-6 space-y-4">
             {filteredDrivers.map(d => {
               const uc = unreadCount(d.id);
               const color = STATUS_COLOR[d.status] || STATUS_COLOR["OVQATLANISHDA"];
@@ -215,7 +215,7 @@ function LogisticsContent() {
           </div>
 
           {/* Detailed Info at bottom */}
-          <div className="p-8 border-t border-slate-50 flex items-center justify-between bg-slate-50/20">
+          <div className="p-8 border-t border-slate-50 flex items-center justify-between bg-slate-50/20 mt-auto">
              <div className="flex gap-4">
                 <div className="text-center">
                    <p className="text-[9px] font-black text-slate-400 mb-1 uppercase tracking-widest">Jami</p>
@@ -231,7 +231,7 @@ function LogisticsContent() {
         </div>
 
         {/* Column 2: Spacious Map (50% Width) - Lowered specifically */}
-        <div className="col-span-6 mt-8 bg-white rounded-[64px] overflow-hidden flex flex-col relative shadow-2xl shadow-indigo-900/10 border border-slate-100 transition-all hover:shadow-indigo-900/20">
+        <div className="col-span-6 mt-12 bg-white rounded-[64px] overflow-hidden flex flex-col relative shadow-2xl shadow-indigo-900/10 border border-slate-100 transition-all hover:shadow-indigo-900/20">
           
           {/* Futuristic Control Center Tabs - Lowered */}
           <div className="absolute top-16 left-1/2 -translate-x-1/2 z-20 flex p-1.5 bg-white/70 backdrop-blur-3xl rounded-[40px] shadow-[0_20px_60px_rgba(0,0,0,0.15)] border border-white/50">

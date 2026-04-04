@@ -8,6 +8,7 @@ import {
 } from 'react-icons/md';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { telephonyApi, getUser } from '@/lib/api';
 
 // --- TYPES ---
 type CallStatus = 'COMPLETED' | 'MISSED' | 'BUSY' | 'IN_PROGRESS' | 'CONNECTED';
@@ -43,10 +44,29 @@ export default function OperatorCallsPage() {
   const [dialNum, setDialNum] = useState('');
   const [incomingCall, setIncomingCall] = useState<any>(null);
   const [listFilter, setListFilter] = useState('');
+  const [sipConfig, setSipConfig] = useState<any>(null);
+  const [sipLoading, setSipLoading] = useState(true);
   
   const longPressTimer = useRef<any>(null);
   const router = useRouter();
   const searchParams = useSearchParams();
+  const user = getUser();
+
+  useEffect(() => {
+    const fetchSip = async () => {
+      if (!user?.companyId) return;
+      try {
+        setSipLoading(true);
+        const config = await telephonyApi.getConfig(user.companyId);
+        setSipConfig(config);
+      } catch (error) {
+        console.error('SIP Fetch Error:', error);
+      } finally {
+        setSipLoading(false);
+      }
+    };
+    fetchSip();
+  }, []);
 
   const callLog: CallRecord[] = useMemo(() => [
     { id: 1, phone: '+998 90 123 45 67', customer: 'Aliyev Vali', status: 'COMPLETED', duration: '02:45', time: 'Bugun, 10:15' },
@@ -110,8 +130,16 @@ export default function OperatorCallsPage() {
       {/* 1. SUB-HEADER */}
       <div className="flex items-center justify-between px-2 shrink-0">
         <div className="flex items-center gap-4">
-           <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse shadow-sm" />
-           <h1 className="text-[10px] font-black text-slate-800 uppercase tracking-[0.25em]">Qo'ng'iroqlar Markazi &mdash; Online</h1>
+           {sipLoading ? (
+             <div className="w-24 h-2 bg-slate-100 animate-pulse rounded-full" />
+           ) : (
+             <div className="flex items-center gap-3">
+               <div className={`w-1.5 h-1.5 rounded-full ${sipConfig?.server ? 'bg-emerald-500 animate-pulse' : 'bg-rose-500'} shadow-sm`} />
+               <h1 className="text-[10px] font-black text-slate-800 uppercase tracking-[0.25em]">
+                 {sipConfig?.server ? `${sipConfig.provider || 'SIP'} &mdash; ${sipConfig.server}` : 'Telefoniya Ulangan emas'}
+               </h1>
+             </div>
+           )}
         </div>
         <button 
            onClick={() => setIncomingCall({ phone: '+998 90 777 55 33', customer: 'Siddiqov Ravshan', campaign: 'Test Simulation' })} 

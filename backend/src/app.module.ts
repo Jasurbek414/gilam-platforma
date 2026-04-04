@@ -10,6 +10,7 @@ import { CustomersModule } from './customers/customers.module';
 import { ServicesModule } from './services/services.module';
 import { OrdersModule } from './orders/orders.module';
 import { NotificationsModule } from './notifications/notifications.module';
+import { TelephonyModule } from './telephony/telephony.module';
 
 @Module({
   imports: [
@@ -38,6 +39,7 @@ import { NotificationsModule } from './notifications/notifications.module';
     ServicesModule,
     OrdersModule,
     NotificationsModule,
+    TelephonyModule,
   ],
   controllers: [AppController],
   providers: [AppService],

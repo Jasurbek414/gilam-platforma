@@ -149,3 +149,9 @@ export const callsApi = {
   create: (data: any) => request<any>('/calls', { method: 'POST', body: JSON.stringify(data) }),
 };
 
+// ===== TELEPHONY API =====
+export const telephonyApi = {
+  getConfig: (companyId: string) => request<any>(`/telephony/config/${companyId}`),
+  updateConfig: (data: { companyId?: string, credentials: any }) => 
+    request<any>('/telephony/config', { method: 'POST', body: JSON.stringify(data) }),
+};

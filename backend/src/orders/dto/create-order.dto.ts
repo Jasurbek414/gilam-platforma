@@ -22,12 +22,16 @@ export class CreateOrderItemDto {
   @IsNumber()
   @IsNotEmpty()
   quantity: number;
+
+  @IsOptional()
+  @IsString()
+  notes?: string;
 }
 
 export class CreateOrderDto {
+  @IsOptional()
   @IsUUID()
-  @IsNotEmpty()
-  companyId: string;
+  companyId?: string;
 
   @IsUUID()
   @IsNotEmpty()

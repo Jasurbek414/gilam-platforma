@@ -1,9 +1,9 @@
 import { IsEnum, IsNotEmpty, IsOptional, IsString, IsUUID } from 'class-validator';
 
 export class CreateCustomerDto {
+  @IsOptional()
   @IsUUID()
-  @IsNotEmpty()
-  companyId: string;
+  companyId?: string;
 
   @IsString()
   @IsNotEmpty()

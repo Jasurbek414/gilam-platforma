@@ -2,9 +2,9 @@ import { IsEnum, IsNotEmpty, IsNumber, IsOptional, IsString, IsUUID } from 'clas
 import { MeasurementUnit } from '../entities/service.entity';
 
 export class CreateServiceDto {
+  @IsOptional()
   @IsUUID()
-  @IsNotEmpty()
-  companyId: string;
+  companyId?: string;
 
   @IsString()
   @IsNotEmpty()

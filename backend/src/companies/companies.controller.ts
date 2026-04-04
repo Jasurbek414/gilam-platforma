@@ -20,9 +20,14 @@ export class CompaniesController {
   }
 
   @Get()
-  @Roles(UserRole.SUPER_ADMIN)
-  findAll() {
-    return this.companiesService.findAll();
+  @Roles(UserRole.SUPER_ADMIN, UserRole.COMPANY_ADMIN)
+  async findAll(@CurrentUser() user: User) {
+    if (user.role === UserRole.SUPER_ADMIN) {
+      return this.companiesService.findAll();
+    }
+    // If not SuperAdmin, return only their own company in an array
+    const company = await this.companiesService.findOne(user.companyId);
+    return [company];
   }
 
   @Get('stats')

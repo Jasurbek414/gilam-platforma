@@ -81,6 +81,22 @@ function LogisticsContent() {
     setCenterTab('map');
   };
 
+  const sendBroadcast = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!broadcastMsg.trim()) return;
+    const t = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    const m = { id: Date.now(), text: `📢 ${broadcastMsg}`, sender: 'operator', time: t };
+    setMessages(p => {
+      const newHistory = { ...p };
+      DRIVERS.forEach(d => {
+        newHistory[d.id] = [...(newHistory[d.id] || []), m];
+      });
+      return newHistory;
+    });
+    setBroadcastMsg('');
+    setShowBroadcast(false);
+  };
+
   const sendMsg = () => {
     if (!msg.trim() || !selected) return;
     const now = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });

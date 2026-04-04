@@ -1,12 +1,13 @@
 'use client';
 
-import React, { useState, useEffect, Suspense, useMemo } from 'react';
+import React, { useState, useEffect, Suspense, useMemo, useRef } from 'react';
 import dynamic from 'next/dynamic';
 import {
   MdLocalShipping, MdChat, MdNotificationsActive, MdLocationOn,
   MdSend, MdPhone, MdTrendingUp, MdDirectionsCar, MdInfo,
   MdSpeed, MdQueryBuilder, MdTimeline, MdMap, MdKeyboardArrowRight,
-  MdFilterList, MdSearch, MdMoreVert, MdAnalytics, MdGroup, MdFingerprint
+  MdFilterList, MdSearch, MdMoreVert, MdAnalytics, MdGroup, MdFingerprint,
+  MdRefresh, MdDescription, MdSettings, MdRestore
 } from 'react-icons/md';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useSearchParams } from 'next/navigation';
@@ -63,6 +64,19 @@ function LogisticsContent() {
   const [statPeriod, setStatPeriod] = useState('daily');
   const [listFilter, setListFilter] = useState('');
   const [isChatOpen, setIsChatOpen] = useState(false);
+  const [isGlobalMoreOpen, setIsGlobalMoreOpen] = useState(false);
+  
+  const moreMenuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (moreMenuRef.current && !moreMenuRef.current.contains(event.target as Node)) {
+        setIsGlobalMoreOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   useEffect(() => {
     const id = searchParams.get('driverId');
@@ -81,50 +95,21 @@ function LogisticsContent() {
     setIsChatOpen(false); 
   };
 
-  const sendBroadcast = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!broadcastMsg.trim()) return;
-    const t = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-    const m = { id: Date.now(), text: `📢 ${broadcastMsg}`, sender: 'operator', time: t };
-    setMessages(p => {
-      const nh = { ...p };
-      DRIVERS.forEach(dr => { nh[dr.id] = [...(nh[dr.id] || []), m]; });
-      return nh;
-    });
-    setBroadcastMsg('');
-    setShowBroadcast(false);
+  const handleRefreshTracking = () => {
+    console.log('Refreshing Global Logistics Signals...');
+    setIsGlobalMoreOpen(false);
   };
 
-  const sendMsg = () => {
-    if (!msg.trim() || !selected) return;
-    const now = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-    setMessages(p => ({ ...p, [selected.id]: [...(p[selected.id] || []), { id: Date.now(), text: msg, sender: 'operator', time: now }] }));
-    setMsg('');
-    setTimeout(() => {
-      const t = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-      setMessages(p => ({ ...p, [selected.id]: [...(p[selected.id] || []), { id: Date.now(), text: "Tushunarli ✅ Ishlayapmiz.", sender: 'driver', time: t }] }));
-    }, 1500);
-  };
-
-  const stats = STAT_PRESETS[statPeriod] || STAT_PRESETS.daily;
   const unreadCount = (id: number) => (messages[id] || []).filter(m => m.sender === 'driver').length;
 
   return (
-    <div className="flex flex-col h-[calc(100vh-140px)] w-full gap-2">
-      
-      {/* 1. PROFESSIONAL EXTERNAL HEADER */}
-      <div className="bg-white/95 backdrop-blur-3xl px-6 py-2 border border-slate-100 rounded-[20px] shadow-sm flex items-center justify-between">
-         <div className="flex items-center gap-4">
+    <div className="h-full flex flex-col font-sans">
+      {/* 1. COMPACT HEADER */}
+      <div className="shrink-0 h-[64px] bg-white border border-slate-100 rounded-[20px] mb-3 px-6 flex items-center justify-between shadow-sm relative z-50">
+         <div className="flex items-center gap-10">
             <div className="flex items-center gap-3">
-               <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center text-white text-md shadow-lg shadow-indigo-50">
-                  <MdLocalShipping />
-               </div>
-               <div>
-                  <h2 className="text-[12px] font-black text-slate-900 tracking-tight leading-none mb-0.5">Monitoring Hub</h2>
-                  <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-1 opacity-60">
-                     <div className="w-1 h-1 rounded-full bg-emerald-500 animate-pulse" /> Live Feed
-                  </p>
-               </div>
+               <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse shadow-sm shadow-emerald-200" />
+               <h1 className="text-[10px] font-black text-slate-800 uppercase tracking-[0.25em]">Live Logistics Grid</h1>
             </div>
             
             <div className="h-6 w-[1px] bg-slate-100" />
@@ -141,13 +126,45 @@ function LogisticsContent() {
             <div className="hidden lg:flex px-6 py-2 bg-slate-50 border border-slate-100 rounded-lg text-[9px] font-black text-indigo-600 uppercase tracking-widest">
                v4.5 Stable
             </div>
-            <button className="w-8 h-8 bg-slate-50 border border-slate-100 rounded-lg flex items-center justify-center text-slate-400 hover:text-slate-950 transition-all"><MdMoreVert size={18}/></button>
+            <div className="relative" ref={moreMenuRef}>
+               <button 
+                  onClick={() => setIsGlobalMoreOpen(!isGlobalMoreOpen)}
+                  className={`w-9 h-9 border rounded-xl flex items-center justify-center transition-all ${
+                     isGlobalMoreOpen ? 'bg-indigo-600 border-indigo-600 text-white shadow-lg' : 'bg-slate-50 border-slate-100 text-slate-400 hover:text-slate-950'
+                  }`}
+               >
+                  <MdMoreVert size={20}/>
+               </button>
+
+               <AnimatePresence>
+                  {isGlobalMoreOpen && (
+                     <motion.div 
+                        initial={{ opacity: 0, y: 10, scale: 0.95 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                        className="absolute right-0 top-[48px] w-56 bg-white/90 backdrop-blur-2xl border border-white rounded-2xl shadow-2xl p-2 z-[9999]"
+                     >
+                        <button onClick={handleRefreshTracking} className="w-full p-3 rounded-xl flex items-center gap-3 hover:bg-indigo-50 group transition-all">
+                           <div className="w-8 h-8 rounded-lg bg-white shadow-sm flex items-center justify-center text-slate-400 group-hover:text-indigo-600 transition-colors"><MdRefresh size={18} /></div>
+                           <span className="text-[10px] font-black text-slate-800 uppercase tracking-widest">Refresh Grid</span>
+                        </button>
+                        <button onClick={() => setIsGlobalMoreOpen(false)} className="w-full p-3 rounded-xl flex items-center gap-3 hover:bg-slate-50 group transition-all">
+                           <div className="w-8 h-8 rounded-lg bg-white shadow-sm flex items-center justify-center text-slate-400 group-hover:text-slate-950 transition-colors"><MdDescription size={18} /></div>
+                           <span className="text-[10px] font-black text-slate-800 uppercase tracking-widest">Export Logs</span>
+                        </button>
+                        <div className="h-[1px] bg-slate-50 mx-2 my-2" />
+                        <button onClick={() => setIsGlobalMoreOpen(false)} className="w-full p-3 rounded-xl flex items-center gap-3 hover:bg-slate-50 group transition-all">
+                           <div className="w-8 h-8 rounded-lg bg-white shadow-sm flex items-center justify-center text-slate-400 group-hover:text-slate-950 transition-colors"><MdSettings size={18} /></div>
+                           <span className="text-[10px] font-black text-slate-800 uppercase tracking-widest">Map Settings</span>
+                        </button>
+                     </motion.div>
+                  )}
+               </AnimatePresence>
+            </div>
          </div>
       </div>
 
       {/* 2. MAIN FEED CONTAINER */}
       <div className="relative flex-1 w-full overflow-hidden rounded-[20px] bg-slate-50 border border-slate-100 shadow-xl">
-        
+         
          {/* MAP BASE LAYER */}
          <div className="absolute inset-0 z-0">
             <DriverMap selected={selected} drivers={DRIVERS} onSelect={handleSelectDriver} />
@@ -252,37 +269,22 @@ function LogisticsContent() {
                                     </div>
                                  ))}
                               </div>
-                              <div className="p-3 bg-white/10 border-t border-white/10">
-                                 <div className="relative">
-                                    <input 
-                                       value={msg} onChange={e => setMsg(e.target.value)}
-                                       onKeyDown={e => e.key === 'Enter' && sendMsg()}
-                                       placeholder="Message..." 
-                                       className="w-full pl-5 pr-12 py-3 bg-white border border-white rounded-xl outline-none text-[11px] font-bold text-slate-900 shadow-sm"
-                                    />
-                                    <button onClick={sendMsg} className="absolute right-1 top-1/2 -translate-y-1/2 w-9 h-9 bg-indigo-600 text-white rounded-lg flex items-center justify-center shadow-md hover:bg-slate-950 transition-all"><MdSend size={18}/></button>
-                                 </div>
-                              </div>
                            </div>
                         ) : (
-                           <div className="p-6 h-full flex flex-col gap-4">
-                              <h3 className="text-[10px] font-black text-slate-800 uppercase tracking-widest border-b border-indigo-50 pb-4">Efficiency Stream</h3>
-                              <div className="grid grid-cols-1 gap-2.5">
-                                 {stats.map((s: any, i: number) => (
-                                    <div key={i} className="p-4 bg-white/40 border border-white/60 rounded-[20px] flex items-center gap-4 group hover:bg-white transition-all shadow-sm">
-                                       <div className="w-8 h-8 bg-indigo-50 text-indigo-500 rounded-lg flex items-center justify-center group-hover:bg-indigo-600 group-hover:text-white transition-all shadow-sm"><s.icon size={18}/></div>
-                                       <div>
-                                          <p className="text-lg font-black text-slate-800 leading-none mb-1">{s.val}</p>
-                                          <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">{s.label}</p>
-                                       </div>
-                                    </div>
-                                 ))}
+                           <div className="p-6 h-full flex flex-col gap-6">
+                              <div className="grid grid-cols-1 gap-3">
+                                 <div className="bg-white/60 p-4 rounded-2xl border border-white flex flex-col gap-1">
+                                    <p className="text-[7px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Live Efficiency</p>
+                                    <p className="text-2xl font-black text-slate-900">92%</p>
+                                    <MdTrendingUp className="text-indigo-600 text-lg" />
+                                 </div>
+                                 <div className="bg-white/60 p-4 rounded-2xl border border-white flex flex-col gap-1">
+                                    <p className="text-[7px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Active Deliveries</p>
+                                    <p className="text-2xl font-black text-slate-900">8</p>
+                                    <MdLocalShipping className="text-amber-500 text-lg" />
+                                 </div>
                               </div>
-                              <div className="mt-auto p-5 bg-indigo-600 rounded-[28px] text-white relative overflow-hidden shadow-xl">
-                                 <p className="text-[9px] font-black uppercase tracking-widest mb-1 opacity-50">Trend Vector</p>
-                                 <p className="text-sm font-black leading-tight">Driver performance is stable.</p>
-                                 <MdTrendingUp className="absolute -bottom-3 -right-3 text-6xl text-white/5 rotate-12" />
-                              </div>
+                              <button className="mt-auto w-full py-4 bg-slate-900 text-white rounded-2xl text-[9px] font-black uppercase tracking-widest hover:bg-slate-800 transition-all shadow-xl">Complete Intelligence Report</button>
                            </div>
                         )}
                      </div>
@@ -290,42 +292,37 @@ function LogisticsContent() {
                </motion.div>
             )}
          </AnimatePresence>
-
       </div>
 
-      {/* COMPACT MODAL */}
-      <Modal isOpen={showBroadcast} onClose={() => setShowBroadcast(false)} title="Broadcast Alert">
-        <div className="px-8 py-6">
-          <div className="flex items-center gap-6 mb-8">
-            <div className="w-16 h-16 bg-slate-950 rounded-2xl flex items-center justify-center shadow-2xl border border-white/5">
-              <MdNotificationsActive className="text-amber-400 text-3xl animate-pulse" />
+      {/* 4. BROADCAST MODAL */}
+      <Modal isOpen={showBroadcast} onClose={() => setShowBroadcast(false)}>
+         <div className="p-10 space-y-8 bg-slate-50">
+            <div className="flex flex-col items-center text-center">
+               <div className="w-20 h-20 bg-indigo-600 rounded-[32px] flex items-center justify-center text-white text-3xl shadow-2xl animate-pulse mb-6">
+                  <MdNotificationsActive />
+               </div>
+               <h2 className="text-3xl font-black text-slate-900 tracking-tight leading-none mb-3">Broadcast Signal</h2>
+               <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Emergency Dispatch to All Active Drivers</p>
             </div>
-            <div>
-               <h2 className="text-2xl font-black text-slate-900 tracking-tight leading-none mb-2">Global Alert</h2>
-               <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest">Barcha haydovchilar uchun xabar</p>
-            </div>
-          </div>
 
-          <form onSubmit={sendBroadcast} className="space-y-6">
             <textarea 
-               required value={broadcastMsg} onChange={e => setBroadcastMsg(e.target.value)}
-               placeholder="Xabar matni..." rows={4}
-               className="w-full p-6 bg-slate-50 border border-slate-100 rounded-2xl outline-none focus:bg-white focus:border-indigo-400 font-bold text-md text-slate-800 transition-all resize-none shadow-inner"
+               value={broadcastMsg} onChange={e => setBroadcastMsg(e.target.value)}
+               placeholder="Enter critical message here..."
+               className="w-full h-40 p-6 bg-white border border-slate-100 rounded-[32px] text-sm font-bold text-slate-800 outline-none focus:border-indigo-600 transition-all shadow-inner resize-none placeholder:text-slate-300"
             />
+
             <div className="flex gap-4">
-              <button type="button" onClick={() => setShowBroadcast(false)} className="flex-1 py-4 text-slate-400 font-black text-[10px] uppercase tracking-widest hover:text-slate-950 transition-all">Cancel</button>
-              <button type="submit" className="flex-2 w-[220px] py-4 bg-slate-950 text-white font-black rounded-xl text-[10px] uppercase tracking-widest shadow-2xl hover:bg-emerald-600 transition-all flex items-center justify-center gap-3">
-                 <MdSend className="text-xl" /> Send Signal
-              </button>
+               <button onClick={() => setShowBroadcast(false)} className="flex-1 py-5 bg-white text-slate-400 font-black rounded-[24px] text-[10px] uppercase tracking-widest border border-slate-100 hover:bg-slate-50 transition-all">Cancel</button>
+               <button onClick={sendBroadcast} className="flex-1 py-5 bg-indigo-600 text-white font-black rounded-[24px] text-[10px] uppercase tracking-widest shadow-2xl hover:scale-105 transition-all">Transmit Signal</button>
             </div>
-          </form>
-        </div>
+         </div>
       </Modal>
 
       <style jsx global>{`
         .custom-scrollbar::-webkit-scrollbar { width: 3px; }
         .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.05); border-radius: 10px; }
+        .backdrop-blur-4xl { backdrop-filter: blur(80px); }
       `}</style>
     </div>
   );
@@ -333,7 +330,7 @@ function LogisticsContent() {
 
 export default function OperatorLogisticsPage() {
   return (
-    <Suspense fallback={<div className="h-screen bg-slate-50 flex items-center justify-center text-indigo-600 text-[10px] font-black uppercase tracking-widest animate-pulse">Loading Hub...</div>}>
+    <Suspense fallback={<div>Loading...</div>}>
       <LogisticsContent />
     </Suspense>
   );

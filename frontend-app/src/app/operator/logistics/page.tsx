@@ -104,7 +104,7 @@ function LogisticsContent() {
   const unreadCount = (id: number) => (messages[id] || []).filter(m => m.sender === 'driver').length;
 
   return (
-    <div className="flex flex-col h-[calc(100vh-140px)] space-y-8">
+    <div className="flex flex-col h-[calc(100vh-140px)] space-y-12">
       
       {/* Dynamic Header Section */}
       <div className="flex items-center justify-between shrink-0 bg-white p-8 rounded-[48px] border border-slate-100 shadow-sm relative overflow-hidden">
@@ -236,10 +236,10 @@ function LogisticsContent() {
         </div>
 
         {/* Column 2: Spacious Map & Premium Chat */}
-        <div className="flex-1 bg-white rounded-[56px] overflow-hidden flex flex-col relative shadow-2xl shadow-indigo-900/5 border border-slate-100">
+        <div className="flex-1 mt-6 bg-white rounded-[56px] overflow-hidden flex flex-col relative shadow-2xl shadow-indigo-900/5 border border-slate-100">
           
           {/* Futuristic Control Center Tabs */}
-          <div className="absolute top-8 left-1/2 -translate-x-1/2 z-20 flex p-1.5 bg-white/70 backdrop-blur-3xl rounded-[32px] shadow-[0_12px_48px_rgba(0,0,0,0.12)] border border-white/50">
+          <div className="absolute top-12 left-1/2 -translate-x-1/2 z-20 flex p-1.5 bg-white/70 backdrop-blur-3xl rounded-[32px] shadow-[0_12px_48px_rgba(0,0,0,0.12)] border border-white/50">
             <button 
               onClick={() => setCenterTab('map')}
               className={`flex items-center gap-3 px-10 py-3.5 rounded-[28px] text-[12px] font-black uppercase tracking-[0.2em] transition-all duration-300 ${

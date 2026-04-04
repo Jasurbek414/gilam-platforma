@@ -52,6 +52,7 @@ function LogisticsContent() {
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [isGlobalMoreOpen, setIsGlobalMoreOpen] = useState(false);
   const [mapType, setMapType] = useState<'streets' | 'satellite' | 'terrain'>('streets');
+  const [showTraffic, setShowTraffic] = useState(false);
   
   const moreMenuRef = useRef<HTMLDivElement>(null);
 
@@ -166,7 +167,7 @@ function LogisticsContent() {
 
       {/* 2. EDGE-TO-EDGE MAP BASE LAYER */}
       <div className="absolute inset-0 z-0">
-         <DriverMap selected={selected} drivers={DRIVERS} onSelect={handleSelectDriver} mapType={mapType} />
+         <DriverMap selected={selected} drivers={DRIVERS} onSelect={handleSelectDriver} mapType={mapType} showTraffic={showTraffic} />
          
          {/* FLOATING MAP SWITCHER (Bottom Left) */}
          <div className="absolute bottom-6 left-6 z-50 flex gap-2">
@@ -185,6 +186,18 @@ function LogisticsContent() {
                   <span className="text-[9px] font-black uppercase tracking-widest hidden sm:inline">{type.label}</span>
                </button>
             ))}
+
+            <div className="w-[2px] bg-white/20 mx-1" />
+
+            <button 
+               onClick={() => setShowTraffic(!showTraffic)}
+               className={`px-4 py-3 rounded-2xl backdrop-blur-3xl border border-white/60 shadow-2xl flex items-center gap-3 transition-all ${
+                  showTraffic ? 'bg-emerald-600 text-white border-emerald-500 scale-105' : 'bg-white/40 text-slate-600 hover:bg-white/60'
+               }`}
+            >
+               <span className="text-lg">🚦</span>
+               <span className="text-[9px] font-black uppercase tracking-widest hidden sm:inline">Traffic</span>
+            </button>
          </div>
       </div>
 

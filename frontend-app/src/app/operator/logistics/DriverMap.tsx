@@ -84,18 +84,19 @@ interface Props {
   selected: Driver | null;
   onSelect: (d: Driver) => void;
   mapType: 'streets' | 'satellite' | 'terrain';
+  showTraffic: boolean;
 }
 
-export default function DriverMap({ drivers, selected, onSelect, mapType }: Props) {
+export default function DriverMap({ drivers, selected, onSelect, mapType, showTraffic }: Props) {
   const tileUrl = useMemo(() => {
     switch (mapType) {
-      case 'satellite': return 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}';
-      case 'terrain': return 'https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png';
-      default: return 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png';
+      case 'satellite': return 'https://sat0{s}.maps.yandex.net/tiles?l=sat&v=3.407.0&x={x}&y={y}&z={z}&lang=uz_UZ';
+      default: return 'https://vec0{s}.maps.yandex.net/tiles?l=map&v=21.09.21&x={x}&y={y}&z={z}&scale=1&lang=uz_UZ';
     }
   }, [mapType]);
 
-  const attribution = mapType === 'satellite' ? 'Esri &copy; DigitalGlobe' : '&copy; OpenStreetMap contributors';
+  const trafficUrl = 'https://core-jams-rdr-cache.maps.yandex.net/tiles?l=trf&x={x}&y={y}&z={z}&scale=1&lang=uz_UZ';
+  const attribution = '&copy; <a href="https://yandex.ru/maps/">Yandex Maps</a>';
   return (
     <div className="w-full h-full relative group bg-slate-50">
       <MapContainer
@@ -109,6 +110,14 @@ export default function DriverMap({ drivers, selected, onSelect, mapType }: Prop
           attribution={attribution}
           url={tileUrl}
         />
+
+        {showTraffic && (
+          <TileLayer
+             url={trafficUrl}
+             opacity={0.7}
+             zIndex={10}
+          />
+        )}
         
         {selected && <FlyTo lat={selected.lat} lng={selected.lng} />}
         

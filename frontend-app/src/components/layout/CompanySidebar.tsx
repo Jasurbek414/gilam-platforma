@@ -13,7 +13,8 @@ import {
   MdSettings,
   MdLogout,
   MdStore,
-  MdAssessment
+  MdAssessment,
+  MdPhone
 } from 'react-icons/md';
 
 const companyLinks = [
@@ -23,6 +24,7 @@ const companyLinks = [
   { name: 'Haydovchilar liniyasi', href: '/company/logistics', icon: MdLocalShipping },
   { name: 'Xodimlar', href: '/company/staff', icon: MdPeople },
   { name: 'Mening Korxonam', href: '/company/settings', icon: MdStore },
+  { name: 'Telefoniya', href: '/company/settings/telephony', icon: MdPhone },
 ];
 
 export default function CompanySidebar() {

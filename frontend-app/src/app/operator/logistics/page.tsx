@@ -119,50 +119,74 @@ function LogisticsContent() {
          <DriverMap selected={selected} drivers={DRIVERS} onSelect={handleSelectDriver} />
       </div>
 
-      {/* OVERLAY: Top Navigation Header */}
-      <div className="absolute top-8 left-8 right-8 z-20 flex items-center justify-between pointer-events-none">
-         <div className="flex items-center gap-6 pointer-events-auto">
-            <div className="bg-white/80 backdrop-blur-3xl p-4 rounded-[28px] border border-white/50 shadow-[0_12px_48px_rgba(0,0,0,0.12)] flex items-center gap-5">
-               <div className="w-12 h-12 bg-indigo-600 rounded-2xl flex items-center justify-center text-white text-xl shadow-lg shadow-indigo-600/30">
+      {/* UNIFIED TOP HEADER: Merged all controls into one sleek bar */}
+      <div className="absolute top-8 left-8 right-8 z-30 pointer-events-none">
+         <div className="w-full bg-white/80 backdrop-blur-3xl p-3 border border-indigo-100/30 rounded-[36px] shadow-[0_20px_80px_rgba(0,0,0,0.1)] flex items-center justify-between pointer-events-auto">
+            {/* Branding Part */}
+            <div className="flex items-center gap-5 px-4">
+               <div className="w-14 h-14 bg-gradient-to-tr from-indigo-600 to-indigo-700 rounded-[24px] flex items-center justify-center text-white text-2xl shadow-xl shadow-indigo-500/20">
                   <MdLocalShipping />
                </div>
                <div>
-                  <h2 className="text-lg font-black text-slate-800 tracking-tight leading-none mb-1">Logistika Markazi</h2>
+                  <h2 className="text-xl font-black text-slate-800 tracking-tight leading-none mb-1.5">Logistika Markazi</h2>
                   <div className="flex items-center gap-2">
-                     <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                     <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Tizim on-line</p>
                   </div>
                </div>
             </div>
-         </div>
 
-         <div className="flex items-center gap-4 pointer-events-auto">
-            <button 
-              onClick={() => setShowBroadcast(true)}
-              className="bg-slate-950 text-white px-8 py-4 rounded-[28px] text-[10px] font-black uppercase tracking-widest flex items-center gap-3 shadow-2xl shadow-slate-900/40 hover:bg-indigo-600 transition-all active:scale-95"
-            >
-              <MdNotificationsActive className="text-indigo-400 text-lg" /> Broadcast
-            </button>
-            <div className="bg-white/80 backdrop-blur-3xl p-1.5 rounded-[24px] border border-white/50 shadow-xl flex items-center">
-               <button onClick={() => setCenterTab('map')} className={`px-6 py-2.5 rounded-2xl text-[10px] font-extrabold uppercase tracking-[0.2em] transition-all ${centerTab === 'map' ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-400 hover:text-slate-700'}`}>Map</button>
-               <button onClick={() => setCenterTab('chat')} className={`px-6 py-2.5 rounded-2xl text-[10px] font-extrabold uppercase tracking-[0.2em] transition-all relative ${centerTab === 'chat' ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-400 hover:text-slate-700'}`}>
-                  Chat {selected && unreadCount(selected.id) > 0 && <span className="absolute top-1 right-3 w-2.5 h-2.5 bg-rose-500 rounded-full border-2 border-white" />}
+            {/* Broadcast Action */}
+            <div className="flex-1 flex justify-center px-10">
+               <button 
+                  onClick={() => setShowBroadcast(true)}
+                  className="group relative px-10 py-5 bg-slate-950 text-white rounded-[26px] text-[11px] font-black uppercase tracking-[0.2em] flex items-center gap-4 shadow-2xl transition-all hover:bg-slate-900 active:scale-95"
+               >
+                  <MdNotificationsActive className="text-amber-400 text-xl group-hover:scale-125 transition-transform" />
+                  Broadcast Alert
+                  <div className="absolute inset-0 rounded-[26px] bg-white opacity-0 group-hover:opacity-10 transition-opacity" />
+               </button>
+            </div>
+
+            {/* View Toggle */}
+            <div className="bg-slate-50/50 p-1.5 rounded-[26px] flex items-center border border-slate-100">
+               <button 
+                  onClick={() => setCenterTab('map')} 
+                  className={`px-8 py-3.5 rounded-[22px] text-[11px] font-black uppercase tracking-[0.1em] flex items-center gap-3 transition-all ${
+                     centerTab === 'map' ? 'bg-indigo-600 text-white shadow-xl shadow-indigo-600/30' : 'text-slate-400 hover:text-slate-600'
+                  }`}
+               >
+                  <MdMap className="text-xl" /> Map
+               </button>
+               <button 
+                  onClick={() => setCenterTab('chat')} 
+                  className={`px-8 py-3.5 rounded-[22px] text-[11px] font-black uppercase tracking-[0.1em] flex items-center gap-3 transition-all relative ${
+                     centerTab === 'chat' ? 'bg-indigo-600 text-white shadow-xl shadow-indigo-600/30' : 'text-slate-400 hover:text-slate-600'
+                  }`}
+               >
+                  <MdChat className="text-xl" /> Chat
+                  {selected && unreadCount(selected.id) > 0 && <span className="absolute top-2 right-4 w-3.5 h-3.5 bg-rose-500 rounded-full border-[3px] border-white shadow-lg" />}
                </button>
             </div>
          </div>
       </div>
 
-      {/* FLOATING LEFT: Driver Selection List */}
-      <div className="absolute top-32 left-8 bottom-32 w-80 z-20 pointer-events-none">
-         <div className="h-full bg-white/70 backdrop-blur-3xl border border-white/50 rounded-[40px] shadow-2xl p-6 flex flex-col pointer-events-auto overflow-hidden group">
-            <div className="mb-6 px-2">
-               <h3 className="text-[11px] font-black text-indigo-400 uppercase tracking-[0.3em] mb-5">Haydovchilar</h3>
-               <div className="relative">
-                  <MdSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-lg" />
+      {/* FLOATING LEFT: Driver Selection List (Enhanced Design) */}
+      <div className="absolute top-[160px] left-8 bottom-32 w-[340px] z-20 pointer-events-none">
+         <div className="h-full bg-white/70 backdrop-blur-3xl border border-indigo-50/50 rounded-[44px] shadow-[0_32px_100px_rgba(0,0,0,0.08)] p-8 flex flex-col pointer-events-auto overflow-hidden">
+            <div className="mb-10">
+               <div className="flex items-center justify-between mb-8 px-2">
+                  <h3 className="text-[12px] font-black text-slate-800 uppercase tracking-[0.3em] flex items-center gap-3">
+                     <div className="w-1.5 h-8 bg-indigo-600 rounded-full" /> Haydovchilar
+                  </h3>
+                  <div className="p-2 bg-slate-50 rounded-xl text-slate-400 text-lg hover:bg-slate-100 cursor-pointer transition-colors"><MdFilterList /></div>
+               </div>
+               <div className="relative group">
+                  <MdSearch className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-300 text-2xl group-focus-within:text-indigo-500 transition-colors" />
                   <input 
                     value={listFilter} onChange={e => setListFilter(e.target.value)}
-                    placeholder="Qidiruv..." 
-                    className="w-full pl-12 pr-4 py-4 bg-white/50 rounded-2xl text-xs font-bold text-slate-700 outline-none focus:bg-white transition-all border border-transparent focus:border-indigo-100"
+                    placeholder="Ism yoki avtomobil..." 
+                    className="w-full pl-15 pr-6 py-5 bg-white/50 border border-slate-100 rounded-[28px] text-[13px] font-extrabold text-slate-700 outline-none focus:bg-white focus:border-indigo-200 transition-all shadow-inner placeholder:text-slate-200"
                   />
                </div>
             </div>

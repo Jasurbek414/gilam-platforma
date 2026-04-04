@@ -242,10 +242,10 @@ function LogisticsContent() {
         </div>
 
         {/* TOP ROW: Column 3: Insights Radar (Span 4) */}
-        <div className="col-span-4 flex flex-col gap-8">
-          <div className="bg-white rounded-[56px] border border-slate-100 p-10 shadow-sm flex-1 flex flex-col relative overflow-hidden min-h-[500px]">
+        <div className="col-span-4">
+          <div className="bg-white rounded-[56px] border border-slate-100 p-10 shadow-sm h-full flex flex-col relative overflow-hidden min-h-[500px]">
              <div className="relative z-10 flex flex-col h-full">
-                <div className="flex items-center justify-between mb-10">
+                <div className="flex items-center justify-between mb-8">
                    <h3 className="text-sm font-black text-slate-800 uppercase tracking-widest flex items-center gap-3">
                       <MdAnalytics className="text-indigo-600 text-xl" /> Haydovchi Tahlili
                    </h3>
@@ -253,8 +253,8 @@ function LogisticsContent() {
                       {['daily', 'weekly'].map(p => (
                         <button 
                           key={p} onClick={() => setStatPeriod(p as any)}
-                          className={`px-4 py-2 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all ${
-                            statPeriod === p ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-400'
+                          className={`px-5 py-2.5 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all ${
+                            statPeriod === p ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-400 hover:text-slate-600'
                           }`}
                         >
                           {p === 'daily' ? 'Kunlik' : 'Haftalik'}
@@ -265,42 +265,70 @@ function LogisticsContent() {
 
                 <AnimatePresence mode="wait">
                   {selected ? (
-                    <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-10 flex-1 flex flex-col">
+                    <motion.div 
+                      key="selected"
+                      initial={{ opacity: 0, scale: 0.95 }} 
+                      animate={{ opacity: 1, scale: 1 }} 
+                      exit={{ opacity: 0, scale: 1.05 }} 
+                      className="space-y-6 flex-1 flex flex-col"
+                    >
                        <div className="grid grid-cols-2 gap-4">
                           {stats.map((s: any, i: number) => (
-                            <div key={i} className="p-6 bg-slate-50 rounded-[32px] border border-slate-50 group hover:border-indigo-100 transition-all">
+                            <div key={i} className="p-5 bg-slate-50/50 rounded-[28px] border border-slate-50 group hover:border-indigo-100 hover:bg-white hover:shadow-xl hover:shadow-indigo-500/5 transition-all duration-300">
                                <div className="flex items-center justify-between mb-4">
-                                  <s.icon className="text-slate-300 text-xl group-hover:text-indigo-500 transition-colors" />
-                                  <span className="text-[8px] font-black text-indigo-400 uppercase tracking-widest">Jonli</span>
+                                  <div className="w-10 h-10 bg-white rounded-xl shadow-sm flex items-center justify-center text-indigo-500 group-hover:scale-110 transition-transform">
+                                     <s.icon className="text-lg" />
+                                  </div>
+                                  <span className="text-[7px] font-black text-indigo-400 uppercase tracking-widest bg-indigo-50 px-2 py-1 rounded-md">Live</span>
                                </div>
-                               <p className="text-2xl font-black text-slate-800">{s.val}</p>
-                               <p className="text-[10px] font-bold text-slate-400 mt-1">{s.label}</p>
+                               <p className="text-xl font-black text-slate-900">{s.val}</p>
+                               <p className="text-[9px] font-bold text-slate-400 mt-0.5 uppercase tracking-wide">{s.label}</p>
                             </div>
                           ))}
                        </div>
                        
-                       <div className="flex-1 bg-indigo-600 rounded-[40px] p-8 text-white relative overflow-hidden group">
-                          <div className="relative z-10">
-                             <h4 className="text-lg font-black tracking-tight mb-2">{selected.name}</h4>
-                             <p className="text-indigo-100/60 text-xs font-medium mb-8 leading-relaxed">Ushbu haydovchining ballari va reytingi doimiy monitoring qilinadi.</p>
-                             <div className="flex items-center gap-4">
-                                <div className="px-5 py-3 bg-white/10 rounded-2xl border border-white/5 backdrop-blur-xl">
-                                   <p className="text-[8px] font-black text-indigo-200 uppercase mb-1">Reyting</p>
-                                   <div className="flex items-center gap-2">
-                                      <span className="text-xl font-black">4.9</span>
-                                      <div className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                       <div className="flex-1 bg-gradient-to-br from-indigo-600 to-indigo-800 rounded-[40px] p-8 text-white relative overflow-hidden group shadow-2xl shadow-indigo-200">
+                          <div className="relative z-10 flex flex-col h-full">
+                             <div className="flex-1">
+                                <h4 className="text-xl font-black tracking-tight mb-2 flex items-center gap-2">
+                                  {selected.name}
+                                  <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                                </h4>
+                                <p className="text-indigo-100/60 text-[11px] font-medium leading-relaxed max-w-[200px]">Ushbu haydovchining ballari va reytingi doimiy monitoring qilinadi.</p>
+                             </div>
+
+                             <div className="mt-8 flex items-end justify-between">
+                                <div className="space-y-1">
+                                   <p className="text-[9px] font-black text-indigo-200 uppercase tracking-widest">Markaziy Reyting</p>
+                                   <div className="flex items-center gap-3">
+                                      <span className="text-3xl font-black">4.9</span>
+                                      <div className="flex items-center gap-1">
+                                        {[1,2,3,4,5].map(star => <div key={star} className="w-1.5 h-1.5 rounded-full bg-white opacity-40" />)}
+                                      </div>
                                    </div>
+                                </div>
+                                <div className="w-12 h-12 bg-white/10 rounded-2xl border border-white/10 backdrop-blur-3xl flex items-center justify-center">
+                                  <MdTrendingUp className="text-xl text-white" />
                                 </div>
                              </div>
                           </div>
-                          <MdGroup className="absolute -bottom-10 -right-10 text-[200px] text-white/5 rotate-12 group-hover:scale-110 transition-transform duration-700" />
+                          <MdGroup className="absolute -bottom-10 -right-10 text-[220px] text-white/5 rotate-12 group-hover:scale-110 transition-transform duration-1000" />
+                          <div className="absolute top-0 right-0 w-32 h-32 bg-white opacity-[0.03] rounded-full -mr-16 -mt-16 blur-2xl" />
                        </div>
                     </motion.div>
                   ) : (
-                    <div className="flex-1 flex flex-col items-center justify-center text-center p-12 opacity-30">
-                       <MdFingerprint className="text-[100px] text-slate-200 mb-8" />
-                       <p className="text-[10px] font-black uppercase tracking-[0.2em] leading-loose max-w-[200px]">Tahliliy ma'lumotlarni ko'rish uchun haydovchini tanlang</p>
-                    </div>
+                    <motion.div 
+                      key="empty"
+                      initial={{ opacity: 0 }} 
+                      animate={{ opacity: 1 }} 
+                      className="flex-1 flex flex-col items-center justify-center text-center p-8"
+                    >
+                       <div className="w-24 h-24 bg-slate-50 rounded-[32px] flex items-center justify-center mb-6 border border-slate-100">
+                          <MdFingerprint className="text-4xl text-slate-300" />
+                       </div>
+                       <p className="text-[11px] font-black text-slate-800 uppercase tracking-[0.2em] leading-relaxed max-w-[200px] mb-2">Tahlil tayyor emas</p>
+                       <p className="text-[10px] font-medium text-slate-400 max-w-[180px]">Ma'lumotlarni ko'rish uchun haydovchilardan birini tanlang</p>
+                    </motion.div>
                   )}
                 </AnimatePresence>
              </div>

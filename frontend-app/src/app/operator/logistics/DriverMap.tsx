@@ -90,13 +90,13 @@ interface Props {
 export default function DriverMap({ drivers, selected, onSelect, mapType, showTraffic }: Props) {
   const tileUrl = useMemo(() => {
     switch (mapType) {
-      case 'satellite': return 'https://sat01.maps.yandex.net/tiles?l=sat&v=3.407.0&x={x}&y={y}&z={z}&lang=uz_UZ';
-      case 'terrain': return 'https://vec01.maps.yandex.net/tiles?l=sat,skl&x={x}&y={y}&z={z}&lang=uz_UZ';
-      default: return 'https://vec01.maps.yandex.net/tiles?l=map&x={x}&y={y}&z={z}&lang=uz_UZ';
+      case 'satellite': return 'https://core-renderer-tiles.maps.yandex.net/tiles?l=sat&v=3.518.0&x={x}&y={y}&z={z}&lang=ru_RU';
+      case 'terrain': return 'https://core-renderer-tiles.maps.yandex.net/tiles?l=map,skl&x={x}&y={y}&z={z}&lang=ru_RU';
+      default: return 'https://core-renderer-tiles.maps.yandex.net/tiles?l=map&v=21.09.21&x={x}&y={y}&z={z}&scale=1&lang=ru_RU';
     }
   }, [mapType]);
 
-  const trafficUrl = 'https://core-jams-rdr-cache.maps.yandex.net/tiles?l=trf&x={x}&y={y}&z={z}&scale=1&lang=uz_UZ';
+  const trafficUrl = 'https://core-jams-rdr-cache.maps.yandex.net/tiles?l=trf&x={x}&y={y}&z={z}&scale=1&lang=ru_RU';
   const attribution = '&copy; <a href="https://yandex.ru/maps/">Yandeks</a>';
   return (
     <div className="w-full h-full relative group bg-slate-50">

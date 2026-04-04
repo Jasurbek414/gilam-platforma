@@ -108,7 +108,7 @@ function LogisticsContent() {
   const unreadCount = (id: number) => (messages[id] || []).filter(m => m.sender === 'driver').length;
 
   return (
-    <div className="h-full flex flex-col font-sans -m-4 bg-slate-50 overflow-hidden relative">
+    <div className="flex-1 flex flex-col font-sans -m-4 bg-slate-50 overflow-hidden relative min-h-[600px]">
       
       {/* 1. OVERLAY HEADER (Floating on Map) */}
       <div className="absolute top-4 left-4 right-4 z-50 flex items-center justify-between pointer-events-none">
@@ -385,8 +385,10 @@ function LogisticsContent() {
 
 export default function OperatorLogisticsPage() {
   return (
-    <Suspense fallback={<div>Loading...</div>}>
-      <LogisticsContent />
-    </Suspense>
+    <div className="w-full h-full flex flex-col min-h-[calc(100vh-140px)]">
+      <Suspense fallback={<div className="flex-1 bg-slate-50 flex items-center justify-center font-black text-slate-300 uppercase tracking-widest text-[10px]">Loading Interface...</div>}>
+        <LogisticsContent />
+      </Suspense>
+    </div>
   );
 }

@@ -198,18 +198,18 @@ export default function OperatorCallsPage() {
         </div>
 
         {/* COMPACT DIALER (Responsive Fixed-Width Style) */}
-        <div className="col-span-12 lg:col-span-5 xl:col-span-4 min-h-[400px] bg-white/70 backdrop-blur-2xl rounded-[32px] lg:rounded-[44px] border border-white/80 shadow-2xl p-6 lg:p-8 flex flex-col relative overflow-hidden">
+        <div className="col-span-12 lg:col-span-12 xl:col-span-4 min-h-[400px] bg-slate-50/90 backdrop-blur-3xl rounded-[32px] lg:rounded-[44px] border border-white/60 shadow-2xl p-6 lg:p-8 flex flex-col relative overflow-hidden">
            <SectionHeader icon={MdDialpad} title="Dispatch Pad" subtitle="Global Relay Control" />
 
            <div className="relative mb-4 lg:mb-6">
-              <div className="bg-slate-50/80 border border-slate-100 rounded-[22px] h-14 flex items-center px-5 relative overflow-hidden focus-within:bg-white focus-within:border-indigo-200 transition-all shadow-inner">
-                 <p className="flex-1 text-xl font-black text-slate-800 tracking-widest font-mono truncate leading-none">{dialNum || '...'}</p>
+              <div className="bg-white/80 border border-slate-200/50 rounded-[24px] h-16 flex items-center px-6 relative overflow-hidden focus-within:bg-white focus-within:border-indigo-400 transition-all shadow-sm">
+                 <p className="flex-1 text-2xl font-black text-slate-900 tracking-widest font-mono truncate leading-none">{dialNum || '...'}</p>
                  {dialNum && (
-                    <button onClick={() => setDialNum(p => p.slice(0, -1))} className="w-8 h-8 hover:bg-rose-50 rounded-lg flex items-center justify-center text-slate-300 hover:text-rose-500 transition-all font-black">
-                       <MdBackspace size={16} />
+                    <button onClick={() => setDialNum(p => p.slice(0, -1))} className="w-10 h-10 hover:bg-rose-50 rounded-xl flex items-center justify-center text-slate-300 hover:text-rose-500 transition-all font-black">
+                       <MdBackspace size={18} />
                     </button>
                  )}
-                 <div className="absolute left-0 top-0 w-1 h-full bg-indigo-600 rounded-r-full" />
+                 <div className="absolute left-0 top-0 w-1.5 h-full bg-indigo-600 rounded-r-full" />
               </div>
 
               <AnimatePresence>
@@ -243,10 +243,10 @@ export default function OperatorCallsPage() {
                        onPointerDown={is0 ? handle0PointerDown : undefined}
                        onPointerUp={is0 ? handle0PointerUp : undefined}
                        onClick={is0 ? undefined : () => handleDial(num)}
-                       className="aspect-[1.1/1] bg-white border border-slate-50 rounded-[22px] flex flex-col items-center justify-center text-xl font-black text-slate-700 hover:bg-indigo-600 hover:text-white hover:border-indigo-600 transition-all active:scale-90 shadow-sm relative group"
+                       className="aspect-[1.15/1] bg-white border border-slate-100 rounded-[24px] flex flex-col items-center justify-center text-2xl font-black text-slate-700 hover:bg-indigo-600 hover:text-white hover:border-indigo-600 transition-all active:scale-95 shadow-sm relative group"
                      >
-                       <span className="text-lg lg:text-xl">{num}</span>
-                       {is0 && <span className="absolute bottom-2 text-[8px] font-black text-slate-300 group-hover:text-white/50">+</span>}
+                       <span className="text-xl lg:text-2xl">{num}</span>
+                       {is0 && <span className="absolute bottom-2.5 text-[9px] font-black text-slate-300 group-hover:text-white/50">+</span>}
                      </button>
                    )
                  })}

@@ -10,30 +10,15 @@ import {
   MdClose
 } from 'react-icons/md';
 import { motion, AnimatePresence } from 'framer-motion';
-
-const INITIAL_CONVERSATIONS = [
-  { id: 1, type: 'driver', name: 'Sardor Rahimov', lastMsg: 'Mijoz telefoniga javob bermayapti...', time: '12:30', unread: 2, online: true, avatar: 'S', phone: '+998 90 111 22 33', car: 'Damas (01 A 123 BA)', recentOrders: 12 },
-  { id: 2, type: 'customer', name: 'Aliyev Vali', lastMsg: 'Buyurtma necha kundan keyin keladi?', time: '12:15', unread: 0, online: false, avatar: 'V', phone: '+998 90 123 45 67', address: 'Uchtepa, 11-kvartal, 12-uy', totalOrders: 45 },
-  { id: 3, type: 'driver', name: 'Jamshid Karimov', lastMsg: 'Tushunarli, yo\'lda davom etavering.', time: '11:45', unread: 0, online: true, avatar: 'J', phone: '+998 90 444 55 66', car: 'Labo (01 B 456 CA)', recentOrders: 8 },
-  { id: 4, type: 'customer', name: 'Karimov Anvar', lastMsg: 'Rahmat, gilamlar juda toza yuvipti!', time: 'Kecha', unread: 0, online: false, avatar: 'A', phone: '+998 93 456 78 90', address: 'Chilonzor, 1-kvartal', totalOrders: 12 }
-];
-
-const INITIAL_MESSAGES: any = {
-  1: [
-    { id: 101, text: "Assalomu alaykum, drayver! Buyurtmani Chilonzordan olishingiz kerak.", sender: 'operator', time: '12:20', status: 'read' },
-    { id: 102, text: "Va alaykum assalom. Hozir boraman.", sender: 'driver', time: '12:22', status: 'read' },
-    { id: 103, text: "Mijoz telefoniga javob bermayapti, 2-marotaba qo'ng'iroq qildim.", sender: 'driver', time: '12:30', status: 'unread' },
-  ],
-  2: [
-    { id: 201, text: "Assalomu alaykum, Vali aka. Gilamlaringiz jarayonda.", sender: 'operator', time: '12:10', status: 'read' },
-    { id: 202, text: "Buyurtma necha kundan keyin keladi?", sender: 'customer', time: '12:15', status: 'read' },
-  ]
-};
+import { useSearchParams } from 'next/navigation';
+import { useChat } from '@/context/ChatContext';
 
 export default function OperatorMessagesPage() {
-  const [conversations, setConversations] = useState(INITIAL_CONVERSATIONS);
-  const [selectedId, setSelectedId] = useState<number | null>(null);
-  const [messages, setMessages] = useState(INITIAL_MESSAGES);
+  const searchParams = useSearchParams();
+  const { messages, sendMessage, socket } = useChat();
+  
+  const [conversations, setConversations] = useState<any[]>([]);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
   const [inputText, setInputText] = useState('');
   const [filter, setFilter] = useState('all');
   const [search, setSearch] = useState('');
@@ -42,11 +27,32 @@ export default function OperatorMessagesPage() {
   const chatEndRef = useRef<HTMLDivElement>(null);
   const scrollToBottom = () => chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
 
+  // Initial Data Fetching (Mocked for now but structure is real-ready)
+  useEffect(() => {
+    // In production, fetch via api.get('/messages/conversations')
+    setConversations([
+        { id: '1', type: 'driver', name: 'Sardor Rahimov', lastMsg: 'Mijoz telefoniga javob bermayapti...', time: '12:30', unread: 2, online: true, avatar: 'S', phone: '+998 90 111 22 33', car: 'Damas (01 A 123 BA)' },
+        { id: '2', type: 'customer', name: 'Aliyev Vali', lastMsg: 'Buyurtma necha kundan keyin keladi?', time: '12:15', unread: 0, online: false, avatar: 'V', phone: '+998 90 123 45 67', address: 'Uchtepa, 11-kvartal, 12-uy' },
+    ]);
+  }, []);
+
+  // Handle URL Deep-linking (e.g. from Logistics)
+  useEffect(() => {
+    const userId = searchParams.get('userId');
+    if (userId) {
+      setSelectedId(userId);
+    }
+  }, [searchParams]);
+
   useEffect(() => {
     if (selectedId) scrollToBottom();
   }, [messages, selectedId]);
 
   const selectedConversation = conversations.find(c => c.id === selectedId);
+  const currentMessages = useMemo(() => 
+    messages.filter(m => (m.senderId === selectedId || m.recipientId === selectedId)), 
+  [messages, selectedId]);
+
   const filteredConversations = useMemo(() => 
     conversations.filter(c => {
       const matchesFilter = filter === 'all' || c.type === filter;
@@ -58,15 +64,7 @@ export default function OperatorMessagesPage() {
     if (e) e.preventDefault();
     if (!inputText.trim() || !selectedId) return;
 
-    const newMessage = {
-      id: Date.now(),
-      text: inputText,
-      sender: 'operator',
-      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      status: 'sent'
-    };
-
-    setMessages((prev: any) => ({ ...prev, [selectedId]: [...(prev[selectedId] || []), newMessage] }));
+    sendMessage(selectedId, inputText);
     setInputText('');
   };
 
@@ -157,15 +155,15 @@ export default function OperatorMessagesPage() {
                   </div>
 
                   <div className="flex-1 overflow-y-auto px-5 lg:px-8 py-6 space-y-4 custom-scrollbar bg-white/5">
-                     {messages[selectedId]?.map((msg: any) => (
-                        <div key={msg.id} className={`flex ${msg.sender === 'operator' ? 'justify-end' : 'justify-start'}`}>
+                     {currentMessages.map((msg: any) => (
+                        <div key={msg.id} className={`flex ${msg.senderId === selectedId ? 'justify-start' : 'justify-end'}`}>
                            <div className={`max-w-[85%] md:max-w-[70%] relative group`}>
-                              <div className={`p-3 lg:p-3.5 rounded-[18px] lg:rounded-[22px] shadow-sm ${msg.sender === 'operator' ? 'bg-indigo-600 text-white rounded-tr-md' : 'bg-white text-slate-800 border border-white rounded-tl-md'}`}>
+                              <div className={`p-3 lg:p-3.5 rounded-[18px] lg:rounded-[22px] shadow-sm ${msg.senderId !== selectedId ? 'bg-indigo-600 text-white rounded-tr-md' : 'bg-white text-slate-800 border border-white rounded-tl-md'}`}>
                                  <p className="text-[11px] lg:text-[12px] font-medium leading-relaxed">{msg.text}</p>
                               </div>
-                              <div className={`flex items-center gap-2 mt-1.5 ${msg.sender === 'operator' ? 'justify-end' : 'justify-start'}`}>
-                                 <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest leading-none">{msg.time}</span>
-                                 {msg.sender === 'operator' && <MdDoneAll className={msg.status === 'read' ? 'text-indigo-500' : 'text-slate-200'} size={14} />}
+                              <div className={`flex items-center gap-2 mt-1.5 ${msg.senderId !== selectedId ? 'justify-end' : 'justify-start'}`}>
+                                 <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest leading-none">{new Date(msg.createdAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
+                                 {msg.senderId !== selectedId && <MdDoneAll className={msg.isRead ? 'text-indigo-500' : 'text-slate-200'} size={14} />}
                               </div>
                            </div>
                         </div>

@@ -11,6 +11,7 @@ import { ServicesModule } from './services/services.module';
 import { OrdersModule } from './orders/orders.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { TelephonyModule } from './telephony/telephony.module';
+import { MessagesModule } from './messages/messages.module';
 
 @Module({
   imports: [
@@ -40,6 +41,7 @@ import { TelephonyModule } from './telephony/telephony.module';
     OrdersModule,
     NotificationsModule,
     TelephonyModule,
+    MessagesModule,
   ],
   controllers: [AppController],
   providers: [AppService],

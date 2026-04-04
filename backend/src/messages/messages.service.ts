@@ -32,11 +32,11 @@ export class MessagesService {
     const received = await this.messageRepository.find({ where: { recipientId: userId }, relations: ['sender'] });
     
     const others = new Set();
-    const results = [];
+    const results: any[] = [];
     
     [...sent.map(m => m.recipient), ...received.map(m => m.sender)].forEach(user => {
-      if (user && user.id !== userId && !others.has(user.id)) {
-        others.add(user.id);
+      if (user && (user as any).id !== userId && !others.has((user as any).id)) {
+        others.add((user as any).id);
         results.push(user);
       }
     });

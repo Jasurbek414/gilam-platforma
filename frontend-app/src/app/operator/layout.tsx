@@ -14,7 +14,7 @@ export default function OperatorLayout({
         <Topbar />
         
         <main className="flex-1 p-6 md:p-10 overflow-auto bg-slate-50/50">
-          <div className="max-w-7xl mx-auto w-full italic">
+          <div className="max-w-7xl mx-auto w-full">
             {children}
           </div>
         </main>

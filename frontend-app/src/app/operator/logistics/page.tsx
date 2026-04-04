@@ -151,24 +151,24 @@ function LogisticsContent() {
          </div>
       </div>
 
-      {/* COMPACT LEFT PANELS */}
-      <div className="absolute top-[120px] left-6 bottom-32 w-[300px] z-20 pointer-events-none">
-         <div className="h-full bg-white/70 backdrop-blur-3xl border border-indigo-50/50 rounded-[40px] shadow-2xl p-6 flex flex-col pointer-events-auto overflow-hidden">
-            <div className="mb-6 px-1">
-               <h3 className="text-[10px] font-black text-slate-800 uppercase tracking-[0.2em] mb-4 flex items-center gap-2">
-                  <div className="w-1 h-6 bg-indigo-600 rounded-full" /> Haydovchilar
+      {/* COMPACT LEFT PANELS (Extended to full height) */}
+      <div className="absolute top-[120px] left-6 bottom-6 w-[280px] z-20 pointer-events-none">
+         <div className="h-full bg-white/70 backdrop-blur-3xl border border-indigo-50/50 rounded-[40px] shadow-2xl p-5 flex flex-col pointer-events-auto overflow-hidden">
+            <div className="mb-5 px-1">
+               <h3 className="text-[9px] font-black text-slate-800 uppercase tracking-[0.25em] mb-4 flex items-center gap-2">
+                  <div className="w-1 h-5 bg-indigo-600 rounded-full" /> Haydovchilar
                </h3>
                <div className="relative">
-                  <MdSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 text-xl" />
+                  <MdSearch className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-300 text-lg" />
                   <input 
                     value={listFilter} onChange={e => setListFilter(e.target.value)}
-                    placeholder="Search..." 
-                    className="w-full pl-11 pr-4 py-4 bg-white/50 border border-slate-50 rounded-2xl text-[12px] font-bold text-slate-700 outline-none focus:bg-white focus:border-indigo-100 transition-all shadow-inner placeholder:text-slate-200"
+                    placeholder="Quick search..." 
+                    className="w-full pl-10 pr-4 py-3 bg-white/50 border border-slate-50 rounded-2xl text-[11px] font-bold text-slate-700 outline-none focus:bg-white focus:border-indigo-100 transition-all shadow-inner placeholder:text-slate-200"
                   />
                </div>
             </div>
 
-            <div className="flex-1 overflow-y-auto space-y-2 custom-scrollbar pr-1">
+            <div className="flex-1 overflow-y-auto space-y-1.5 custom-scrollbar pr-1">
                {filteredDrivers.map(d => {
                   const uc = unreadCount(d.id);
                   const isActive = selected?.id === d.id;
@@ -177,18 +177,18 @@ function LogisticsContent() {
                   return (
                      <motion.div 
                         layout key={d.id} onClick={() => handleSelectDriver(d)}
-                        className={`group p-3 rounded-[24px] border cursor-pointer transition-all ${
+                        className={`group p-2.5 rounded-[22px] border cursor-pointer transition-all ${
                            isActive ? 'bg-white shadow-xl border-indigo-100' : 'bg-transparent border-transparent hover:bg-white/40'
                         }`}
                      >
-                        <div className="flex items-center gap-3">
-                           <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-white font-black relative shrink-0 ${sc.bg}`}>
+                        <div className="flex items-center gap-2.5">
+                           <div className={`w-9 h-9 rounded-xl flex items-center justify-center text-white font-black relative shrink-0 ${sc.bg}`}>
                               {d.name[0]}
-                              {uc > 0 && <span className="absolute -top-0.5 -right-0.5 w-4.5 h-4.5 bg-rose-500 rounded-full border-2 border-white text-[7px] flex items-center justify-center font-black">{uc}</span>}
+                              {uc > 0 && <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-rose-500 rounded-full border-2 border-white text-[7px] flex items-center justify-center font-black">{uc}</span>}
                            </div>
                            <div className="flex-1 min-w-0">
-                              <h4 className="text-[12px] font-bold text-slate-800 truncate">{d.name}</h4>
-                              <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-1.5 mt-0.5">
+                              <h4 className="text-[11px] font-black text-slate-800 truncate leading-none mb-1">{d.name}</h4>
+                              <p className="text-[7px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-1.5">
                                  <div className={`w-1 h-1 rounded-full ${sc.dot}`} /> {d.status}
                               </p>
                            </div>
@@ -197,9 +197,9 @@ function LogisticsContent() {
                                  <motion.button 
                                     initial={{ opacity: 0, scale: 0.5 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.5 }}
                                     onClick={(e) => { e.stopPropagation(); setCenterTab('chat'); }}
-                                    className="w-8 h-8 bg-indigo-50 text-indigo-600 rounded-lg flex items-center justify-center hover:bg-indigo-600 hover:text-white transition-all shadow-sm"
+                                    className="w-7 h-7 bg-indigo-50 text-indigo-600 rounded-lg flex items-center justify-center hover:bg-indigo-600 hover:text-white transition-all shadow-sm"
                                  >
-                                    <MdChat className="text-sm" />
+                                    <MdChat className="text-xs" />
                                  </motion.button>
                               )}
                            </AnimatePresence>

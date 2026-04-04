@@ -182,21 +182,21 @@ export default function OperatorCallsPage() {
            <SectionHeader icon={MdDialpad} title="Raqam Terish" subtitle="Dialpad & Control" />
 
            <div className="flex-1 flex flex-col">
-              <div className="bg-slate-50 border border-slate-100 rounded-[24px] p-5 mb-6 flex items-center gap-4 relative">
-                 <p className="flex-1 text-2xl font-black text-slate-800 tracking-widest font-mono pl-4 leading-none">{dialNum || '...'}</p>
+              <div className="bg-slate-50 border border-slate-100 rounded-[28px] h-20 mb-8 flex items-center px-6 relative overflow-hidden group/disp shadow-inner transition-colors focus-within:bg-white focus-within:border-indigo-100">
+                 <p className="flex-1 text-2xl font-black text-slate-800 tracking-widest font-mono truncate leading-none">{dialNum || '...'}</p>
                  {dialNum && (
-                    <button onClick={() => setDialNum(p => p.slice(0, -1))} className="w-10 h-10 bg-white border border-slate-100 rounded-xl flex items-center justify-center text-slate-400 hover:text-rose-500 transition-all shadow-sm">
-                       <MdBackspace size={20} />
+                    <button onClick={() => setDialNum(p => p.slice(0, -1))} className="w-11 h-11 bg-white border border-slate-200 rounded-2xl flex items-center justify-center text-slate-400 hover:text-rose-500 hover:border-rose-100 hover:rotate-12 transition-all shadow-sm shrink-0">
+                       <MdBackspace size={22} />
                     </button>
                  )}
-                 <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-indigo-600 rounded-r-full" />
+                 <div className="absolute left-0 top-0 w-1.5 h-full bg-indigo-600 rounded-r-lg" />
               </div>
 
-              <div className="grid grid-cols-3 gap-3 flex-1 overflow-hidden">
+              <div className="grid grid-cols-3 gap-4 flex-1 h-0 min-h-0">
                  {['1','2','3','4','5','6','7','8','9','*','0','#'].map(num => (
                    <button 
                     key={num} onClick={() => handleDial(num)}
-                    className="w-full h-full bg-white border border-slate-50 rounded-[22px] flex items-center justify-center text-xl font-black text-slate-700 hover:bg-slate-50 hover:border-indigo-100 hover:shadow-inner transition-all active:scale-95"
+                    className="w-full h-full bg-white border border-slate-100 rounded-[26px] flex items-center justify-center text-2xl font-black text-slate-700 hover:bg-indigo-50 hover:border-indigo-100 hover:text-indigo-600 hover:shadow-xl transition-all active:scale-90 shadow-sm"
                    >
                      {num}
                    </button>
@@ -205,7 +205,7 @@ export default function OperatorCallsPage() {
 
               <button 
                onClick={startCall} disabled={!dialNum}
-               className="w-full py-5 bg-indigo-600 text-white font-black rounded-[28px] mt-6 text-[10px] uppercase tracking-widest shadow-xl shadow-indigo-100 hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-3 disabled:opacity-20"
+               className="w-full py-6 bg-indigo-600 text-white font-black rounded-[32px] mt-8 text-xs uppercase tracking-[0.2em] shadow-[0_20px_60px_-10px_rgba(79,70,229,0.4)] hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-4 disabled:opacity-20"
               >
                 <MdCall size={20} /> Aloqaga Chiqish
               </button>

@@ -93,6 +93,7 @@ export default function DriverMap({ drivers, selected, onSelect, mapType, showTr
       case 'satellite': 
         return 'https://core-renderer-tiles.maps.yandex.net/tiles?l=sat&x={x}&y={y}&z={z}&lang=ru_RU&scale=1';
       case 'terrain': 
+        // Yandex Hybrid (Satellite + Skeleton) provides a professional terrain/hybrid view
         return 'https://core-renderer-tiles.maps.yandex.net/tiles?l=sat,skl&x={x}&y={y}&z={z}&lang=ru_RU&scale=1';
       default: 
         return 'https://core-renderer-tiles.maps.yandex.net/tiles?l=map&x={x}&y={y}&z={z}&lang=ru_RU&scale=1';
@@ -111,23 +112,26 @@ export default function DriverMap({ drivers, selected, onSelect, mapType, showTr
         className="z-0"
       >
         <TileLayer
+          key={mapType}
           attribution='&copy; Yandex'
           url={tileUrl}
         />
         
-        {/* Universal Overlay: Standard Labels if Yandex Satellite is used */}
+        {/* Native Yandex Hybrid Labels for Satellite mode */}
         {mapType === 'satellite' && (
           <TileLayer 
-             url="https://{s}.basemaps.cartocdn.com/light_only_labels/{z}/{x}/{y}{r}.png"
-             opacity={0.8}
+             key="satellite-labels"
+             url="https://core-renderer-tiles.maps.yandex.net/tiles?l=skl&x={x}&y={y}&z={z}&lang=ru_RU&scale=1"
+             opacity={0.9}
              zIndex={5}
           />
         )}
 
         {showTraffic && (
           <TileLayer
+             key="traffic-layer"
              url={trafficUrl}
-             opacity={0.7}
+             opacity={0.8}
              zIndex={10}
           />
         )}

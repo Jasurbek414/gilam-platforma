@@ -132,3 +132,20 @@ export const notificationsApi = {
   markAllAsReadCompany: (companyId: string) => request<any>(`/notifications/company/${companyId}/read-all`, { method: 'PATCH' }),
   markAllAsReadSuperAdmin: () => request<any>('/notifications/superadmin/read-all', { method: 'PATCH' }),
 };
+
+// ===== CAMPAIGNS API =====
+export const campaignsApi = {
+  getAll: (companyId: string) => request<any[]>(`/campaigns/company/${companyId}`),
+  getOne: (id: string) => request<any>(`/campaigns/${id}`),
+  create: (data: any) => request<any>('/campaigns', { method: 'POST', body: JSON.stringify(data) }),
+  update: (id: string, data: any) => request<any>(`/campaigns/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+  remove: (id: string) => request<void>(`/campaigns/${id}`, { method: 'DELETE' }),
+};
+
+// ===== CALLS API =====
+export const callsApi = {
+  getAll: (companyId: string) => request<any[]>(`/calls/company/${companyId}`),
+  getOne: (id: string) => request<any>(`/calls/${id}`),
+  create: (data: any) => request<any>('/calls', { method: 'POST', body: JSON.stringify(data) }),
+};
+

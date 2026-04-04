@@ -91,8 +91,8 @@ export default function DriverMap({ drivers, selected, onSelect, mapType, showTr
   const tileUrl = useMemo(() => {
     switch (mapType) {
       case 'satellite': return 'https://sat01.maps.yandex.net/tiles?l=sat&v=3.407.0&x={x}&y={y}&z={z}&lang=uz_UZ';
-      case 'terrain': return 'https://vec01.maps.yandex.net/tiles?l=sat,skl&v=4.55.2&x={x}&y={y}&z={z}&scale=1&lang=uz_UZ';
-      default: return 'https://vec01.maps.yandex.net/tiles?l=map&v=4.55.2&x={x}&y={y}&z={z}&scale=1&lang=uz_UZ';
+      case 'terrain': return 'https://vec01.maps.yandex.net/tiles?l=sat,skl&x={x}&y={y}&z={z}&lang=uz_UZ';
+      default: return 'https://vec01.maps.yandex.net/tiles?l=map&x={x}&y={y}&z={z}&lang=uz_UZ';
     }
   }, [mapType]);
 

@@ -82,7 +82,7 @@ export default function OperatorCallsPage() {
   const endCall = () => { setActiveCall(null); setIsMuted(false); setIsOnHold(false); };
 
   return (
-    <div className="relative h-[calc(100vh-140px)] w-full overflow-hidden flex flex-col gap-6 font-sans">
+    <div className="relative min-h-[calc(100vh-140px)] w-full flex flex-col gap-8 pb-12 font-sans overflow-y-auto overflow-x-hidden custom-scrollbar">
       
       {/* 1. TOP BAR: Unified Status & Breadcrumbs */}
       <header className="shrink-0 flex items-center justify-between bg-white/80 backdrop-blur-xl p-6 rounded-[36px] border border-indigo-50/50 shadow-sm transition-all duration-500">

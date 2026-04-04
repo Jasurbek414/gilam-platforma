@@ -104,7 +104,7 @@ function LogisticsContent() {
   const unreadCount = (id: number) => (messages[id] || []).filter(m => m.sender === 'driver').length;
 
   return (
-    <div className="flex flex-col h-[calc(100vh-140px)] space-y-12">
+    <div className="flex flex-col h-[calc(100vh-140px)] space-y-16">
       
       {/* Dynamic Header Section */}
       <div className="flex items-center justify-between shrink-0 bg-white p-8 rounded-[48px] border border-slate-100 shadow-sm relative overflow-hidden">
@@ -138,11 +138,11 @@ function LogisticsContent() {
         <div className="absolute top-0 right-0 w-64 h-64 bg-slate-50 rounded-full -mr-32 -mt-32 opacity-40 blur-3xl"></div>
       </div>
 
-      {/* Workspace Grid */}
-      <div className="flex-1 flex gap-8 min-h-0 overflow-hidden">
+      {/* Workspace Grid - NEW Balanced Grid Distribution */}
+      <div className="flex-1 grid grid-cols-12 gap-10 min-h-0 overflow-hidden">
         
-        {/* Column 1: Clean Driver List */}
-        <div className="w-[320px] bg-white rounded-[48px] border border-slate-100 shadow-sm flex flex-col min-w-0">
+        {/* Column 1: Clean Driver List (25% Width) */}
+        <div className="col-span-3 bg-white rounded-[56px] border border-slate-100 shadow-sm flex flex-col min-w-0">
           <div className="p-8 border-b border-slate-50 space-y-6">
             <div className="flex items-center justify-between">
               <h3 className="text-sm font-black text-slate-800 uppercase tracking-widest flex items-center gap-3">
@@ -153,7 +153,7 @@ function LogisticsContent() {
               <MdSearch className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-600 transition-colors text-lg" />
               <input 
                 value={listFilter} onChange={e => setListFilter(e.target.value)}
-                placeholder="Raqam yoki ism bo'yicha qidirish..." 
+                placeholder="Qidiruv..." 
                 className="w-full pl-14 pr-6 py-5 bg-slate-50 rounded-[28px] text-[14px] font-bold text-slate-700 outline-none focus:bg-white focus:ring-4 ring-indigo-500/5 border border-transparent focus:border-indigo-100 transition-all shadow-sm"
               />
             </div>
@@ -187,13 +187,12 @@ function LogisticsContent() {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between gap-3 mb-1.5">
                         <h4 className={`text-base font-black truncate transition-colors ${isActive ? 'text-slate-900' : 'text-slate-700'}`}>{d.name}</h4>
-                        <span className={`text-[9px] font-black shrink-0 px-2.5 py-1 rounded-full uppercase tracking-widest ${color.bg} ${color.text} border border-current opacity-60`}>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <div className={`w-1.5 h-1.5 rounded-full ${color.dot} opacity-60`} />
+                        <span className={`text-[9px] font-black uppercase tracking-widest ${color.text} truncate`}>
                           {d.status}
                         </span>
-                      </div>
-                      <div className="flex items-center gap-2 text-slate-400">
-                        <MdLocationOn className="text-indigo-400 text-sm" />
-                        <p className="text-[11px] font-bold truncate tracking-tight">{d.location}</p>
                       </div>
                     </div>
                   </div>
@@ -208,7 +207,6 @@ function LogisticsContent() {
                           <MdChat /> Tanlash
                         </button>
                       </div>
-                      <motion.div animate={{ scale: [1, 1.2, 1] }} transition={{ repeat: Infinity, duration: 2 }} className="w-3 h-3 rounded-full bg-indigo-500 shadow-[0_0_10px_rgba(79,70,229,0.5)]" />
                     </motion.div>
                   )}
                 </motion.div>
@@ -229,33 +227,30 @@ function LogisticsContent() {
                    <p className="text-lg font-black text-emerald-500 leading-none">{DRIVERS.filter(d => d.status === "BO'SH").length}</p>
                 </div>
              </div>
-             <button className="p-3 rounded-2xl bg-white border border-slate-100 text-slate-400 hover:text-indigo-600 transition-all">
-                <MdMoreVert className="text-xl" />
-             </button>
           </div>
         </div>
 
-        {/* Column 2: Spacious Map & Premium Chat */}
-        <div className="flex-1 mt-6 bg-white rounded-[56px] overflow-hidden flex flex-col relative shadow-2xl shadow-indigo-900/5 border border-slate-100">
+        {/* Column 2: Spacious Map (50% Width) - Lowered specifically */}
+        <div className="col-span-6 mt-8 bg-white rounded-[64px] overflow-hidden flex flex-col relative shadow-2xl shadow-indigo-900/10 border border-slate-100 transition-all hover:shadow-indigo-900/20">
           
-          {/* Futuristic Control Center Tabs */}
-          <div className="absolute top-12 left-1/2 -translate-x-1/2 z-20 flex p-1.5 bg-white/70 backdrop-blur-3xl rounded-[32px] shadow-[0_12px_48px_rgba(0,0,0,0.12)] border border-white/50">
+          {/* Futuristic Control Center Tabs - Lowered */}
+          <div className="absolute top-16 left-1/2 -translate-x-1/2 z-20 flex p-1.5 bg-white/70 backdrop-blur-3xl rounded-[40px] shadow-[0_20px_60px_rgba(0,0,0,0.15)] border border-white/50">
             <button 
               onClick={() => setCenterTab('map')}
-              className={`flex items-center gap-3 px-10 py-3.5 rounded-[28px] text-[12px] font-black uppercase tracking-[0.2em] transition-all duration-300 ${
-                centerTab === 'map' ? 'bg-slate-900 text-white shadow-2xl shadow-slate-900/20' : 'text-slate-400 hover:text-slate-700'
+              className={`flex items-center gap-3 px-12 py-4 rounded-[36px] text-[13px] font-black uppercase tracking-[0.25em] transition-all duration-500 ${
+                centerTab === 'map' ? 'bg-slate-900 text-white shadow-2xl shadow-slate-900/30' : 'text-slate-400 hover:text-slate-700'
               }`}
             >
               <MdMap className="text-xl" /> Xarita
             </button>
             <button 
               onClick={() => setCenterTab('chat')}
-              className={`flex items-center gap-3 px-10 py-3.5 rounded-[28px] text-[12px] font-black uppercase tracking-[0.2em] transition-all duration-300 relative ${
-                centerTab === 'chat' ? 'bg-slate-900 text-white shadow-2xl shadow-slate-900/20' : 'text-slate-400 hover:text-slate-700'
+              className={`flex items-center gap-3 px-12 py-4 rounded-[36px] text-[13px] font-black uppercase tracking-[0.25em] transition-all duration-500 relative ${
+                centerTab === 'chat' ? 'bg-slate-900 text-white shadow-2xl shadow-slate-900/30' : 'text-slate-400 hover:text-slate-700'
               }`}
             >
               <MdChat className="text-xl" /> Muloqot Markazi
-              {selected && unreadCount(selected.id) > 0 && <span className="absolute top-2 right-6 w-3 h-3 bg-rose-500 rounded-full border-[3px] border-white shadow-lg" />}
+              {selected && unreadCount(selected.id) > 0 && <span className="absolute top-2 right-8 w-3 h-3 bg-rose-500 rounded-full border-[3px] border-white shadow-lg" />}
             </button>
           </div>
 
@@ -388,8 +383,8 @@ function LogisticsContent() {
           </AnimatePresence>
         </div>
 
-        {/* Column 3: Insights Radar (Right Side) */}
-        <div className="w-[320px] flex flex-col gap-8 shrink-0">
+        {/* Column 3: Insights Radar (Right Side) (25% Width) */}
+        <div className="col-span-3 flex flex-col gap-8 shrink-0">
           
           <div className="bg-white rounded-[56px] border border-slate-100 p-10 shadow-sm flex-1 flex flex-col relative overflow-hidden">
              

@@ -4,11 +4,13 @@ import { CompaniesController } from './companies.controller';
 import { CompaniesService } from './companies.service';
 import { Company } from './entities/company.entity';
 import { NotificationsModule } from '../notifications/notifications.module';
+import { AuthModule } from '../auth/auth.module';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([Company]),
-    NotificationsModule
+    NotificationsModule,
+    AuthModule
   ],
   controllers: [CompaniesController],
   providers: [CompaniesService],

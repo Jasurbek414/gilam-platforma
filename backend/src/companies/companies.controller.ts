@@ -1,37 +1,60 @@
-import { Controller, Get, Post, Put, Delete, Body, Param, ParseUUIDPipe } from '@nestjs/common';
+import { Controller, Get, Post, Put, Delete, Body, Param, ParseUUIDPipe, UseGuards } from '@nestjs/common';
 import { CompaniesService } from './companies.service';
 import { CreateCompanyDto, UpdateCompanyDto } from './dto/company.dto';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { RolesGuard } from '../auth/roles.guard';
+import { Roles } from '../auth/roles.decorator';
+import { UserRole } from '../users/entities/user.entity';
+import { CurrentUser } from '../auth/decorators/current-user.decorator';
+import { User } from '../users/entities/user.entity';
 
+@UseGuards(JwtAuthGuard, RolesGuard)
 @Controller('companies')
 export class CompaniesController {
   constructor(private readonly companiesService: CompaniesService) {}
 
   @Post()
+  @Roles(UserRole.SUPER_ADMIN)
   create(@Body() dto: CreateCompanyDto) {
     return this.companiesService.create(dto);
   }
 
   @Get()
+  @Roles(UserRole.SUPER_ADMIN)
   findAll() {
     return this.companiesService.findAll();
   }
 
   @Get('stats')
+  @Roles(UserRole.SUPER_ADMIN)
   getStats() {
     return this.companiesService.getStats();
   }
 
   @Get(':id')
-  findOne(@Param('id', ParseUUIDPipe) id: string) {
+  findOne(@Param('id', ParseUUIDPipe) id: string, @CurrentUser() user: User) {
+    // Only same company or superadmin
+    if (user.role !== UserRole.SUPER_ADMIN && user.companyId !== id) {
+       throw new Error('Ruxsat etilmagan');
+    }
     return this.companiesService.findOne(id);
   }
 
   @Put(':id')
-  update(@Param('id', ParseUUIDPipe) id: string, @Body() dto: UpdateCompanyDto) {
+  @Roles(UserRole.SUPER_ADMIN, UserRole.COMPANY_ADMIN)
+  update(
+    @Param('id', ParseUUIDPipe) id: string, 
+    @Body() dto: UpdateCompanyDto,
+    @CurrentUser() user: User
+  ) {
+    if (user.role !== UserRole.SUPER_ADMIN && user.companyId !== id) {
+       throw new Error('Ruxsat etilmagan');
+    }
     return this.companiesService.update(id, dto);
   }
 
   @Delete(':id')
+  @Roles(UserRole.SUPER_ADMIN)
   remove(@Param('id', ParseUUIDPipe) id: string) {
     return this.companiesService.remove(id);
   }

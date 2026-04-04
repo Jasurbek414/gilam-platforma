@@ -164,15 +164,15 @@ export default function OperatorCallsPage() {
         </div>
 
         {/* DIALER SECTION (Right) */}
-        <div className="col-span-12 lg:col-span-5 h-[420px] bg-white rounded-[44px] border border-slate-100 shadow-sm p-10 flex flex-col relative overflow-visible">
+        <div className="col-span-12 lg:col-span-5 h-[420px] bg-white rounded-[44px] border border-slate-100 shadow-sm p-8 flex flex-col relative overflow-hidden">
            <SectionHeader icon={MdDialpad} title="Dialpad" subtitle="Integrated Keyboard" />
 
-           <div className="relative mb-6">
-              <div className="bg-slate-50 border border-slate-100 rounded-[24px] h-16 flex items-center px-6 relative overflow-hidden transition-colors focus-within:bg-white focus-within:border-indigo-100 shadow-inner">
-                 <p className="flex-1 text-2xl font-black text-slate-800 tracking-widest font-mono truncate leading-none">{dialNum || '...'}</p>
+           <div className="relative mb-4">
+              <div className="bg-slate-50 border border-slate-100 rounded-[20px] h-14 flex items-center px-5 relative overflow-hidden transition-colors focus-within:bg-white focus-within:border-indigo-100 shadow-inner">
+                 <p className="flex-1 text-xl font-black text-slate-800 tracking-widest font-mono truncate leading-none">{dialNum || '...'}</p>
                  {dialNum && (
-                    <button onClick={() => setDialNum(p => p.slice(0, -1))} className="w-9 h-9 bg-white border border-slate-200 rounded-xl flex items-center justify-center text-slate-300 hover:text-rose-500 transition-all shadow-sm">
-                       <MdBackspace size={18} />
+                    <button onClick={() => setDialNum(p => p.slice(0, -1))} className="w-8 h-8 bg-white border border-slate-200 rounded-lg flex items-center justify-center text-slate-300 hover:text-rose-500 transition-all shadow-sm">
+                       <MdBackspace size={16} />
                     </button>
                  )}
                  <div className="absolute left-0 top-0 w-1 h-full bg-indigo-600 rounded-r-full" />
@@ -180,17 +180,17 @@ export default function OperatorCallsPage() {
 
               <AnimatePresence>
                  {matches.length > 0 && (
-                    <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="absolute z-20 left-0 right-0 top-18 bg-white border border-slate-100 rounded-2xl shadow-2xl p-2 space-y-1">
+                    <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="absolute z-20 left-0 right-0 top-15 bg-white border border-slate-100 rounded-2xl shadow-2xl p-2 space-y-1">
                        {matches.map(m => (
-                          <div key={m.id} onClick={() => startCall(m.phone)} className="p-3 bg-slate-50 hover:bg-indigo-50 rounded-xl flex items-center justify-between cursor-pointer group transition-colors">
+                          <div key={m.id} onClick={() => startCall(m.phone)} className="p-2.5 bg-slate-50 hover:bg-indigo-50 rounded-xl flex items-center justify-between cursor-pointer group transition-colors">
                              <div className="flex items-center gap-3">
-                                <div className="w-8 h-8 rounded-lg bg-white flex items-center justify-center text-indigo-600" ><MdPerson/></div>
+                                <div className="w-7 h-7 rounded-lg bg-white flex items-center justify-center text-indigo-600" ><MdPerson size={14}/></div>
                                 <div>
-                                   <p className="text-[12px] font-black text-slate-800 leading-none mb-1">{m.phone}</p>
+                                   <p className="text-[11px] font-black text-slate-800 leading-none mb-1">{m.phone}</p>
                                    <p className="text-[8px] font-bold text-slate-400 uppercase tracking-widest">{m.customer}</p>
                                 </div>
                              </div>
-                             <MdPhone className="text-slate-200 group-hover:text-indigo-500"/>
+                             <MdPhone size={14} className="text-slate-200 group-hover:text-indigo-500"/>
                           </div>
                        ))}
                     </motion.div>
@@ -198,7 +198,7 @@ export default function OperatorCallsPage() {
               </AnimatePresence>
            </div>
 
-           <div className="grid grid-cols-3 gap-3 flex-1 mb-6">
+           <div className="grid grid-cols-3 gap-3 flex-1 mb-5">
               {['1','2','3','4','5','6','7','8','9','*', '0', '#'].map(num => {
                 const is0 = num === '0';
                 return (
@@ -207,7 +207,7 @@ export default function OperatorCallsPage() {
                     onPointerDown={is0 ? handle0PointerDown : undefined}
                     onPointerUp={is0 ? handle0PointerUp : undefined}
                     onClick={is0 ? undefined : () => handleDial(num)}
-                    className="w-full h-full bg-white border border-slate-50 rounded-[22px] flex flex-col items-center justify-center text-xl font-black text-slate-700 hover:bg-slate-50 hover:border-indigo-100 hover:text-indigo-600 transition-all active:scale-95 shadow-sm relative group"
+                    className="w-full h-full bg-white border border-slate-50 rounded-[20px] flex flex-col items-center justify-center text-lg font-black text-slate-600 hover:bg-indigo-50 hover:border-indigo-100 hover:text-indigo-600 transition-all active:scale-95 shadow-sm relative group"
                   >
                     {num}
                     {is0 && <span className="absolute bottom-1.5 text-[8px] font-black text-slate-300 group-hover:text-amber-500">+</span>}
@@ -218,9 +218,9 @@ export default function OperatorCallsPage() {
 
            <button 
             onClick={() => startCall(dialNum)} disabled={!dialNum}
-            className="w-full py-5 bg-indigo-600 text-white font-black rounded-[28px] text-[10px] uppercase tracking-widest shadow-xl shadow-indigo-100/30 hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-3 disabled:opacity-20 flex-shrink-0"
+            className="w-full py-4.5 bg-indigo-600 text-white font-black rounded-2xl text-[10px] uppercase tracking-widest shadow-xl shadow-indigo-100/30 hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-3 disabled:opacity-20 flex-shrink-0"
            >
-             <MdCall size={20} /> Call Now
+             <MdCall size={18} /> Call Now
            </button>
         </div>
       </div>

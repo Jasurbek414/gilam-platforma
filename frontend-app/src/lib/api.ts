@@ -51,8 +51,16 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   }
 
   if (!res.ok) {
-    const error = await res.json().catch(() => ({ message: 'Server xatosi' }));
-    throw new Error(error.message || `HTTP ${res.status}`);
+    const errorData = await res.json().catch(() => ({ message: 'Server xatosi' }));
+    const errorMessage = Array.isArray(errorData.message) 
+      ? errorData.message.join(', ') 
+      : (errorData.message || `HTTP ${res.status}`);
+    
+    // Create a custom error that mimics Axios or similar structures for consistency
+    const error: any = new Error(errorMessage);
+    error.status = res.status;
+    error.response = { data: errorData };
+    throw error;
   }
 
   return res.json();

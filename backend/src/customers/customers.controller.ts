@@ -1,27 +1,39 @@
-import { Controller, Get, Post, Put, Delete, Body, Param, Query, ParseUUIDPipe } from '@nestjs/common';
+import { Controller, Get, Post, Put, Delete, Body, Param, Query, ParseUUIDPipe, UseGuards } from '@nestjs/common';
 import { CustomersService } from './customers.service';
 import { CreateCustomerDto, UpdateCustomerDto } from './dto/customer.dto';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { CurrentUser } from '../auth/decorators/current-user.decorator';
+import { User, UserRole } from '../users/entities/user.entity';
 
+@UseGuards(JwtAuthGuard)
 @Controller('customers')
 export class CustomersController {
   constructor(private readonly customersService: CustomersService) {}
 
   @Post()
-  create(@Body() dto: CreateCustomerDto) {
+  create(@Body() dto: CreateCustomerDto, @CurrentUser() user: User) {
+    // Inject companyId from token for safety
+    dto.companyId = user.companyId;
     return this.customersService.create(dto);
   }
 
   @Get('company/:companyId')
-  findAllByCompany(@Param('companyId', ParseUUIDPipe) companyId: string) {
-    return this.customersService.findAllByCompany(companyId);
+  findAllByCompany(
+    @Param('companyId', ParseUUIDPipe) companyId: string,
+    @CurrentUser() user: User
+  ) {
+    const targetId = user.role === UserRole.SUPER_ADMIN ? companyId : user.companyId;
+    return this.customersService.findAllByCompany(targetId);
   }
 
   @Get('search/:companyId')
   search(
     @Param('companyId', ParseUUIDPipe) companyId: string,
     @Query('q') query: string,
+    @CurrentUser() user: User
   ) {
-    return this.customersService.search(companyId, query || '');
+    const targetId = user.role === UserRole.SUPER_ADMIN ? companyId : user.companyId;
+    return this.customersService.search(targetId, query || '');
   }
 
   @Get(':id')

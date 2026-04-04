@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, In, EntityManager } from 'typeorm';
 import { Order, OrderStatus } from './entities/order.entity';
 import { OrderItem } from './entities/order-item.entity';
 import { Service, MeasurementUnit } from '../services/entities/service.entity';
@@ -20,15 +20,6 @@ export class OrdersService {
     private readonly notificationsService: NotificationsService,
   ) {}
 
-  /**
-   * NARX HISOBLASH ALGORITMI:
-   * 1. Har bir OrderItem uchun tegishli Service dan narxni olish
-   * 2. O'lchov birligi bo'yicha totalPrice hisoblash:
-   *    - SQM (kv.metr): width × length × price
-   *    - KG / PIECE / SET / FIXED: quantity × price
-   *    - METER / CM: quantity × price
-   * 3. Order.totalAmount = barcha itemlar yig'indisi
-   */
   private calculateItemPrice(
     item: { width?: number; length?: number; quantity: number },
     service: Service,
@@ -37,87 +28,80 @@ export class OrdersService {
 
     switch (service.measurementUnit) {
       case MeasurementUnit.SQM:
-        // Gilam: eni × bo'yi × narx
-        const width = item.width || 0;
-        const length = item.length || 0;
+        const width = Number(item.width) || 0;
+        const length = Number(item.length) || 0;
         const area = width * length;
         return Math.round(area * price * 100) / 100;
 
-      case MeasurementUnit.KG:
-      case MeasurementUnit.PIECE:
-      case MeasurementUnit.SET:
-      case MeasurementUnit.FIXED:
-      case MeasurementUnit.METER:
-      case MeasurementUnit.CM:
-      case MeasurementUnit.HOUR:
-        // Miqdor × narx
-        return Math.round(item.quantity * price * 100) / 100;
-
       default:
-        return Math.round(item.quantity * price * 100) / 100;
+        return Math.round(Number(item.quantity) * price * 100) / 100;
     }
   }
 
   async create(createOrderDto: CreateOrderDto) {
     const { items, ...orderData } = createOrderDto;
 
-    // 1. Order yaratish
-    const order = this.orderRepository.create({
-      ...orderData,
-      status: OrderStatus.NEW,
-      totalAmount: 0,
-    });
-    const savedOrder = await this.orderRepository.save(order);
+    // Run within transaction for ACID compliance
+    return this.orderRepository.manager.transaction(async (manager: EntityManager) => {
+      // 1. Create Order shell
+      const order = manager.create(Order, {
+        ...orderData,
+        status: OrderStatus.NEW,
+        totalAmount: 0,
+      });
+      const savedOrder = await manager.save(order);
 
-    // 2. Har bir item uchun narx hisoblash va saqlash
-    let totalAmount = 0;
+      let totalAmount = 0;
 
-    if (items && items.length > 0) {
-      const orderItems: OrderItem[] = [];
-
-      for (const itemDto of items) {
-        // Xizmat turini bazadan olish
-        const service = await this.serviceRepository.findOne({
-          where: { id: itemDto.serviceId },
+      if (items && items.length > 0) {
+        // 2. Fetch all services at once (Optimization)
+        const serviceIds = items.map(i => i.serviceId);
+        const services = await manager.find(Service, {
+          where: { id: In(serviceIds) }
         });
+        
+        const serviceMap = new Map(services.map(s => [s.id, s]));
+        const orderItems: OrderItem[] = [];
 
-        if (!service) {
-          throw new NotFoundException(`Xizmat #${itemDto.serviceId} topilmadi`);
+        for (const itemDto of items) {
+          const service = serviceMap.get(itemDto.serviceId);
+          if (!service) {
+            throw new NotFoundException(`Xizmat #${itemDto.serviceId} topilmadi`);
+          }
+
+          const totalPrice = this.calculateItemPrice(itemDto, service);
+          totalAmount += totalPrice;
+
+          const orderItem = manager.create(OrderItem, {
+            orderId: savedOrder.id,
+            serviceId: itemDto.serviceId,
+            barcode: itemDto.barcode,
+            width: itemDto.width,
+            length: itemDto.length,
+            quantity: itemDto.quantity,
+            totalPrice,
+          });
+
+          orderItems.push(orderItem);
         }
 
-        // Narx hisoblash
-        const totalPrice = this.calculateItemPrice(itemDto, service);
-        totalAmount += totalPrice;
-
-        const orderItem = this.orderItemRepository.create({
-          orderId: savedOrder.id,
-          serviceId: itemDto.serviceId,
-          barcode: itemDto.barcode,
-          width: itemDto.width,
-          length: itemDto.length,
-          quantity: itemDto.quantity,
-          totalPrice,
-        });
-
-        orderItems.push(orderItem);
+        await manager.save(orderItems);
       }
 
-      await this.orderItemRepository.save(orderItems);
-    }
+      // 3. Finalize Order total
+      savedOrder.totalAmount = totalAmount;
+      const finalOrder = await manager.save(savedOrder);
 
-    // 3. Order totalAmount yangilash
-    savedOrder.totalAmount = totalAmount;
-    await this.orderRepository.save(savedOrder);
+      // Side Effect: Notification (Post-transaction or safe async)
+      this.notificationsService.create({
+        companyId: finalOrder.companyId,
+        title: 'Yangi buyurtma',
+        text: `Yangi buyurtma qabul qilindi. ID: ${finalOrder.id.substring(0,8)}`,
+        type: 'order'
+      }).catch(err => console.error('Notification failed:', err));
 
-    // Xabarnoma qoldirish
-    await this.notificationsService.create({
-      companyId: savedOrder.companyId,
-      title: 'Yangi buyurtma',
-      text: `Yangi buyurtma qabul qilindi. Mijoz: ${savedOrder.customerId}`,
-      type: 'order'
+      return finalOrder;
     });
-
-    return this.findOne(savedOrder.id);
   }
 
   async findAll() {

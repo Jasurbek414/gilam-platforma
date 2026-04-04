@@ -1,19 +1,28 @@
-import { Controller, Get, Post, Put, Delete, Body, Param, ParseUUIDPipe } from '@nestjs/common';
+import { Controller, Get, Post, Put, Delete, Body, Param, ParseUUIDPipe, UseGuards } from '@nestjs/common';
 import { ServicesService } from './services.service';
 import { CreateServiceDto, UpdateServiceDto } from './dto/service.dto';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { CurrentUser } from '../auth/decorators/current-user.decorator';
+import { User, UserRole } from '../users/entities/user.entity';
 
+@UseGuards(JwtAuthGuard)
 @Controller('services')
 export class ServicesController {
   constructor(private readonly servicesService: ServicesService) {}
 
   @Post()
-  create(@Body() dto: CreateServiceDto) {
+  create(@Body() dto: CreateServiceDto, @CurrentUser() user: User) {
+    dto.companyId = user.companyId;
     return this.servicesService.create(dto);
   }
 
   @Get('company/:companyId')
-  findAllByCompany(@Param('companyId', ParseUUIDPipe) companyId: string) {
-    return this.servicesService.findAllByCompany(companyId);
+  findAllByCompany(
+    @Param('companyId', ParseUUIDPipe) companyId: string,
+    @CurrentUser() user: User
+  ) {
+    const targetId = user.role === UserRole.SUPER_ADMIN ? companyId : user.companyId;
+    return this.servicesService.findAllByCompany(targetId);
   }
 
   @Get(':id')

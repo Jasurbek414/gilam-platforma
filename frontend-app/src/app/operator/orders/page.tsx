@@ -37,7 +37,7 @@ function OrderContent() {
   const [formData, setFormData] = useState<any>({ 
     customerId: '', 
     notes: '',
-    items: [{ serviceId: '', width: '', height: '', quantity: 1, notes: '' }]
+    items: [{ serviceId: '', width: '', length: '', quantity: 1, notes: '' }]
   });
 
   useEffect(() => {
@@ -83,7 +83,7 @@ function OrderContent() {
     setFormData({ 
       customerId: '', 
       notes: '',
-      items: [{ serviceId: '', width: '', height: '', quantity: 1, notes: '' }] 
+      items: [{ serviceId: '', width: '', length: '', quantity: 1, notes: '' }] 
     });
     setIsModalOpen(true);
   };
@@ -91,7 +91,7 @@ function OrderContent() {
   const handleAddItem = () => {
     setFormData({
       ...formData,
-      items: [...formData.items, { serviceId: '', width: '', height: '', quantity: 1, notes: '' }]
+      items: [...formData.items, { serviceId: '', width: '', length: '', quantity: 1, notes: '' }]
     });
   };
 
@@ -115,7 +115,7 @@ function OrderContent() {
       .map((item: any) => ({
         serviceId: item.serviceId,
         width: item.width ? Number(item.width) : undefined,
-        height: item.height ? Number(item.height) : undefined,
+        length: item.length ? Number(item.length) : undefined,
         quantity: item.quantity ? Number(item.quantity) : 1,
         notes: item.notes
       }));
@@ -138,7 +138,11 @@ function OrderContent() {
       await loadData(user.company.id);
       setIsModalOpen(false);
     } catch (err: any) {
-      alert('Xatolik: ' + err.message);
+      console.error(err);
+      const msg = Array.isArray(err.response?.data?.message) 
+        ? err.response.data.message[0] 
+        : err.message;
+      toast.error('Saqlashda xato: ' + msg);
     } finally {
       setSaving(false);
     }
@@ -149,7 +153,7 @@ function OrderContent() {
       await ordersApi.updateStatus(orderId, { status: newStatus });
       await loadData(user.company.id);
     } catch (err: any) {
-      alert('Status o\'zgartirishda xato: ' + err.message);
+      toast.error('Status xatosi: ' + err.message);
     }
   };
 
@@ -353,7 +357,7 @@ function OrderContent() {
                   </div>
                   <div className="w-1/3 lg:w-20 space-y-1.5">
                     <label className="text-[10px] uppercase font-black text-slate-400">Bo'yi(m)</label>
-                    <input type="number" step="0.01" className="w-full px-3 py-2.5 rounded-xl border border-slate-200 focus:border-indigo-500 outline-none text-sm font-bold" placeholder="0.0" value={item.height} onChange={(e) => handleItemChange(idx, 'height', e.target.value)} />
+                    <input type="number" step="0.01" className="w-full px-3 py-2.5 rounded-xl border border-slate-200 focus:border-indigo-500 outline-none text-sm font-bold" placeholder="0.0" value={item.length} onChange={(e) => handleItemChange(idx, 'length', e.target.value)} />
                   </div>
                   <div className="w-1/3 lg:w-20 space-y-1.5">
                     <label className="text-[10px] uppercase font-black text-slate-400">Soni</label>

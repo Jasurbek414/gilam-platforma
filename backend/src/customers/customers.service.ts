@@ -12,6 +12,20 @@ export class CustomersService {
   ) {}
 
   async create(dto: CreateCustomerDto): Promise<Customer> {
+    // Uniqueness check: avoid duplicate phone numbers within the same company
+    const existing = await this.customerRepository.findOne({
+      where: { 
+        companyId: dto.companyId,
+        phone1: dto.phone1
+      }
+    });
+
+    if (existing) {
+      // If customer exists, we can either return it or throw an error.
+      // For a seamless operator experience, let's return the existing one or throw a ConflictException.
+      throw new Error(`Ushbu telefon raqamli mijoz (${dto.phone1}) allaqachon mavjud.`);
+    }
+
     const customer = this.customerRepository.create(dto);
     return this.customerRepository.save(customer);
   }

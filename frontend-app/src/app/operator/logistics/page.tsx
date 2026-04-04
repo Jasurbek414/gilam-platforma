@@ -142,7 +142,7 @@ function LogisticsContent() {
       <div className="flex-1 flex gap-8 min-h-0 overflow-hidden">
         
         {/* Column 1: Clean Driver List */}
-        <div className="w-[420px] bg-white rounded-[48px] border border-slate-100 shadow-sm flex flex-col min-w-0">
+        <div className="w-[320px] bg-white rounded-[48px] border border-slate-100 shadow-sm flex flex-col min-w-0">
           <div className="p-8 border-b border-slate-50 space-y-6">
             <div className="flex items-center justify-between">
               <h3 className="text-sm font-black text-slate-800 uppercase tracking-widest flex items-center gap-3">
@@ -389,7 +389,7 @@ function LogisticsContent() {
         </div>
 
         {/* Column 3: Insights Radar (Right Side) */}
-        <div className="w-[380px] flex flex-col gap-8 shrink-0">
+        <div className="w-[320px] flex flex-col gap-8 shrink-0">
           
           <div className="bg-white rounded-[56px] border border-slate-100 p-10 shadow-sm flex-1 flex flex-col relative overflow-hidden">
              
@@ -454,7 +454,7 @@ function LogisticsContent() {
       </div>
 
       {/* Modern Broadcast Portal */}
-      <Modal isOpen={showBroadcast} onClose={() => setShowBroadcast(false)}>
+      <Modal isOpen={showBroadcast} onClose={() => setShowBroadcast(false)} title="Global Bildirishnoma">
         <div className="p-12">
           <div className="flex items-center gap-8 mb-12">
             <div className="w-20 h-20 bg-gradient-to-tr from-slate-900 to-slate-800 rounded-[28px] flex items-center justify-center shadow-2xl rotate-3">

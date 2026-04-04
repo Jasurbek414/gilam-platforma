@@ -83,9 +83,19 @@ interface Props {
   drivers: Driver[];
   selected: Driver | null;
   onSelect: (d: Driver) => void;
+  mapType: 'streets' | 'satellite' | 'terrain';
 }
 
-export default function DriverMap({ drivers, selected, onSelect }: Props) {
+export default function DriverMap({ drivers, selected, onSelect, mapType }: Props) {
+  const tileUrl = useMemo(() => {
+    switch (mapType) {
+      case 'satellite': return 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}';
+      case 'terrain': return 'https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png';
+      default: return 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png';
+    }
+  }, [mapType]);
+
+  const attribution = mapType === 'satellite' ? 'Esri &copy; DigitalGlobe' : '&copy; OpenStreetMap contributors';
   return (
     <div className="w-full h-full relative group bg-slate-50">
       <MapContainer
@@ -96,8 +106,8 @@ export default function DriverMap({ drivers, selected, onSelect }: Props) {
         className="z-0"
       >
         <TileLayer
-          attribution='&copy; <a href="https://carto.com/attributions">CARTO</a>'
-          url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png"
+          attribution={attribution}
+          url={tileUrl}
         />
         
         {selected && <FlyTo lat={selected.lat} lng={selected.lng} />}

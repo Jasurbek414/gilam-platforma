@@ -1,30 +1,40 @@
-import { Controller, Get, Post, Body, Param, Patch, ParseUUIDPipe } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Patch, ParseUUIDPipe, UseGuards } from '@nestjs/common';
 import { NotificationsService } from './notifications.service';
 import { CreateNotificationDto } from './dto/create-notification.dto';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { CurrentUser } from '../auth/decorators/current-user.decorator';
+import { User, UserRole } from '../users/entities/user.entity';
 
+@UseGuards(JwtAuthGuard)
 @Controller('notifications')
 export class NotificationsController {
   constructor(private readonly notificationsService: NotificationsService) {}
 
   @Post()
-  create(@Body() dto: CreateNotificationDto) {
+  create(@Body() dto: CreateNotificationDto, @CurrentUser() user: User) {
+    dto.companyId = user.companyId;
     return this.notificationsService.create(dto);
   }
 
-  // Barchasini o'qish (faqat Super Admin uchun mo'ljallangan global xabarlar)
   @Get('superadmin')
-  getForSuperAdmin() {
+  getForSuperAdmin(@CurrentUser() user: User) {
+    if (user.role !== UserRole.SUPER_ADMIN) {
+      throw new Error('Ruxsat etilmagan');
+    }
     return this.notificationsService.getForSuperAdmin();
   }
 
   @Get('company/:companyId')
-  getByCompany(@Param('companyId', ParseUUIDPipe) companyId: string) {
-    return this.notificationsService.getByCompany(companyId);
+  getByCompany(
+    @Param('companyId', ParseUUIDPipe) companyId: string,
+    @CurrentUser() user: User
+  ) {
+    const targetId = user.role === UserRole.SUPER_ADMIN ? companyId : user.companyId;
+    return this.notificationsService.getByCompany(targetId);
   }
 
   @Get('user/:userId')
   getByUser(@Param('userId', ParseUUIDPipe) userId: string) {
-    // Agar companyId ham filter qilinishi kerak bo'lsa query dan olamiz, ammo oddiylik uchun userId o'zi.
     return this.notificationsService.getByUser(userId);
   }
 
@@ -34,12 +44,19 @@ export class NotificationsController {
   }
 
   @Patch('company/:companyId/read-all')
-  markAllAsReadCompany(@Param('companyId', ParseUUIDPipe) companyId: string) {
-    return this.notificationsService.markAllAsReadForCompany(companyId);
+  markAllAsReadCompany(
+    @Param('companyId', ParseUUIDPipe) companyId: string,
+    @CurrentUser() user: User
+  ) {
+    const targetId = user.role === UserRole.SUPER_ADMIN ? companyId : user.companyId;
+    return this.notificationsService.markAllAsReadForCompany(targetId);
   }
 
   @Patch('superadmin/read-all')
-  markAllAsReadSuperAdmin() {
+  markAllAsReadSuperAdmin(@CurrentUser() user: User) {
+    if (user.role !== UserRole.SUPER_ADMIN) {
+      throw new Error('Ruxsat etilmagan');
+    }
     return this.notificationsService.markAllAsReadForSuperAdmin();
   }
 }

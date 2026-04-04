@@ -235,9 +235,9 @@ function LogisticsContent() {
                            </div>
                            <div className="flex-1 min-w-0">
                               <h4 className="text-[11px] font-black text-slate-800 truncate mb-1">{d.name}</h4>
-                              <p className="text-[7px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2 leading-none">
+                              <div className="text-[7px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2 leading-none">
                                  <div className={`w-1.5 h-1.5 rounded-full ${sc.dot}`} /> {d.status}
-                              </p>
+                              </div>
                            </div>
                         </div>
                      </motion.div>
@@ -288,7 +288,7 @@ function LogisticsContent() {
                      {isChatOpen ? (
                         <div className="flex flex-col h-full">
                            <div className="px-8 py-5 border-b border-white/20 flex items-center justify-between bg-white/10">
-                              <p className="text-[10px] font-black text-slate-900 uppercase tracking-widest flex items-center gap-3"><div className="w-1.5 h-1.5 bg-indigo-500 rounded-full animate-pulse" /> Operator Signal</p>
+                              <div className="text-[10px] font-black text-slate-900 uppercase tracking-widest flex items-center gap-3"><div className="w-1.5 h-1.5 bg-indigo-500 rounded-full animate-pulse" /> Operator Signal</div>
                               <button onClick={() => setIsChatOpen(false)} className="w-8 h-8 rounded-full hover:bg-slate-100 flex items-center justify-center transition-all"><MdKeyboardArrowRight size={20}/></button>
                            </div>
                            <div className="flex-1 overflow-y-auto p-8 space-y-5 custom-scrollbar">

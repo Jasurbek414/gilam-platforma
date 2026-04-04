@@ -74,7 +74,7 @@ export default function OperatorCallsPage() {
   const endCall = () => { setActiveCall(null); setIsMuted(false); setIsOnHold(false); };
 
   return (
-    <div className="relative min-h-[calc(100vh-140px)] w-full flex flex-col gap-8 pb-12 font-sans overflow-y-auto overflow-x-hidden custom-scrollbar">
+    <div className="relative min-h-[calc(100vh-140px)] w-full flex flex-col gap-14 pb-20 font-sans overflow-y-auto overflow-x-hidden custom-scrollbar">
       
       {/* 1. HEADER: Unified & Clean */}
       <header className="shrink-0 flex items-center justify-between bg-white/90 backdrop-blur-2xl p-5 rounded-[28px] border border-slate-100 shadow-sm">

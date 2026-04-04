@@ -6,7 +6,8 @@ import {
   MdSentimentSatisfiedAlt, MdMoreVert, MdLocalShipping, 
   MdPerson, MdInfo, MdPhone, MdLocationOn, MdHistory,
   MdFiberManualRecord, MdDoneAll, MdCheck, MdNotifications,
-  MdFingerprint, MdKeyboardArrowRight, MdTrendingUp, MdEmail
+  MdFingerprint, MdKeyboardArrowRight, MdTrendingUp, MdEmail,
+  MdClose
 } from 'react-icons/md';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -84,6 +85,7 @@ export default function OperatorMessagesPage() {
   const [inputText, setInputText] = useState('');
   const [filter, setFilter] = useState('all');
   const [search, setSearch] = useState('');
+  const [showInfo, setShowInfo] = useState(true);
   
   const chatEndRef = useRef<HTMLDivElement>(null);
   const scrollToBottom = () => chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -118,14 +120,14 @@ export default function OperatorMessagesPage() {
   };
 
   return (
-    <div className="h-[calc(100vh-140px)] w-full flex gap-3 overflow-hidden">
+    <div className="h-[calc(100vh-140px)] w-full flex gap-2 lg:gap-4 overflow-hidden relative">
       
-      {/* 1. LEFT: MICRO CONVERSATIONS LIST */}
-      <div className="w-[280px] bg-white/40 backdrop-blur-3xl rounded-[32px] border border-white/40 shadow-xl flex flex-col shrink-0 overflow-hidden">
-        <div className="p-5 pb-4">
-           <div className="flex items-center justify-between mb-5">
-              <h2 className="text-md font-black text-slate-900 tracking-tight flex items-center gap-2.5">
-                 <div className="w-8 h-8 bg-indigo-600 rounded-xl flex items-center justify-center text-white shadow-lg shadow-indigo-100">
+      {/* 1. LEFT: MICRO CONVERSATIONS LIST (Responsive Width) */}
+      <div className={`${selectedId ? 'hidden md:flex' : 'flex'} w-full md:w-[280px] lg:w-[320px] bg-white/40 backdrop-blur-3xl rounded-[24px] lg:rounded-[32px] border border-white/40 shadow-xl flex-col shrink-0 overflow-hidden transition-all duration-300`}>
+        <div className="p-4 lg:p-6 pb-3">
+           <div className="flex items-center justify-between mb-4 lg:mb-6">
+              <h2 className="text-md lg:text-lg font-black text-slate-900 tracking-tight flex items-center gap-2.5">
+                 <div className="w-8 h-8 bg-indigo-600 rounded-xl flex items-center justify-center text-white shadow-lg">
                     <MdChat size={16} />
                  </div>
                  Xabarlar
@@ -133,15 +135,15 @@ export default function OperatorMessagesPage() {
            </div>
            
            <div className="relative group">
-              <MdSearch className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-lg group-focus-within:text-indigo-600 transition-colors" />
+              <MdSearch className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-lg" />
               <input 
                  value={search} onChange={(e) => setSearch(e.target.value)}
-                 placeholder="Qidiruv..."
-                 className="w-full bg-white/60 border border-white/40 rounded-xl py-2.5 pl-10 pr-4 text-[10px] font-bold text-slate-800 outline-none focus:bg-white transition-all shadow-inner placeholder:text-slate-400"
+                 placeholder="Search..."
+                 className="w-full bg-white/60 border border-white/40 rounded-xl py-2.5 pl-10 pr-4 text-[10px] font-bold text-slate-800 outline-none focus:bg-white transition-all shadow-inner"
               />
            </div>
 
-           <div className="mt-3.5 flex bg-white/50 p-0.5 rounded-xl gap-0.5 border border-white/20">
+           <div className="mt-3.5 flex bg-white/50 p-0.5 rounded-xl gap-0.5 border border-white/20 overflow-x-auto scrollbar-hide">
               {[
                 { id: 'all', label: 'All' },
                 { id: 'driver', label: 'Driver' },
@@ -149,7 +151,7 @@ export default function OperatorMessagesPage() {
               ].map(tab => (
                  <button 
                     key={tab.id} onClick={() => setFilter(tab.id)}
-                    className={`flex-1 py-1 rounded-lg text-[8px] font-black uppercase tracking-widest transition-all ${
+                    className={`flex-1 min-w-[60px] py-1.5 rounded-lg text-[8px] font-black uppercase tracking-widest transition-all ${
                        filter === tab.id ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-400 hover:text-slate-700'
                     }`}
                  >
@@ -159,11 +161,11 @@ export default function OperatorMessagesPage() {
            </div>
         </div>
 
-        <div className="flex-1 overflow-y-auto px-2.5 pb-4 space-y-1 custom-scrollbar">
+        <div className="flex-1 overflow-y-auto px-2.5 pb-4 space-y-1.5 custom-scrollbar">
            {filteredConversations.map((conv) => (
               <motion.div 
                  layout key={conv.id} onClick={() => setSelectedId(conv.id)}
-                 className={`p-2.5 rounded-[22px] cursor-pointer transition-all flex items-center gap-2.5 relative group ${
+                 className={`p-2.5 rounded-[20px] cursor-pointer transition-all flex items-center gap-3 relative group ${
                     selectedId === conv.id ? 'bg-white shadow-lg border border-white translate-x-1.5' : 'hover:bg-white/40 border border-transparent'
                  }`}
               >
@@ -173,7 +175,7 @@ export default function OperatorMessagesPage() {
                     }`}>
                        {conv.avatar}
                     </div>
-                    {conv.online && <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-emerald-500 border-2 border-white rounded-full shadow-sm" />}
+                    {conv.online && <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-emerald-500 border-2 border-white rounded-full" />}
                  </div>
                  
                  <div className="flex-1 min-w-0">
@@ -190,45 +192,53 @@ export default function OperatorMessagesPage() {
         </div>
       </div>
 
-      {/* 2. CENTER: COMPACT CHAT (Infinite Flow) */}
-      <div className="flex-1 bg-white/30 backdrop-blur-4xl rounded-[32px] border border-white/40 shadow-2xl flex flex-col overflow-hidden relative">
+      {/* 2. CENTER: FLEXIBLE CHAT SPACE */}
+      <div className={`${!selectedId ? 'hidden md:flex' : 'flex'} flex-1 bg-white/30 backdrop-blur-4xl rounded-[24px] lg:rounded-[32px] border border-white/40 shadow-2xl flex-col overflow-hidden relative transition-all duration-300`}>
          <AnimatePresence mode="wait">
             {selectedId ? (
                <motion.div 
-                 initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.98 }}
+                 initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
                  className="flex flex-col h-full"
                >
-                  <div className="px-6 py-4 border-b border-white/10 flex items-center justify-between bg-white/20">
-                     <div className="flex items-center gap-2.5">
-                        <div className="w-9 h-9 rounded-xl bg-white/60 flex items-center justify-center text-lg border border-white shadow-inner">
-                           {selectedConversation?.type === 'driver' ? <MdLocalShipping className="text-indigo-600" /> : <MdPerson className="text-emerald-500" />}
+                  {/* Responsive Chat Header */}
+                  <div className="px-5 lg:px-8 py-3.5 lg:py-4 border-b border-white/10 flex items-center justify-between bg-white/20">
+                     <div className="flex items-center gap-3">
+                        <button onClick={() => setSelectedId(null)} className="md:hidden w-8 h-8 rounded-lg bg-white/60 text-slate-400 flex items-center justify-center"><MdKeyboardArrowRight className="rotate-180" size={20}/></button>
+                        <div className="relative">
+                           <div className="w-9 h-9 rounded-xl bg-white/60 flex items-center justify-center text-lg border border-white">
+                              {selectedConversation?.type === 'driver' ? <MdLocalShipping className="text-indigo-600" /> : <MdPerson className="text-emerald-500" />}
+                           </div>
+                           <div className={`absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full border border-white ${selectedConversation?.online ? 'bg-emerald-500' : 'bg-slate-300'}`} />
                         </div>
-                        <div>
-                           <h3 className="text-[13px] font-black text-slate-900 tracking-tight leading-none mb-1">{selectedConversation?.name}</h3>
-                           <p className="text-[7px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-1.5 opacity-60">
-                              <MdFingerprint className="text-indigo-400" /> Active Session
-                           </p>
+                        <div className="min-w-0">
+                           <h3 className="text-[12px] lg:text-[13px] font-black text-slate-900 tracking-tight leading-none mb-1 truncate">{selectedConversation?.name}</h3>
+                           <p className="text-[7px] font-black text-slate-400 uppercase tracking-widest leading-none opacity-60 truncate">Active Session</p>
                         </div>
                      </div>
-                     <div className="flex gap-2">
-                        <button className="w-8 h-8 rounded-lg bg-white/60 hover:bg-white text-indigo-600 transition-all border border-white flex items-center justify-center"><MdPhone size={18}/></button>
-                        <button className="w-8 h-8 rounded-lg bg-white/60 hover:bg-white text-slate-400 transition-all border border-white flex items-center justify-center"><MdMoreVert size={20}/></button>
+                     <div className="flex gap-1.5 lg:gap-2">
+                        <button className="w-8 h-8 lg:w-9 lg:h-9 rounded-lg lg:rounded-xl bg-white/60 hover:bg-white text-indigo-600 transition-all border border-white flex items-center justify-center"><MdPhone size={18}/></button>
+                        <button 
+                           onClick={() => setShowInfo(!showInfo)}
+                           className={`w-8 h-8 lg:w-9 lg:h-9 rounded-lg lg:rounded-xl flex items-center justify-center transition-all border ${
+                              showInfo ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white/60 text-slate-400 border-white hover:text-indigo-600'
+                           }`}
+                        >
+                           <MdInfo size={18}/></button>
                      </div>
                   </div>
 
-                  <div className="flex-1 overflow-y-auto px-8 py-6 space-y-4 custom-scrollbar bg-white/5">
+                  {/* Dynamic Message Stream */}
+                  <div className="flex-1 overflow-y-auto px-5 lg:px-8 py-6 space-y-4 lg:space-y-5 custom-scrollbar bg-white/5">
                      {messages[selectedId]?.map((msg: any) => (
-                        <div 
-                           key={msg.id} className={`flex ${msg.sender === 'operator' ? 'justify-end' : 'justify-start'}`}
-                        >
-                           <div className={`max-w-[80%] relative group`}>
-                              <div className={`p-3.5 rounded-[22px] shadow-sm ${
+                        <div key={msg.id} className={`flex ${msg.sender === 'operator' ? 'justify-end' : 'justify-start'}`}>
+                           <div className={`max-w-[85%] md:max-w-[70%] relative group`}>
+                              <div className={`p-3 lg:p-4 rounded-[20px] lg:rounded-[24px] shadow-sm ${
                                  msg.sender === 'operator' ? 'bg-indigo-600 text-white rounded-tr-md' : 'bg-white text-slate-800 border border-white rounded-tl-md'
                               }`}>
-                                 <p className="text-[11px] font-medium leading-relaxed font-sans">{msg.text}</p>
+                                 <p className="text-[11px] lg:text-[12px] font-medium leading-relaxed">{msg.text}</p>
                               </div>
                               <div className={`flex items-center gap-2 mt-1.5 ${msg.sender === 'operator' ? 'justify-end' : 'justify-start'}`}>
-                                 <span className="text-[7px] font-black text-slate-400 uppercase tracking-widest leading-none">{msg.time}</span>
+                                 <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest">{msg.time}</span>
                                  {msg.sender === 'operator' && <MdDoneAll className={msg.status === 'read' ? 'text-indigo-500' : 'text-slate-200'} size={14} />}
                               </div>
                            </div>
@@ -237,17 +247,18 @@ export default function OperatorMessagesPage() {
                      <div ref={chatEndRef} />
                   </div>
 
-                  <div className="p-5 bg-white/10">
-                     <form onSubmit={handleSendMessage} className="bg-white/80 border border-white rounded-[24px] p-1.5 shadow-xl flex items-center gap-2">
-                        <button type="button" className="w-9 h-9 rounded-lg bg-slate-50 flex items-center justify-center text-slate-400 hover:text-indigo-600"><MdAttachFile size={20}/></button>
+                  {/* Flexible Input Bar */}
+                  <div className="p-4 lg:p-6 bg-white/10">
+                     <form onSubmit={handleSendMessage} className="bg-white/80 border border-white rounded-[24px] lg:rounded-[28px] p-1.5 shadow-xl flex items-center gap-2">
+                        <button type="button" className="w-9 h-9 lg:w-10 lg:h-10 rounded-lg lg:rounded-xl bg-slate-50 flex items-center justify-center text-slate-400 hover:text-indigo-600"><MdAttachFile size={20}/></button>
                         <input 
                            value={inputText} onChange={(e) => setInputText(e.target.value)}
                            placeholder="Type..."
-                           className="flex-1 bg-transparent border-none outline-none px-2 text-[11px] font-bold text-slate-800 placeholder:text-slate-300"
+                           className="flex-1 bg-transparent border-none outline-none px-2 text-[11px] lg:text-[12px] font-bold text-slate-800"
                         />
                         <button 
                            type="submit" disabled={!inputText.trim()}
-                           className="w-10 h-10 bg-indigo-600 text-white rounded-xl flex items-center justify-center shadow-lg transition-all disabled:opacity-30"
+                           className="w-10 h-10 lg:w-11 lg:h-11 bg-indigo-600 text-white rounded-lg lg:rounded-xl flex items-center justify-center shadow-lg transition-all"
                         >
                            <MdSend size={20} />
                         </button>
@@ -256,95 +267,79 @@ export default function OperatorMessagesPage() {
                </motion.div>
             ) : (
                <div className="flex-1 flex flex-col items-center justify-center text-center p-12 opacity-10">
-                  <MdChat className="text-6xl text-slate-300" />
+                  <MdChat className="text-7xl lg:text-8xl text-slate-300 animate-pulse" />
                </div>
             )}
          </AnimatePresence>
       </div>
 
-      {/* 3. RIGHT: TRIPLE-SPLIT INTELLIGENCE (Bottom-Focus Profile) */}
-      <div className="w-[240px] bg-white/40 backdrop-blur-3xl rounded-[32px] border border-white/40 shadow-xl flex flex-col shrink-0 overflow-hidden">
-         <AnimatePresence mode="wait">
-            {selectedId ? (
-               <motion.div 
-                 initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                 className="flex flex-col h-full"
-               >
-                  {/* PART 1: PULSE FEED (Top) */}
-                  <div className="p-5 border-b border-white/10 bg-white/5">
-                     <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-3 flex items-center justify-between">
+      {/* 3. RIGHT: CONDITIONAL INTELLIGENCE PANEL (Slide-in) */}
+      <AnimatePresence>
+         {selectedId && showInfo && (
+            <motion.div 
+               initial={{ x: 300, opacity: 0 }} animate={{ x: 0, opacity: 1 }} exit={{ x: 300, opacity: 0 }}
+               className="absolute md:relative top-0 right-0 h-full w-[260px] lg:w-[300px] z-50 md:z-auto"
+            >
+               <div className="h-full bg-white/95 md:bg-white/40 backdrop-blur-5xl rounded-l-[24px] md:rounded-[24px] lg:rounded-[32px] border border-white/40 shadow-2xl flex flex-col overflow-hidden">
+                  <div className="p-5 border-b border-white/10 bg-white/5 flex items-center justify-between">
+                     <p className="text-[8px] lg:text-[9px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
                         Pulse Feed <MdNotifications className="text-lg text-indigo-400" />
                      </p>
-                     <div className="space-y-2">
-                        <div className="p-3 bg-white/50 rounded-xl border border-white shadow-sm flex items-center gap-2">
-                           <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-ping" />
-                           <p className="text-[9px] font-black text-slate-800">Order Dispatched</p>
-                        </div>
-                     </div>
+                     <button onClick={() => setShowInfo(false)} className="w-8 h-8 rounded-lg hover:bg-slate-100 flex items-center justify-center transition-all md:hidden"><MdClose /></button>
                   </div>
 
-                  {/* PART 2: INTERACTION HISTORY (Middle) */}
-                  <div className="p-5 border-b border-white/10 overflow-y-auto custom-scrollbar flex-1 min-h-0">
-                     <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-4">Activity Journal</p>
+                  <div className="p-4 lg:p-5 border-b border-white/10 overflow-y-auto custom-scrollbar flex-1 min-h-0">
+                     <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-4">Activity</p>
                      <div className="space-y-3.5">
                         {[1, 2, 3].map(i => (
-                           <div key={i} className="flex gap-2.5 relative group">
-                              <div className="w-1.5 h-1.5 bg-slate-200 rounded-full mt-1.5 shrink-0 group-hover:bg-indigo-500 transition-all shadow-sm" />
+                           <div key={i} className="flex gap-2.5 group">
+                              <div className="w-1 h-10 bg-slate-100 rounded-full shrink-0 group-hover:bg-indigo-500 transition-all" />
                               <div className="min-w-0">
-                                 <p className="text-[10px] font-black text-slate-800 leading-tight">Interaction #{i*213}</p>
-                                 <p className="text-[8px] font-bold text-slate-400 uppercase mt-0.5 tracking-tighter">Apr 04 • Completed</p>
+                                 <p className="text-[10px] font-black text-slate-800 truncate">Logistics Signal #{i*12}</p>
+                                 <p className="text-[8px] font-bold text-slate-400">APR 04 • Success</p>
                               </div>
                            </div>
                         ))}
                      </div>
                   </div>
                   
-                  {/* PART 3: THE PROFILE (Flush Bottom) */}
-                  <div className="mt-auto p-5 space-y-4 bg-white/10 border-t border-white/10">
+                  <div className="mt-auto p-5 space-y-4 bg-white/20 border-t border-white/10">
                      <div className="flex items-center gap-3">
-                        <div className={`w-10 h-10 rounded-2xl flex items-center justify-center font-black text-sm shadow-xl ${
+                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-black text-sm shadow-xl ${
                            selectedConversation?.type === 'driver' ? 'bg-slate-900 text-white' : 'bg-emerald-50 text-emerald-600 border border-emerald-100'
                         }`}>
                            {selectedConversation?.avatar}
                         </div>
                         <div className="min-w-0">
-                           <h4 className="text-[11px] font-black text-slate-900 tracking-tight leading-none mb-0.5 truncate">{selectedConversation?.name}</h4>
-                           <p className="text-[7px] font-black text-indigo-500 uppercase tracking-widest">
-                              {selectedConversation?.type === 'driver' ? 'Logistic Pro' : 'V.I.P Client'}
-                           </p>
+                           <h4 className="text-[11px] lg:text-[12px] font-black text-slate-900 truncate leading-none mb-1">{selectedConversation?.name}</h4>
+                           <p className="text-[8px] font-black text-indigo-500 uppercase tracking-widest leading-none">V.I.P Member</p>
                         </div>
                      </div>
 
-                     <div className="space-y-1.5">
-                        <div className="p-2.5 bg-white/50 rounded-xl border border-white shadow-sm flex items-center justify-between">
-                           <p className="text-[7px] font-black text-slate-400 uppercase">Contact</p>
-                           <p className="text-[9px] font-black text-slate-800">{selectedConversation?.phone}</p>
+                     <div className="space-y-2">
+                        <div className="p-2.5 bg-white/60 rounded-xl border border-white shadow-sm flex items-center justify-between">
+                           <p className="text-[7px] font-black text-slate-400 uppercase">Phone</p>
+                           <p className="text-[10px] font-black text-slate-800">{selectedConversation?.phone}</p>
                         </div>
-                        <div className="p-2.5 bg-indigo-600 text-white rounded-xl shadow-lg shadow-indigo-100 flex items-center justify-between overflow-hidden relative">
-                           <p className="text-[7px] font-black text-white/50 uppercase">Asset</p>
-                           <p className="text-[8px] font-black truncate max-w-[120px]">{selectedConversation?.car || selectedConversation?.address}</p>
-                           <MdFingerprint className="absolute -bottom-1 -right-1 text-2xl text-white/5 rotate-12" />
+                        <div className="p-2.5 bg-slate-950 text-white rounded-xl shadow-xl flex items-center justify-between relative overflow-hidden">
+                           <p className="text-[7px] font-black text-white/40 uppercase">Details</p>
+                           <p className="text-[9px] font-black truncate max-w-[120px]">{selectedConversation?.car || selectedConversation?.address}</p>
+                           <MdFingerprint className="absolute -bottom-1 -right-1 text-2xl text-white/5" />
                         </div>
                      </div>
-
-                     <button className="w-full py-3 bg-slate-950 text-white font-black rounded-xl text-[8px] uppercase tracking-widest shadow-xl hover:bg-indigo-600 transition-all flex items-center justify-center gap-2">
-                        View Intelligence <MdKeyboardArrowRight size={14}/>
-                     </button>
                   </div>
-               </motion.div>
-            ) : (
-               <div className="h-full flex flex-col items-center justify-center p-12 text-center opacity-5">
-                  <MdFingerprint size={60} />
                </div>
-            )}
-         </AnimatePresence>
-      </div>
+            </motion.div>
+         )}
+      </AnimatePresence>
 
       <style jsx global>{`
         .custom-scrollbar::-webkit-scrollbar { width: 2px; }
         .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.05); border-radius: 10px; }
         .backdrop-blur-4xl { backdrop-filter: blur(80px); }
+        .backdrop-blur-5xl { backdrop-filter: blur(120px); }
+        .scrollbar-hide::-webkit-scrollbar { display: none; }
       `}</style>
     </div>
   );

@@ -98,6 +98,17 @@ function LogisticsContent() {
     setShowBroadcast(false);
   };
 
+  const sendMsg = () => {
+    if (!msg.trim() || !selected) return;
+    const now = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    setMessages(p => ({ ...p, [selected.id]: [...(p[selected.id] || []), { id: Date.now(), text: msg, sender: 'operator', time: now }] }));
+    setMsg('');
+    setTimeout(() => {
+      const t = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      setMessages(p => ({ ...p, [selected.id]: [...(p[selected.id] || []), { id: Date.now(), text: "Tushunarli ✅ Ishlayapmiz.", sender: 'driver', time: t }] }));
+    }, 1500);
+  };
+
   const stats = STAT_PRESETS[statPeriod] || STAT_PRESETS.daily;
   const unreadCount = (id: number) => (messages[id] || []).filter(m => m.sender === 'driver').length;
 
@@ -323,7 +334,7 @@ function LogisticsContent() {
           <AnimatePresence mode="wait">
             {centerTab === 'map' ? (
               <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="flex-1 w-full h-full relative">
-                <DriverMap selectedDriver={selected} allDrivers={DRIVERS} />
+                <DriverMap selected={selected} drivers={DRIVERS} onSelect={handleSelectDriver} />
                 <AnimatePresence>
                   {selected && (
                     <motion.div initial={{ y: 50, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 50, opacity: 0 }} className="absolute bottom-10 left-1/2 -translate-x-1/2 z-20 w-full max-w-xl px-4">

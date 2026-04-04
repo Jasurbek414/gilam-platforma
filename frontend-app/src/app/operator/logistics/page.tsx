@@ -169,8 +169,8 @@ function LogisticsContent() {
       <div className="absolute inset-0 z-0">
          <DriverMap selected={selected} drivers={DRIVERS} onSelect={handleSelectDriver} mapType={mapType} showTraffic={showTraffic} />
          
-         {/* FLOATING MAP SWITCHER (Bottom Left) */}
-         <div className="absolute bottom-6 left-6 z-50 flex gap-2">
+         {/* FLOATING MAP SWITCHER (Bottom Center/Left) */}
+         <div className="absolute bottom-6 left-[280px] z-50 flex gap-2">
             {[
                { id: 'streets', icon: MdMap, label: 'Default' },
                { id: 'satellite', icon: MdSatellite, label: 'Satellite' },

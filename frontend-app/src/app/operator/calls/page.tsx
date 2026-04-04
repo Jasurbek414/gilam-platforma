@@ -116,23 +116,23 @@ export default function OperatorCallsPage() {
         <button onClick={() => setIncomingCall({ phone: '+998 90 777 55 33', customer: 'Siddiqov Ravshan', campaign: 'Test' })} className="text-[8px] font-black text-slate-300 uppercase tracking-[0.3em] hover:text-indigo-500 transition-colors">Event Simulation</button>
       </div>
 
-      {/* 2. TOP GRID */}
-      <div className="grid grid-cols-12 gap-8 shrink-0">
+      {/* 2. TOP GRID: CALL EXPERIENCE & DIALER (Synchronized Height) */}
+      <div className="grid grid-cols-12 gap-8 shrink-0 items-stretch">
         
-        {/* PANEL: CALL EXPERIENCE */}
-        <div className="col-span-12 lg:col-span-7 h-[400px]">
+        {/* PANEL: CALL EXPERIENCE (Left) */}
+        <div className="col-span-12 lg:col-span-7">
            <AnimatePresence mode="wait">
              {activeCall ? (
-               <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="h-full bg-slate-950 rounded-[44px] p-10 flex flex-col items-center justify-center relative overflow-hidden shadow-2xl">
+               <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="h-[420px] bg-slate-950 rounded-[44px] p-12 flex flex-col items-center justify-center relative overflow-hidden shadow-2xl">
                   <div className="relative z-10 flex flex-col items-center">
-                     <div className="w-24 h-24 bg-white/5 rounded-[36px] border border-white/5 flex items-center justify-center mb-8 relative">
-                        <MdPerson className="text-5xl text-white/10" />
+                     <div className="w-20 h-20 bg-white/5 rounded-[36px] border border-white/5 flex items-center justify-center mb-8 relative">
+                        <MdPerson className="text-4xl text-white/10" />
                         <div className="absolute inset-0 rounded-[36px] border border-indigo-500/20 animate-ping" />
                      </div>
                      <h2 className="text-4xl font-black text-white tracking-widest font-mono mb-4">{activeCall.phone}</h2>
                      <p className="text-indigo-400 text-[10px] font-black uppercase tracking-[0.3em] px-5 py-2 bg-white/5 rounded-full">{activeCall.customer}</p>
                      
-                     <div className="flex gap-6 mt-12">
+                     <div className="flex gap-6 mt-14">
                         <button onClick={() => setIsMuted(!isMuted)} className={`w-14 h-14 rounded-2xl flex items-center justify-center transition-all ${isMuted ? 'bg-amber-500 text-white' : 'bg-white/10 text-white/40 hover:bg-white/10'}`}><MdMicOff size={24}/></button>
                         <button onClick={endCall} className="w-20 h-20 bg-rose-600 text-white rounded-[28px] flex items-center justify-center shadow-xl hover:scale-105 active:scale-95 transition-all"><MdCallEnd className="text-4xl"/></button>
                         <button onClick={() => setIsOnHold(!isOnHold)} className={`w-14 h-14 rounded-2xl flex items-center justify-center transition-all ${isOnHold ? 'bg-indigo-600 text-white' : 'bg-white/10 text-white/40 hover:bg-white/10'}`}><MdPlayArrow size={24}/></button>
@@ -141,10 +141,12 @@ export default function OperatorCallsPage() {
                   <div className="absolute inset-0 bg-gradient-to-tr from-indigo-500/5 to-transparent blur-3xl opacity-50" />
                </motion.div>
              ) : incomingCall ? (
-               <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="h-full bg-white border-2 border-indigo-500 rounded-[44px] p-12 flex flex-col items-center justify-center relative overflow-hidden shadow-2xl">
-                  <div className="w-20 h-20 bg-indigo-600 rounded-[32px] flex items-center justify-center text-white text-4xl animate-bounce mb-8 shadow-xl shadow-indigo-600/20"><MdNotificationsActive /></div>
+               <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="h-[420px] bg-white border-2 border-indigo-500 rounded-[44px] p-12 flex flex-col items-center justify-center relative overflow-hidden shadow-2xl">
+                  <div className="w-20 h-20 bg-indigo-600 rounded-[32px] flex items-center justify-center text-white text-4xl animate-bounce mb-8">
+                     <MdNotificationsActive />
+                  </div>
                   <h3 className="text-3xl font-black text-slate-800 tracking-tight leading-none mb-4">{incomingCall.phone}</h3>
-                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-10">{incomingCall.customer} &bull; {incomingCall.campaign}</p>
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-loose mb-10">{incomingCall.customer} &bull; {incomingCall.campaign}</p>
                   <div className="flex gap-4 w-full max-w-sm">
                      <button onClick={() => setIncomingCall(null)} className="flex-1 py-4 bg-slate-50 text-slate-400 font-black rounded-2xl text-[9px] uppercase tracking-widest border border-slate-100 hover:bg-rose-50 hover:text-rose-600 transition-all">Ignore</button>
                      <button onClick={() => { setActiveCall({...incomingCall}); setIncomingCall(null); }} className="flex-1 py-4 bg-emerald-500 text-white font-black rounded-2xl text-[9px] uppercase tracking-widest shadow-xl animate-pulse">Answer</button>
@@ -152,17 +154,17 @@ export default function OperatorCallsPage() {
                   <div className="absolute inset-x-0 bottom-0 h-1.5 bg-indigo-500" />
                </motion.div>
              ) : (
-               <div className="h-full bg-white border border-slate-100 rounded-[44px] p-12 flex flex-col items-center justify-center text-center shadow-sm relative overflow-hidden">
+               <div className="h-[420px] bg-white border border-slate-100 rounded-[44px] p-12 flex flex-col items-center justify-center text-center shadow-sm relative overflow-hidden">
                   <div className="w-16 h-16 bg-slate-50 rounded-[28px] flex items-center justify-center mb-8 rotate-12 opacity-50"><MdCall className="text-4xl text-slate-200" /></div>
-                  <h3 className="text-lg font-black text-slate-800 tracking-tight">Kutilmoqda...</h3>
-                  <p className="text-[9px] font-black text-slate-400 mt-4 uppercase tracking-[0.20em] leading-relaxed max-w-[200px]">Tizim on-line rejimida yangi murojaatlarni kutilmoqda.</p>
+                  <h3 className="text-lg font-black text-slate-800 tracking-tight leading-none">Kutilmoqda...</h3>
+                  <p className="text-[9px] font-extrabold text-slate-300 mt-5 uppercase tracking-[0.25em] leading-relaxed max-w-[220px]">IP-Tizimi yangi murojaatlarni kutilmoqda.</p>
                </div>
              )}
            </AnimatePresence>
         </div>
 
-        {/* DIALER SECTION */}
-        <div className="col-span-12 lg:col-span-5 bg-white rounded-[44px] border border-slate-100 shadow-sm p-8 flex flex-col relative">
+        {/* DIALER SECTION (Right) */}
+        <div className="col-span-12 lg:col-span-5 h-[420px] bg-white rounded-[44px] border border-slate-100 shadow-sm p-10 flex flex-col relative overflow-visible">
            <SectionHeader icon={MdDialpad} title="Dialpad" subtitle="Integrated Keyboard" />
 
            <div className="relative mb-6">

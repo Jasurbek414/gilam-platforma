@@ -17,8 +17,8 @@ const DriverMap = dynamic(() => import('./DriverMap'), {
   ssr: false,
   loading: () => <div className="absolute inset-0 bg-slate-50 flex items-center justify-center z-0">
     <div className="flex flex-col items-center gap-4">
-      <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1.5, ease: "linear" }} className="w-12 h-12 border-[4px] border-indigo-600 border-t-transparent rounded-full" />
-      <span className="text-[10px] font-black text-slate-300 uppercase tracking-widest">Map Loading...</span>
+      <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1.5, ease: "linear" }} className="w-10 h-10 border-[3px] border-indigo-600 border-t-transparent rounded-full" />
+      <span className="text-[9px] font-black text-slate-300 uppercase tracking-widest text-center">Loading...</span>
     </div>
   </div>
 });
@@ -110,66 +110,66 @@ function LogisticsContent() {
   const unreadCount = (id: number) => (messages[id] || []).filter(m => m.sender === 'driver').length;
 
   return (
-    <div className="flex flex-col h-full w-full gap-5">
+    <div className="flex flex-col h-[calc(100vh-100px)] w-full gap-3">
       
-      {/* 1. EXTERNAL TOP HEADER */}
-      <div className="bg-white/80 backdrop-blur-xl px-10 py-6 border border-slate-100 rounded-[44px] shadow-sm flex items-center justify-between">
-         <div className="flex items-center gap-8">
-            <div className="flex items-center gap-4">
-               <div className="w-14 h-14 bg-indigo-600 rounded-[22px] flex items-center justify-center text-white text-2xl shadow-2xl shadow-indigo-100">
+      {/* 1. COMPACT EXTERNAL HEADER */}
+      <div className="bg-white/90 backdrop-blur-3xl px-8 py-3 border border-slate-100 rounded-[32px] shadow-sm flex items-center justify-between">
+         <div className="flex items-center gap-6">
+            <div className="flex items-center gap-3">
+               <div className="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center text-white text-lg shadow-xl shadow-indigo-100">
                   <MdLocalShipping />
                </div>
                <div>
-                  <h2 className="text-lg font-black text-slate-800 tracking-tight leading-none mb-1.5">MArkazi Monitoring</h2>
-                  <p className="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2">
-                     <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_10px_rgba(16,185,129,0.5)]" /> Real-time Feed
+                  <h2 className="text-sm font-black text-slate-800 tracking-tight leading-none mb-1">Markazi Monitoring</h2>
+                  <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-1.5 opacity-60">
+                     <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" /> Live Feed
                   </p>
                </div>
             </div>
             
-            <div className="h-12 w-[1px] bg-slate-100" />
+            <div className="h-8 w-[1px] bg-slate-100" />
             
             <button 
                onClick={() => setShowBroadcast(true)}
-               className="group flex items-center gap-4 px-10 py-4 bg-slate-950 text-white rounded-[24px] text-[11px] font-black uppercase tracking-widest shadow-2xl hover:bg-indigo-600 transition-all active:scale-95"
+               className="flex items-center gap-3 px-6 py-2.5 bg-slate-900 text-white rounded-xl text-[9px] font-black uppercase tracking-widest shadow-xl hover:bg-indigo-600 transition-all active:scale-95"
             >
-               <MdNotificationsActive className="text-amber-400 text-xl group-hover:scale-125 transition-transform" /> Broadcast System
+               <MdNotificationsActive className="text-amber-400 text-lg" /> Broadcast Alert
             </button>
          </div>
 
-         <div className="flex items-center gap-5">
-            <div className="hidden lg:flex p-1.5 bg-slate-50 border border-slate-100 rounded-full">
-               <div className="px-12 py-3.5 bg-white border border-slate-100 rounded-full shadow-sm text-[11px] font-black text-indigo-600 uppercase tracking-[0.15em]">
-                  Logistika Bo'limi v2.0
+         <div className="flex items-center gap-4">
+            <div className="flex p-0.5 bg-slate-50 border border-slate-100 rounded-full">
+               <div className="px-6 py-2 bg-white border border-slate-50 rounded-full shadow-sm text-[9px] font-black text-indigo-600 uppercase tracking-widest opacity-80">
+                  Logistic Hub V3
                </div>
             </div>
-            <button className="w-14 h-14 bg-slate-50 border border-slate-100 rounded-[22px] flex items-center justify-center text-slate-400 hover:text-slate-900 transition-all shadow-sm"><MdMoreVert size={28}/></button>
+            <button className="w-10 h-10 bg-slate-50 border border-slate-100 rounded-xl flex items-center justify-center text-slate-400 hover:text-slate-900 transition-all shadow-sm"><MdMoreVert size={20}/></button>
          </div>
       </div>
 
-      {/* 2. MAIN IMMERSIVE CONTENT */}
-      <div className="relative flex-1 w-full overflow-hidden rounded-[44px] bg-slate-50 border border-slate-100 shadow-2xl">
+      {/* 2. MAIN IMMERSIVE CONTENT (Expanded Map Visibility) */}
+      <div className="relative flex-1 w-full overflow-hidden rounded-[32px] bg-slate-50 border border-slate-100 shadow-2xl">
         
          {/* MAP BASE LAYER */}
          <div className="absolute inset-0 z-0">
             <DriverMap selected={selected} drivers={DRIVERS} onSelect={handleSelectDriver} />
          </div>
 
-         {/* FLOATING DRIVER LIST */}
-         <div className="absolute top-8 left-8 bottom-8 w-[260px] z-20 pointer-events-none">
-            <div className="h-full bg-white/20 backdrop-blur-3xl border border-white/40 rounded-[44px] shadow-2xl p-5 flex flex-col pointer-events-auto overflow-hidden">
-               <div className="mb-6 px-1">
+         {/* ULTRA-COMPACT DRIVER LIST (Left Overlay) */}
+         <div className="absolute top-4 left-4 bottom-4 w-[220px] z-20 pointer-events-none">
+            <div className="h-full bg-white/20 backdrop-blur-3xl border border-white/40 rounded-[32px] shadow-2xl p-4 flex flex-col pointer-events-auto overflow-hidden">
+               <div className="mb-4">
                   <div className="relative">
-                     <MdSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-xl" />
+                     <MdSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-lg" />
                      <input 
                        value={listFilter} onChange={e => setListFilter(e.target.value)}
-                       placeholder="Filter by name/car..." 
-                       className="w-full pl-12 pr-4 py-4 bg-white/50 border border-white/20 rounded-[22px] text-[11px] font-black text-slate-800 outline-none focus:bg-white transition-all shadow-inner placeholder:text-slate-400"
+                       placeholder="Quick search..." 
+                       className="w-full pl-9 pr-3 py-2.5 bg-white/40 border border-white/20 rounded-xl text-[9px] font-black text-slate-800 outline-none focus:bg-white transition-all shadow-inner placeholder:text-slate-400"
                      />
                   </div>
                </div>
 
-               <div className="flex-1 overflow-y-auto space-y-2 custom-scrollbar pr-1">
+               <div className="flex-1 overflow-y-auto space-y-1.5 custom-scrollbar pr-1">
                   {filteredDrivers.map(d => {
                      const uc = unreadCount(d.id);
                      const isActive = selected?.id === d.id;
@@ -178,19 +178,19 @@ function LogisticsContent() {
                      return (
                         <motion.div 
                            layout key={d.id} onClick={() => handleSelectDriver(d)}
-                           className={`group p-3 rounded-[26px] border cursor-pointer transition-all ${
-                              isActive ? 'bg-white shadow-2xl border-white translate-x-1' : 'bg-transparent border-transparent hover:bg-white/10'
+                           className={`group p-2 rounded-2xl border cursor-pointer transition-all ${
+                              isActive ? 'bg-white shadow-xl border-white translate-x-1' : 'bg-transparent border-transparent hover:bg-white/10'
                            }`}
                         >
-                           <div className="flex items-center gap-4">
-                              <div className={`w-10 h-10 rounded-[14px] flex items-center justify-center text-white font-black relative shrink-0 ${sc.bg} opacity-90 shadow-md`}>
+                           <div className="flex items-center gap-2.5">
+                              <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-white font-black relative shrink-0 ${sc.bg} opacity-90 shadow-sm text-[10px]`}>
                                  {d.name[0]}
-                                 {uc > 0 && <span className="absolute -top-1 -right-1 w-4.5 h-4.5 bg-rose-500 rounded-full border-2 border-white text-[7px] flex items-center justify-center font-black shadow-lg">{uc}</span>}
+                                 {uc > 0 && <span className="absolute -top-0.5 -right-0.5 w-3.5 h-3.5 bg-rose-500 rounded-full border-2 border-white text-[6px] flex items-center justify-center font-black shadow-lg">{uc}</span>}
                               </div>
                               <div className="flex-1 min-w-0">
-                                 <h4 className="text-[12px] font-black text-slate-800 truncate leading-none mb-1.5">{d.name}</h4>
-                                 <p className="text-[7px] font-black text-slate-500 uppercase tracking-[0.2em] flex items-center gap-2">
-                                    <div className={`w-1.5 h-1.5 rounded-full ${sc.dot}`} /> {d.status}
+                                 <h4 className="text-[10px] font-black text-slate-800 truncate leading-none mb-1">{d.name}</h4>
+                                 <p className="text-[6px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-1.5">
+                                    <div className={`w-1 h-1 rounded-full ${sc.dot}`} /> {d.status}
                                  </p>
                               </div>
                            </div>
@@ -201,97 +201,93 @@ function LogisticsContent() {
             </div>
          </div>
 
-         {/* FLOATING ACTION & STATS SIDEBAR */}
+         {/* ULTRA-COMPACT SIDEBAR (Right Overlay) */}
          <AnimatePresence>
             {selected && (
                <motion.div 
-                  initial={{ x: 400, opacity: 0 }} animate={{ x: 0, opacity: 1 }} exit={{ x: 400, opacity: 0 }}
-                  className="absolute top-8 right-8 bottom-8 w-[380px] z-30 pointer-events-none"
+                  initial={{ x: 200, opacity: 0 }} animate={{ x: 0, opacity: 1 }} exit={{ x: 200, opacity: 0 }}
+                  className="absolute top-4 right-4 bottom-4 w-[280px] z-30 pointer-events-none"
                >
-                  <div className="h-full flex flex-col gap-5 pointer-events-auto">
+                  <div className="h-full flex flex-col gap-3 pointer-events-auto">
                      
-                     {/* SELETCED DRIVER QUICK VIEW */}
-                     <div className="bg-slate-950/90 backdrop-blur-3xl border border-white/10 rounded-[44px] shadow-2xl p-8 text-white relative overflow-hidden">
-                        <div className="relative z-10 flex flex-col gap-8">
+                     {/* DRIVER QUICK VIEW */}
+                     <div className="bg-slate-950/80 backdrop-blur-3xl border border-white/10 rounded-[32px] shadow-2xl p-5 text-white relative overflow-hidden">
+                        <div className="relative z-10 flex flex-col gap-4">
                            <div className="flex items-center justify-between">
-                              <div className="flex items-center gap-5">
-                                 <div className="w-16 h-16 bg-white/10 rounded-[22px] flex items-center justify-center text-3xl border border-white/5 backdrop-blur-md">{selected.profileImg}</div>
+                              <div className="flex items-center gap-3">
+                                 <div className="w-12 h-12 bg-white/10 rounded-xl flex items-center justify-center text-2xl border border-white/5 backdrop-blur-md">{selected.profileImg}</div>
                                  <div className="min-w-0">
-                                    <h3 className="text-xl font-black tracking-tight truncate">{selected.name}</h3>
-                                    <p className="text-[10px] font-black text-indigo-400 uppercase tracking-[0.25em] mt-1.5">{selected.car}</p>
+                                    <h3 className="text-md font-black tracking-tight truncate leading-none mb-1">{selected.name}</h3>
+                                    <p className="text-[8px] font-black text-indigo-400 uppercase tracking-widest">{selected.car}</p>
                                  </div>
                               </div>
-                              <a href={`tel:${selected.phone}`} className="w-14 h-14 bg-white text-slate-950 rounded-[22px] flex items-center justify-center hover:scale-110 active:scale-95 transition-all shadow-[0_15px_35px_rgba(255,255,255,0.15)]"><MdPhone size={28}/></a>
+                              <a href={`tel:${selected.phone}`} className="w-10 h-10 bg-white text-slate-950 rounded-xl flex items-center justify-center hover:scale-110 active:scale-95 transition-all shadow-xl"><MdPhone size={20}/></a>
                            </div>
                            
-                           <div className="grid grid-cols-2 gap-4">
+                           <div className="grid grid-cols-2 gap-2">
                               <button 
                                  onClick={() => setIsChatOpen(!isChatOpen)} 
-                                 className="flex-1 py-5 bg-indigo-600 text-white rounded-[24px] text-[11px] font-black uppercase tracking-widest flex items-center justify-center gap-3 shadow-xl shadow-indigo-600/30 hover:bg-indigo-500 transition-all"
+                                 className="flex-1 py-3 bg-indigo-600 text-white rounded-xl text-[9px] font-black uppercase tracking-widest flex items-center justify-center gap-2 shadow-xl hover:bg-indigo-500 transition-all"
                               >
-                                 {isChatOpen ? <><MdKeyboardArrowRight size={20}/> View Stats</> : <><MdChat size={20}/> Open Chat</>}
+                                 {isChatOpen ? <><MdKeyboardArrowRight size={16}/> Stats</> : <><MdChat size={16}/> Chat</>}
                               </button>
-                              <div className="flex-1 py-5 bg-white/5 border border-white/10 rounded-[24px] text-[11px] font-black text-white/40 uppercase tracking-widest flex items-center justify-center gap-3">
-                                 <div className="w-2 h-2 rounded-full bg-emerald-500" /> ID #{selected.id}092
+                              <div className="flex-1 py-3 bg-white/5 border border-white/10 rounded-xl text-[9px] font-black text-white/40 uppercase tracking-widest flex items-center justify-center gap-1.5 opacity-60">
+                                 <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" /> Live
                               </div>
                            </div>
                         </div>
-                        <MdAnalytics className="absolute -bottom-10 -right-10 text-[180px] text-white/5 rotate-12" />
                      </div>
 
-                     {/* DYNAMIC CONTENT CONTAINER */}
-                     <div className="flex-1 bg-white/20 backdrop-blur-3xl border border-white/40 rounded-[44px] shadow-2xl flex flex-col min-h-0 overflow-hidden">
+                     {/* DYNAMIC CONTENT CONTEXT */}
+                     <div className="flex-1 bg-white/20 backdrop-blur-3xl border border-white/40 rounded-[32px] shadow-2xl flex flex-col min-h-0 overflow-hidden">
                         {isChatOpen ? (
                            <div className="flex flex-col h-full">
-                              <div className="px-10 py-7 border-b border-white/10 flex items-center justify-between bg-white/10 backdrop-blur-xl">
-                                 <div className="flex items-center gap-3">
-                                    <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
-                                    <p className="text-[11px] font-black text-slate-800 uppercase tracking-widest">End-to-End Encryption</p>
-                                 </div>
-                                 <button onClick={() => setIsChatOpen(false)} className="text-slate-400 hover:text-slate-900 transition-all font-black text-[10px] uppercase">Close</button>
+                              <div className="px-6 py-4 border-b border-white/10 flex items-center justify-between bg-white/10 backdrop-blur-xl">
+                                 <p className="text-[9px] font-black text-slate-800 uppercase tracking-widest">Operator Chat</p>
+                                 <button onClick={() => setIsChatOpen(false)} className="text-indigo-600 hover:text-slate-950 transition-all font-black text-[8px] uppercase">Close</button>
                               </div>
-                              <div className="flex-1 overflow-y-auto p-10 space-y-6 custom-scrollbar">
+                              <div className="flex-1 overflow-y-auto p-6 space-y-4 custom-scrollbar">
                                  {(messages[selected.id] || []).map((m: any) => (
                                     <div key={m.id} className={`flex ${m.sender === 'operator' ? 'justify-end' : 'justify-start'}`}>
-                                       <div className={`max-w-[85%] p-5 rounded-[24px] ${m.sender === 'operator' ? 'bg-indigo-600 text-white shadow-xl shadow-indigo-200 rounded-br-md' : 'bg-white/60 text-slate-800 border border-white/60 backdrop-blur-md rounded-bl-md shadow-sm'}`}>
-                                          <p className="text-[13px] font-medium leading-relaxed font-sans">{m.text}</p>
-                                          <p className={`text-[8px] font-black mt-2.5 uppercase tracking-widest ${m.sender === 'operator' ? 'text-white/40' : 'text-slate-400'}`}>{m.time}</p>
+                                       <div className={`max-w-[85%] p-3.5 rounded-2xl ${m.sender === 'operator' ? 'bg-indigo-600 text-white shadow-lg rounded-br-md' : 'bg-white/60 text-slate-800 border border-white/60 backdrop-blur-md rounded-bl-md shadow-sm'}`}>
+                                          <p className="text-[11px] font-medium leading-relaxed">{m.text}</p>
+                                          <p className={`text-[6px] font-black mt-1.5 uppercase tracking-widest ${m.sender === 'operator' ? 'text-white/40' : 'text-slate-400'}`}>{m.time}</p>
                                        </div>
                                     </div>
                                  ))}
                               </div>
-                              <div className="p-6 bg-white/10 border-t border-white/10">
+                              <div className="p-3 bg-white/10 border-t border-white/10">
                                  <div className="relative">
                                     <input 
                                        value={msg} onChange={e => setMsg(e.target.value)}
                                        onKeyDown={e => e.key === 'Enter' && sendMsg()}
-                                       placeholder="Secure message..." 
-                                       className="w-full pl-8 pr-16 py-5 bg-white/60 border border-white/40 rounded-[28px] outline-none focus:bg-white text-[13px] font-bold text-slate-800 transition-all shadow-inner"
+                                       placeholder="Message..." 
+                                       className="w-full pl-5 pr-12 py-3.5 bg-white/60 border border-white/40 rounded-2xl outline-none focus:bg-white text-[11px] font-bold text-slate-800 transition-all shadow-inner"
                                     />
-                                    <button onClick={sendMsg} className="absolute right-2 top-1/2 -translate-y-1/2 w-12 h-12 bg-indigo-600 text-white rounded-[20px] flex items-center justify-center shadow-xl hover:bg-slate-950 transition-all"><MdSend size={24}/></button>
+                                    <button onClick={sendMsg} className="absolute right-1.5 top-1/2 -translate-y-1/2 w-9 h-9 bg-indigo-600 text-white rounded-xl flex items-center justify-center shadow-xl hover:bg-slate-950 transition-all"><MdSend size={18}/></button>
                                  </div>
                               </div>
                            </div>
                         ) : (
-                           <div className="p-10 h-full flex flex-col gap-8">
-                              <h3 className="text-[12px] font-black text-slate-800 uppercase tracking-[0.25em] border-b border-indigo-50 pb-6 flex items-center justify-between">
-                                 Driver Efficiency <span className="text-[10px] text-slate-400">Real-time stats</span>
+                           <div className="p-6 h-full flex flex-col gap-4">
+                              <h3 className="text-[10px] font-black text-slate-800 uppercase tracking-widest border-b border-indigo-50 pb-3 flex items-center justify-between">
+                                 Efficiency <span className="text-[8px] text-slate-400">Monitoring Active</span>
                               </h3>
-                              <div className="grid grid-cols-1 gap-5">
+                              <div className="grid grid-cols-1 gap-3">
                                  {stats.map((s: any, i: number) => (
-                                    <div key={i} className="p-6 bg-white/40 border border-white/60 rounded-[35px] flex items-center gap-6 group hover:bg-white transition-all shadow-sm">
-                                       <div className="w-12 h-12 bg-indigo-50 text-indigo-500 rounded-[18px] flex items-center justify-center group-hover:bg-indigo-600 group-hover:text-white transition-all shadow-sm"><s.icon size={24}/></div>
+                                    <div key={i} className="p-4 bg-white/40 border border-white/60 rounded-[28px] flex items-center gap-4 group hover:bg-white transition-all shadow-sm">
+                                       <div className="w-10 h-10 bg-indigo-50 text-indigo-500 rounded-xl flex items-center justify-center group-hover:bg-indigo-600 group-hover:text-white transition-all shadow-sm"><s.icon size={18}/></div>
                                        <div>
-                                          <p className="text-xl font-black text-slate-800 leading-none mb-1.5">{s.val}</p>
-                                          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{s.label}</p>
+                                          <p className="text-md font-black text-slate-800 leading-none mb-1">{s.val}</p>
+                                          <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest leading-none">{s.label}</p>
                                        </div>
                                     </div>
                                  ))}
                               </div>
-                              <div className="mt-auto p-8 bg-gradient-to-br from-indigo-600 to-indigo-800 rounded-[40px] text-white overflow-hidden relative shadow-2xl">
-                                 <p className="text-[11px] font-black uppercase tracking-[0.3em] mb-3 opacity-60">Fleet Performance</p>
-                                 <p className="text-xl font-black leading-tight">Driver is exceeding the primary goal by 12%</p>
-                                 <MdTrendingUp className="absolute -bottom-6 -right-6 text-[120px] text-white/10 rotate-12" />
+                              <div className="mt-auto p-5 bg-gradient-to-br from-indigo-600 to-indigo-800 rounded-[32px] text-white overflow-hidden relative shadow-xl">
+                                 <p className="text-[9px] font-black uppercase tracking-widest mb-1 opacity-60">Status Feed</p>
+                                 <p className="text-sm font-black leading-tight">Driver is performing above average.</p>
+                                 <MdTrendingUp className="absolute -bottom-4 -right-4 text-7xl text-white/5 rotate-12" />
                               </div>
                            </div>
                         )}
@@ -303,28 +299,29 @@ function LogisticsContent() {
 
       </div>
 
+      {/* COMPACT BROADCAST MODAL */}
       <Modal isOpen={showBroadcast} onClose={() => setShowBroadcast(false)} title="Broadcast Alert">
-        <div className="p-10">
-          <div className="flex items-center gap-8 mb-10">
-            <div className="w-20 h-20 bg-slate-950 rounded-[32px] flex items-center justify-center shadow-2xl">
-              <MdNotificationsActive className="text-amber-400 text-4xl animate-pulse" />
+        <div className="p-8">
+          <div className="flex items-center gap-6 mb-8">
+            <div className="w-16 h-16 bg-slate-950 rounded-[24px] flex items-center justify-center shadow-2xl">
+              <MdNotificationsActive className="text-amber-400 text-3xl animate-pulse" />
             </div>
             <div>
-               <h2 className="text-3xl font-black text-slate-900 tracking-tight leading-none mb-2">Global Alert</h2>
-               <p className="text-slate-400 text-sm font-medium">Barcha haydovchilarga tezkor xabar yuborish tizimi.</p>
+               <h2 className="text-2xl font-black text-slate-900 tracking-tight leading-none mb-2">Global Alert</h2>
+               <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest">Oltin xabar tizimi</p>
             </div>
           </div>
 
-          <form onSubmit={sendBroadcast} className="space-y-8">
+          <form onSubmit={sendBroadcast} className="space-y-6">
             <textarea 
                required value={broadcastMsg} onChange={e => setBroadcastMsg(e.target.value)}
-               placeholder="Haydovchilar uchun muhim xabar..." rows={5}
-               className="w-full p-8 bg-slate-50 border border-slate-100 rounded-[44px] outline-none focus:bg-white focus:border-indigo-400 font-bold text-lg text-slate-800 transition-all resize-none shadow-inner"
+               placeholder="Haydovchilar uchun muhim xabar..." rows={4}
+               className="w-full p-6 bg-slate-50 border border-slate-100 rounded-[32px] outline-none focus:bg-white focus:border-indigo-400 font-bold text-md text-slate-800 transition-all resize-none shadow-inner"
             />
             <div className="flex gap-4">
-              <button type="button" onClick={() => setShowBroadcast(false)} className="flex-1 py-5 text-slate-400 font-black text-[11px] uppercase tracking-widest">Cancel</button>
-              <button type="submit" className="flex-2 w-[300px] py-5 bg-slate-950 text-white font-black rounded-[30px] text-[11px] uppercase tracking-widest shadow-2xl hover:bg-emerald-600 transition-all flex items-center justify-center gap-4">
-                 <MdSend className="text-2xl" /> Send Global Alert
+              <button type="button" onClick={() => setShowBroadcast(false)} className="flex-1 py-4 text-slate-400 font-black text-[10px] uppercase tracking-widest">Cancel</button>
+              <button type="submit" className="flex-2 w-[220px] py-4 bg-slate-950 text-white font-black rounded-[24px] text-[10px] uppercase tracking-widest shadow-2xl hover:bg-indigo-600 transition-all flex items-center justify-center gap-3">
+                 <MdSend className="text-xl" /> Send Alert
               </button>
             </div>
           </form>
@@ -332,9 +329,9 @@ function LogisticsContent() {
       </Modal>
 
       <style jsx global>{`
-        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+        .custom-scrollbar::-webkit-scrollbar { width: 2px; }
         .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.05); border-radius: 20px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.05); border-radius: 10px; }
       `}</style>
     </div>
   );

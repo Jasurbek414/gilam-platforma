@@ -6,7 +6,7 @@ import {
   MdLocalShipping, MdChat, MdNotificationsActive, MdLocationOn,
   MdSend, MdPhone, MdTrendingUp, MdDirectionsCar, MdInfo,
   MdSpeed, MdQueryBuilder, MdTimeline, MdMap, MdKeyboardArrowRight,
-  MdFilterList, MdSearch, MdMoreVert,
+  MdFilterList, MdSearch, MdMoreVert, MdAnalytics, MdGroup, MdFingerprint
 } from 'react-icons/md';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useSearchParams } from 'next/navigation';
@@ -37,9 +37,18 @@ const STATUS_COLOR: Record<string, { bg: string; text: string; dot: string; icon
 };
 
 const STAT_PRESETS: Record<string, any> = {
-  daily:   { orders: 15,  active: '6s 12d', speed: 42 },
-  weekly:  { orders: 84,  active: '42s',     speed: 38 },
-  monthly: { orders: 320, active: '180s',    speed: 40 },
+  daily:   [
+    { label: 'Kunlik buyurtmalar', val: '15 ta', icon: MdTrendingUp },
+    { label: 'Yoqilg\'i sarfi', val: '6.2 L', icon: MdDirectionsCar },
+    { label: 'O\'rtacha tezlik', val: '42 km/h', icon: MdSpeed },
+    { label: 'Aktiv vaqt', val: '6s 12d', icon: MdQueryBuilder },
+  ],
+  weekly:  [
+    { label: 'Haftalik buyurtmalar', val: '84 ta', icon: MdTimeline },
+    { label: 'Yoqilg\'i sarfi', val: '42 L', icon: MdDirectionsCar },
+    { label: 'O\'rtacha tezlik', val: '38 km/h', icon: MdSpeed },
+    { label: 'Aktiv vaqt', val: '42s', icon: MdQueryBuilder },
+  ],
 };
 
 function LogisticsContent() {
@@ -71,17 +80,6 @@ function LogisticsContent() {
   const handleSelectDriver = (d: any) => {
     setSelected(d);
     setCenterTab('map');
-  };
-
-  const sendMsg = () => {
-    if (!msg.trim() || !selected) return;
-    const now = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-    setMessages(p => ({ ...p, [selected.id]: [...(p[selected.id] || []), { id: Date.now(), text: msg, sender: 'operator', time: now }] }));
-    setMsg('');
-    setTimeout(() => {
-      const t = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-      setMessages(p => ({ ...p, [selected.id]: [...(p[selected.id] || []), { id: Date.now(), text: "Tushunarli ✅ Ishlayapmiz.", sender: 'driver', time: t }] }));
-    }, 1500);
   };
 
   const sendBroadcast = (e: React.FormEvent) => {
@@ -138,11 +136,11 @@ function LogisticsContent() {
         <div className="absolute top-0 right-0 w-64 h-64 bg-slate-50 rounded-full -mr-32 -mt-32 opacity-40 blur-3xl"></div>
       </div>
 
-      {/* Workspace Grid - NEW Balanced Grid Distribution */}
-      <div className="grid grid-cols-12 gap-10 min-h-[800px]">
+      {/* Workspace Grid - NEW Top-Bottom Distribution */}
+      <div className="grid grid-cols-12 gap-10">
         
-        {/* Column 1: Clean Driver List (25% Width) */}
-        <div className="col-span-3 bg-white rounded-[56px] border border-slate-100 shadow-sm flex flex-col min-w-0">
+        {/* TOP ROW: Column 1: Clean Driver List (Span 8) */}
+        <div className="col-span-8 bg-white rounded-[56px] border border-slate-100 shadow-sm flex flex-col min-w-0 min-h-[500px]">
           <div className="p-8 border-b border-slate-50 space-y-6">
             <div className="flex items-center justify-between">
               <h3 className="text-sm font-black text-slate-800 uppercase tracking-widest flex items-center gap-3">
@@ -159,7 +157,7 @@ function LogisticsContent() {
             </div>
           </div>
 
-          <div className="flex-1 px-6 py-6 space-y-4">
+          <div className="p-8 grid grid-cols-2 gap-6">
             {filteredDrivers.map(d => {
               const uc = unreadCount(d.id);
               const color = STATUS_COLOR[d.status] || STATUS_COLOR["OVQATLANISHDA"];
@@ -198,15 +196,13 @@ function LogisticsContent() {
                   </div>
 
                   {isActive && (
-                    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="mt-6 pt-6 border-t border-slate-50 flex items-center justify-between">
-                      <div className="flex gap-3">
-                        <a href={`tel:${d.phone}`} className="flex items-center gap-2 px-5 py-2.5 bg-emerald-50 text-emerald-600 font-black rounded-2xl text-[10px] hover:bg-emerald-100 transition-all uppercase tracking-widest">
-                          <MdPhone /> Qo'ng'iroq
-                        </a>
-                        <button onClick={() => setCenterTab('chat')} className="flex items-center gap-2 px-5 py-2.5 bg-indigo-50 text-indigo-600 font-black rounded-2xl text-[10px] hover:bg-indigo-100 transition-all uppercase tracking-widest">
-                          <MdChat /> Tanlash
-                        </button>
-                      </div>
+                    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="mt-6 pt-6 border-t border-slate-50 flex items-center gap-3">
+                      <a href={`tel:${d.phone}`} className="flex items-center gap-2 px-5 py-2.5 bg-emerald-50 text-emerald-600 font-black rounded-2xl text-[10px] hover:bg-emerald-100 transition-all uppercase tracking-widest">
+                        <MdPhone /> Qo'ng'iroq
+                      </a>
+                      <button onClick={() => setCenterTab('chat')} className="flex items-center gap-2 px-5 py-2.5 bg-indigo-50 text-indigo-600 font-black rounded-2xl text-[10px] hover:bg-indigo-100 transition-all uppercase tracking-widest">
+                        <MdChat /> Tanlash
+                      </button>
                     </motion.div>
                   )}
                 </motion.div>
@@ -214,12 +210,16 @@ function LogisticsContent() {
             })}
           </div>
 
-          {/* Detailed Info at bottom */}
           <div className="p-8 border-t border-slate-50 flex items-center justify-between bg-slate-50/20 mt-auto">
-             <div className="flex gap-4">
+             <div className="flex gap-8">
                 <div className="text-center">
-                   <p className="text-[9px] font-black text-slate-400 mb-1 uppercase tracking-widest">Jami</p>
+                   <p className="text-[9px] font-black text-slate-400 mb-1 uppercase tracking-widest">Jami jamoa</p>
                    <p className="text-lg font-black text-slate-700 leading-none">{DRIVERS.length}</p>
+                </div>
+                <div className="w-px h-6 bg-slate-200 mt-2" />
+                <div className="text-center">
+                   <p className="text-[9px] font-black text-slate-400 mb-1 uppercase tracking-widest">Aktiv</p>
+                   <p className="text-lg font-black text-indigo-500 leading-none">{DRIVERS.filter(d => d.status !== "BO'SH").length}</p>
                 </div>
                 <div className="w-px h-6 bg-slate-200 mt-2" />
                 <div className="text-center">
@@ -230,8 +230,74 @@ function LogisticsContent() {
           </div>
         </div>
 
-        {/* Column 2: Spacious Map (50% Width) - Lowered specifically */}
-        <div className="col-span-6 mt-12 bg-white rounded-[64px] overflow-hidden flex flex-col relative shadow-2xl shadow-indigo-900/10 border border-slate-100 transition-all hover:shadow-indigo-900/20">
+        {/* TOP ROW: Column 3: Insights Radar (Span 4) */}
+        <div className="col-span-4 flex flex-col gap-8">
+          <div className="bg-white rounded-[56px] border border-slate-100 p-10 shadow-sm flex-1 flex flex-col relative overflow-hidden min-h-[500px]">
+             <div className="relative z-10 flex flex-col h-full">
+                <div className="flex items-center justify-between mb-10">
+                   <h3 className="text-sm font-black text-slate-800 uppercase tracking-widest flex items-center gap-3">
+                      <MdAnalytics className="text-indigo-600 text-xl" /> Haydovchi Tahlili
+                   </h3>
+                   <div className="flex p-1 bg-slate-50 rounded-xl">
+                      {['daily', 'weekly'].map(p => (
+                        <button 
+                          key={p} onClick={() => setStatPeriod(p as any)}
+                          className={`px-4 py-2 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all ${
+                            statPeriod === p ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-400'
+                          }`}
+                        >
+                          {p === 'daily' ? 'Kunlik' : 'Haftalik'}
+                        </button>
+                      ))}
+                   </div>
+                </div>
+
+                <AnimatePresence mode="wait">
+                  {selected ? (
+                    <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-10 flex-1 flex flex-col">
+                       <div className="grid grid-cols-2 gap-4">
+                          {stats.map((s: any, i: number) => (
+                            <div key={i} className="p-6 bg-slate-50 rounded-[32px] border border-slate-50 group hover:border-indigo-100 transition-all">
+                               <div className="flex items-center justify-between mb-4">
+                                  <s.icon className="text-slate-300 text-xl group-hover:text-indigo-500 transition-colors" />
+                                  <span className="text-[8px] font-black text-indigo-400 uppercase tracking-widest">Jonli</span>
+                               </div>
+                               <p className="text-2xl font-black text-slate-800">{s.val}</p>
+                               <p className="text-[10px] font-bold text-slate-400 mt-1">{s.label}</p>
+                            </div>
+                          ))}
+                       </div>
+                       
+                       <div className="flex-1 bg-indigo-600 rounded-[40px] p-8 text-white relative overflow-hidden group">
+                          <div className="relative z-10">
+                             <h4 className="text-lg font-black tracking-tight mb-2">{selected.name}</h4>
+                             <p className="text-indigo-100/60 text-xs font-medium mb-8 leading-relaxed">Ushbu haydovchining ballari va reytingi doimiy monitoring qilinadi.</p>
+                             <div className="flex items-center gap-4">
+                                <div className="px-5 py-3 bg-white/10 rounded-2xl border border-white/5 backdrop-blur-xl">
+                                   <p className="text-[8px] font-black text-indigo-200 uppercase mb-1">Reyting</p>
+                                   <div className="flex items-center gap-2">
+                                      <span className="text-xl font-black">4.9</span>
+                                      <div className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                                   </div>
+                                </div>
+                             </div>
+                          </div>
+                          <MdGroup className="absolute -bottom-10 -right-10 text-[200px] text-white/5 rotate-12 group-hover:scale-110 transition-transform duration-700" />
+                       </div>
+                    </motion.div>
+                  ) : (
+                    <div className="flex-1 flex flex-col items-center justify-center text-center p-12 opacity-30">
+                       <MdFingerprint className="text-[100px] text-slate-200 mb-8" />
+                       <p className="text-[10px] font-black uppercase tracking-[0.2em] leading-loose max-w-[200px]">Tahliliy ma'lumotlarni ko'rish uchun haydovchini tanlang</p>
+                    </div>
+                  )}
+                </AnimatePresence>
+             </div>
+          </div>
+        </div>
+
+        {/* BOTTOM ROW: Column 2: Spacious Map (Span 12) - IMMERSIVE WIDTH */}
+        <div className="col-span-12 bg-white rounded-[64px] overflow-hidden flex flex-col relative shadow-2xl shadow-indigo-900/10 border border-slate-100 h-[600px] transition-all hover:shadow-indigo-900/20">
           
           {/* Futuristic Control Center Tabs - Lowered */}
           <div className="absolute top-16 left-1/2 -translate-x-1/2 z-20 flex p-1.5 bg-white/70 backdrop-blur-3xl rounded-[40px] shadow-[0_20px_60px_rgba(0,0,0,0.15)] border border-white/50">
@@ -256,195 +322,72 @@ function LogisticsContent() {
 
           <AnimatePresence mode="wait">
             {centerTab === 'map' ? (
-              <motion.div key="map-view" initial={{ opacity: 0, scale: 1.02 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.98 }} className="flex-1 w-full h-full relative">
-                <DriverMap 
-                  drivers={DRIVERS} 
-                  selected={selected} 
-                  onSelect={handleSelectDriver} 
-                />
-                
-                {/* Floating Driver Info Card on Map */}
-                {selected && (
-                  <motion.div 
-                    initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }}
-                    className="absolute bottom-10 left-10 right-10 bg-white/80 backdrop-blur-2xl rounded-[40px] p-6 border border-white/50 shadow-2xl flex items-center justify-between z-10"
-                  >
-                    <div className="flex items-center gap-6">
-                      <div className="w-16 h-16 bg-indigo-600 text-white rounded-[20px] flex items-center justify-center text-2xl font-black shadow-xl shadow-indigo-200">
-                        {selected.name[0]}
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="flex-1 w-full h-full relative">
+                <DriverMap selectedDriver={selected} allDrivers={DRIVERS} />
+                <AnimatePresence>
+                  {selected && (
+                    <motion.div initial={{ y: 50, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 50, opacity: 0 }} className="absolute bottom-10 left-1/2 -translate-x-1/2 z-20 w-full max-w-xl px-4">
+                      <div className="bg-white/80 backdrop-blur-3xl p-6 rounded-[32px] border border-white shadow-2xl flex items-center justify-between">
+                         <div className="flex items-center gap-6">
+                            <div className="w-16 h-16 bg-slate-900 rounded-2xl flex items-center justify-center text-2xl shadow-xl">
+                               {selected.profileImg}
+                            </div>
+                            <div>
+                               <h4 className="text-lg font-black text-slate-800">{selected.name}</h4>
+                               <p className="text-[10px] font-black text-indigo-500 uppercase tracking-widest">{selected.car}</p>
+                            </div>
+                         </div>
+                         <a href={`tel:${selected.phone}`} className="flex items-center gap-3 px-8 py-4 bg-emerald-500 text-white font-black rounded-2xl text-[10px] uppercase tracking-widest shadow-xl shadow-emerald-500/20 active:scale-95 transition-all">
+                            <MdPhone className="text-lg" /> Aloqaga chiqish
+                         </a>
                       </div>
-                      <div>
-                        <h4 className="text-xl font-black text-slate-800 tracking-tight leading-none mb-2">{selected.name}</h4>
-                        <p className="text-xs text-slate-500 font-bold flex items-center gap-2 uppercase tracking-widest">
-                          <MdLocationOn className="text-indigo-500 text-base" /> {selected.location}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="flex gap-4">
-                      <button onClick={() => setCenterTab('chat')} className="px-8 py-4 bg-slate-900 text-white font-black rounded-[24px] text-xs uppercase tracking-widest shadow-xl">
-                        Muloqot qilish
-                      </button>
-                      <a href={`tel:${selected.phone}`} className="w-14 h-14 bg-emerald-500 text-white rounded-[24px] flex items-center justify-center shadow-xl hover:bg-emerald-600 transition-all">
-                        <MdPhone className="text-2xl" />
-                      </a>
-                    </div>
-                  </motion.div>
-                )}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </motion.div>
             ) : (
-              <motion.div key="chat-view" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="flex-1 flex flex-col bg-slate-900 overflow-hidden relative">
+              <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="flex-1 flex flex-col bg-slate-50/50 p-10 min-h-[500px]">
                 {selected ? (
-                  <>
-                    <div className="px-10 py-8 border-b border-white/5 flex items-center justify-between shrink-0 bg-slate-900/60 backdrop-blur-3xl z-10">
-                      <div className="flex items-center gap-6">
-                        <div className="w-16 h-16 bg-white/5 rounded-3xl flex items-center justify-center font-black text-white text-2xl border border-white/10 shadow-2xl">{selected.name[0]}</div>
-                        <div>
-                          <h4 className="text-2xl font-black text-white tracking-tight leading-none mb-2">{selected.name}</h4>
-                          <div className="flex items-center gap-3">
-                             <div className={`w-2 h-2 rounded-full ${STATUS_COLOR[selected.status]?.dot || 'bg-slate-500'} animate-pulse`} />
-                             <p className="text-[10px] font-black text-white/50 uppercase tracking-[0.3em] font-mono">{selected.status}</p>
-                          </div>
-                        </div>
+                   <div className="flex flex-col h-full bg-white rounded-[48px] shadow-sm border border-slate-100 overflow-hidden">
+                      <div className="px-10 py-6 border-b border-slate-50 flex items-center justify-between">
+                         <div className="flex items-center gap-4">
+                            <div className="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center text-white font-black">{selected.name[0]}</div>
+                            <h4 className="font-black text-slate-800 tracking-tight">{selected.name} bilan muloqot</h4>
+                         </div>
                       </div>
-                      <div className="flex items-center gap-4">
-                        <div className="text-right mr-4">
-                           <p className="text-[9px] font-black text-white/20 uppercase tracking-widest mb-1">Muloqot</p>
-                           <p className="text-[11px] font-bold text-indigo-400">Jonli liniya</p>
-                        </div>
-                        <a href={`tel:${selected.phone}`} className="w-14 h-14 bg-white/5 text-white/70 rounded-3xl flex items-center justify-center hover:bg-indigo-600 hover:text-white transition-all border border-white/10 group">
-                          <MdPhone className="text-2xl group-hover:rotate-12 transition-transform" />
-                        </a>
-                      </div>
-                    </div>
-
-                    <div className="flex-1 overflow-y-auto px-10 py-12 space-y-8 flex flex-col custom-scrollbar relative">
-                      {(messages[selected.id] || []).length === 0 && (
-                        <div className="text-center py-20 opacity-10 flex flex-col items-center justify-center h-full">
-                          <MdChat className="text-[120px] mb-8 text-white" />
-                          <p className="font-black uppercase tracking-[0.4em] text-white text-xl">Xabarlar yo'q</p>
-                        </div>
-                      )}
-                      {(messages[selected.id] || []).map((m: any) => (
-                        <div key={m.id} className={`flex ${m.sender === 'operator' ? 'justify-end' : 'justify-start'}`}>
-                          <div className={`max-w-[75%] space-y-2 ${m.sender === 'operator' ? 'items-end' : 'items-start'} flex flex-col`}>
-                            <div className={`px-8 py-6 rounded-[40px] text-base leading-relaxed ${
-                              m.sender === 'operator' 
-                                ? 'bg-indigo-600 text-white rounded-br-none shadow-[0_20px_40px_-12px_rgba(79,70,229,0.4)] border border-indigo-500' 
-                                : 'bg-white/5 border border-white/10 text-white/90 rounded-bl-none backdrop-blur-xl'
-                            }`}>
-                              <p className="font-medium tracking-wide">{m.text}</p>
-                            </div>
-                            <span className="text-[10px] font-black text-white/20 uppercase tracking-[0.2em] px-4 font-mono">{m.time} • {m.sender.toUpperCase()}</span>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-
-                    <div className="p-10 bg-slate-900 border-t border-white/5 relative z-10">
-                      <form onSubmit={e => { e.preventDefault(); sendMsg(); }} className="flex gap-4 relative">
-                        <div className="flex-1 relative group">
-                           <input 
-                              value={msg} onChange={e => setMsg(e.target.value)}
-                              placeholder="Haydovchiga topshiriq yoki xabar yo'llang..." 
-                              className="w-full bg-white/5 border border-white/10 rounded-[40px] pl-10 pr-24 py-7 text-base text-white placeholder:text-white/20 outline-none focus:border-indigo-500/50 focus:bg-white/10 transition-all font-bold shadow-2xl"
-                           />
-                           <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center gap-3">
-                              <button 
-                                type="submit" disabled={!msg.trim()}
-                                className="w-16 h-16 bg-indigo-600 text-white rounded-full flex items-center justify-center hover:bg-indigo-500 disabled:opacity-20 disabled:scale-90 transition-all shadow-[0_12px_24px_rgba(79,70,229,0.3)] active:scale-95"
-                              >
-                                <MdSend className="text-2xl" />
-                              </button>
+                      <div className="flex-1 overflow-y-auto p-10 space-y-6 custom-scrollbar">
+                         {(messages[selected.id] || []).map((m: any) => (
+                           <div key={m.id} className={`flex ${m.sender === 'operator' ? 'justify-end' : 'justify-start'}`}>
+                              <div className={`max-w-[70%] p-6 rounded-[28px] ${m.sender === 'operator' ? 'bg-slate-900 text-white rounded-br-sm shadow-xl' : 'bg-slate-100 text-slate-800 rounded-bl-sm'}`}>
+                                 <p className="text-sm font-medium leading-relaxed">{m.text}</p>
+                                 <p className={`text-[9px] font-black mt-2 uppercase tracking-widest opacity-50 ${m.sender === 'operator' ? 'text-indigo-200' : 'text-slate-400'}`}>{m.time}</p>
+                              </div>
                            </div>
-                        </div>
-                      </form>
-                    </div>
-                  </>
-                ) : (
-                  <div className="flex-1 flex flex-col items-center justify-center text-center p-20 space-y-8 relative overflow-hidden">
-                    <div className="absolute inset-0 bg-gradient-to-br from-indigo-600/5 to-transparent pointer-events-none" />
-                    <div className="w-32 h-32 bg-white/5 rounded-[48px] flex items-center justify-center border border-white/5 relative shadow-inner">
-                      <div className="absolute inset-0 bg-indigo-500/10 blur-[60px] rounded-full" />
-                      <MdChat className="text-6xl text-white/10 relative z-10" />
-                    </div>
-                    <div className="space-y-4 relative z-10 max-w-sm">
-                      <h4 className="text-3xl font-black text-white uppercase tracking-[0.2em]">Muloqot</h4>
-                      <p className="text-slate-500 text-base font-bold leading-relaxed">Operatsiyalarni muvofiqlashtirish uchun haydovchilardan biri bilan dialog sahifasini oching.</p>
-                      <div className="pt-8">
-                         <button onClick={() => setCenterTab('map')} className="px-10 py-4 bg-indigo-600/10 text-indigo-400 font-black rounded-3xl text-xs uppercase tracking-[0.15em] border border-indigo-500/20 hover:bg-indigo-600 hover:text-white transition-all shadow-glow">
-                             Xaritadan tanlash
-                         </button>
+                         ))}
                       </div>
-                    </div>
+                      <div className="p-8 border-t border-slate-50 bg-slate-50/20">
+                         <div className="relative">
+                            <input 
+                              value={msg} onChange={e => setMsg(e.target.value)}
+                              onKeyDown={e => e.key === 'Enter' && sendMsg()}
+                              placeholder="Xabar yozing..." 
+                              className="w-full pl-8 pr-20 py-5 bg-white border border-slate-100 rounded-[28px] outline-none focus:border-indigo-400 font-bold transition-all shadow-sm"
+                            />
+                            <button onClick={sendMsg} className="absolute right-3 top-1/2 -translate-y-1/2 w-12 h-12 bg-indigo-600 text-white rounded-2xl flex items-center justify-center shadow-lg hover:shadow-indigo-500/40 transition-all active:scale-90">
+                               <MdSend className="text-xl" />
+                            </button>
+                         </div>
+                      </div>
+                   </div>
+                ) : (
+                  <div className="h-full flex flex-col items-center justify-center text-center p-12 space-y-6 opacity-20 border-2 border-dashed border-slate-100 rounded-[40px]">
+                     <MdInfo className="text-7xl text-slate-300" />
+                     <p className="text-[11px] font-black uppercase tracking-[0.3em] font-mono leading-relaxed">Muloqot qilish uchun haydovchini tanlang</p>
                   </div>
                 )}
               </motion.div>
             )}
           </AnimatePresence>
-        </div>
-
-        {/* Column 3: Insights Radar (Right Side) (25% Width) */}
-        <div className="col-span-3 flex flex-col gap-8 shrink-0">
-          
-          <div className="bg-white rounded-[56px] border border-slate-100 p-10 shadow-sm flex-1 flex flex-col relative overflow-hidden">
-             
-             <div className="relative z-10 h-full flex flex-col">
-                <div className="flex items-center justify-between mb-10">
-                   <h3 className="text-sm font-black text-slate-800 uppercase tracking-widest flex items-center gap-3">
-                      <MdTimeline className="text-indigo-600 text-2xl" /> Driver Insights
-                   </h3>
-                   <div className="w-1.5 h-1.5 rounded-full bg-slate-200" />
-                </div>
-
-                {selected ? (
-                  <div className="space-y-10 flex flex-col flex-1">
-                     <div className="bg-slate-50 rounded-[40px] p-8 border border-slate-100 flex flex-col items-center text-center relative group overflow-hidden">
-                       <div className="w-20 h-20 bg-indigo-600 text-white rounded-[24px] flex items-center justify-center text-3xl font-black mb-6 shadow-2xl shadow-indigo-100 group-hover:scale-110 transition-transform duration-500 relative z-10">
-                         {selected.name[0]}
-                       </div>
-                       <h4 className="text-xl font-black text-slate-800 tracking-tight leading-none mb-2 relative z-10">{selected.name}</h4>
-                       <p className="text-xs font-black text-indigo-400 font-mono tracking-[0.2em] relative z-10 uppercase">{selected.phone}</p>
-                       
-                       <div className="flex gap-2 mt-6 relative z-10">
-                         <span className="text-[10px] font-black px-4 py-1.5 bg-white border border-slate-100 rounded-full text-slate-500 shadow-sm uppercase tracking-widest">{selected.car}</span>
-                       </div>
-                       <div className="absolute -bottom-10 -right-10 w-32 h-32 bg-indigo-600/5 rounded-full blur-2xl group-hover:bg-indigo-600/10 transition-colors" />
-                     </div>
-
-                     <div className="grid grid-cols-1 gap-6">
-                        {[
-                          { icon: MdTrendingUp, label: 'Buyurtmalar soni', val: stats.orders, color: 'text-indigo-600 bg-indigo-50 border-indigo-100' },
-                          { icon: MdSpeed, label: "O'rtacha tezlik", val: `${stats.speed} km/h`, color: 'text-emerald-600 bg-emerald-50 border-emerald-100' },
-                          { icon: MdQueryBuilder, label: 'Aktivlik vaqti', val: stats.active, color: 'text-amber-600 bg-amber-50 border-amber-100' },
-                        ].map((item) => (
-                          <div key={item.label} className={`p-6 rounded-[32px] border flex items-center gap-6 group hover:translate-x-1 transition-all ${item.color}`}>
-                             <div className="p-3 bg-white/50 rounded-2xl shadow-sm text-2xl"><item.icon /></div>
-                             <div>
-                                <p className="text-[9px] font-black uppercase tracking-widest opacity-40 mb-1 leading-none">{item.label}</p>
-                                <p className="text-lg font-black leading-none tracking-tight">{item.val}</p>
-                             </div>
-                          </div>
-                        ))}
-                     </div>
-
-                     <div className="mt-auto space-y-4 pt-10">
-                        <button onClick={() => setCenterTab('chat')} className="w-full flex items-center justify-center gap-3 py-5 bg-slate-900 text-white font-black rounded-[28px] text-[11px] uppercase tracking-[0.2em] hover:bg-slate-800 transition-all shadow-2xl active:scale-95">
-                           <MdChat className="text-lg" /> Xabar yozish
-                        </button>
-                        <a href={`tel:${selected.phone}`} className="w-full flex items-center justify-center gap-3 py-5 bg-white border border-slate-100 text-slate-800 font-black rounded-[28px] text-[11px] uppercase tracking-[0.2em] hover:bg-slate-50 transition-all">
-                           <MdPhone className="text-lg" /> Aloqaga chiqish
-                        </a>
-                     </div>
-                  </div>
-                ) : (
-                  <div className="h-full flex flex-col items-center justify-center text-center p-12 space-y-6 opacity-20 border-2 border-dashed border-slate-100 rounded-[40px]">
-                     <MdInfo className="text-7xl text-slate-300" />
-                     <p className="text-[11px] font-black uppercase tracking-[0.3em] font-mono leading-relaxed">Tahliliy ma'lumotlarni ko'rish uchun driverni tanlang</p>
-                  </div>
-                )}
-             </div>
-             <div className="absolute -bottom-20 -left-20 w-64 h-64 bg-slate-50 rounded-full blur-3xl opacity-50" />
-          </div>
         </div>
       </div>
 

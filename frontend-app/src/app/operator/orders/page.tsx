@@ -173,7 +173,13 @@ function OrderContent() {
   const statusColors: Record<string, string> = {
     'NEW': 'bg-indigo-50 text-indigo-600 border-indigo-200',
     'DRIVER_ASSIGNED': 'bg-amber-50 text-amber-600 border-amber-200',
+    'PICKED_UP': 'bg-orange-50 text-orange-600 border-orange-200',
+    'AT_FACILITY': 'bg-blue-50 text-blue-600 border-blue-200',
+    'WASHING': 'bg-cyan-50 text-cyan-600 border-cyan-200',
+    'DRYING': 'bg-sky-50 text-sky-600 border-sky-200',
     'READY_FOR_DELIVERY': 'bg-emerald-50 text-emerald-600 border-emerald-200',
+    'OUT_FOR_DELIVERY': 'bg-teal-50 text-teal-600 border-teal-200',
+    'DELIVERED': 'bg-slate-100 text-slate-800 border-slate-300',
     'CANCELLED': 'bg-rose-50 text-rose-600 border-rose-200',
   };
 
@@ -287,7 +293,7 @@ function OrderContent() {
                     </td>
                     <td className="px-8 py-6 text-right">
                        <span className="text-sm font-black text-slate-800">
-                         {Number(order.totalAmount).toLocaleString()}
+                         {Number(order.totalAmount).toLocaleString()} <span className="text-[10px] text-slate-400">so'm</span>
                        </span>
                     </td>
                   </tr>
@@ -346,7 +352,7 @@ function OrderContent() {
                     >
                       <option value="">Tanlang...</option>
                       {services.map(s => (
-                        <option key={s.id} value={s.id}>{s.name} ({s.unit})</option>
+                        <option key={s.id} value={s.id}>{s.name} ({s.measurementUnit})</option>
                       ))}
                     </select>
                   </div>

@@ -106,7 +106,10 @@ export default function UsersPage() {
       await loadData();
       toast.success('Foydalanuvchi o\'chirildi');
     } catch (err: any) {
-      toast.error('Xatolik: ' + err.message);
+      const msg = Array.isArray(err.response?.data?.message) 
+        ? err.response.data.message[0] 
+        : (err.message || 'O\'chirishda xato');
+      toast.error('Xatolik: ' + msg);
     }
   };
 
@@ -115,8 +118,9 @@ export default function UsersPage() {
     try {
       await usersApi.update(user.id, { status: newStatus });
       await loadData();
+      toast.success(newStatus === 'ACTIVE' ? 'Xodim faollashtirildi' : 'Xodim to\'xtatildi');
     } catch (err: any) {
-      alert('Xatolik: ' + err.message);
+      toast.error('Xatolik: ' + err.message);
     }
   };
 
@@ -147,16 +151,16 @@ export default function UsersPage() {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-2xl font-bold border-b-2 border-blue-500 inline-block pb-1 text-slate-800">
+          <h1 className="text-2xl font-black border-b-[3px] border-indigo-600 inline-block pb-1 text-slate-800 tracking-tight">
             Foydalanuvchilar Boshqaruvi
           </h1>
           <p className="text-slate-500 mt-2 text-sm">Tizimdagi barcha foydalanuvchilar ro'yxati</p>
         </div>
         <button 
           onClick={() => handleOpenModal()}
-          className="flex items-center gap-2 bg-blue-600 text-white px-5 py-2.5 rounded-xl font-medium shadow-md shadow-blue-500/20 hover:shadow-blue-500/40 hover:-translate-y-0.5 transition-all outline-none"
+          className="flex items-center gap-2 bg-indigo-600 text-white px-5 py-2.5 rounded-xl font-black text-xs uppercase tracking-widest shadow-xl shadow-indigo-500/20 hover:shadow-indigo-500/40 hover:-translate-y-0.5 transition-all outline-none"
         >
-          <MdAdd className="text-xl" />
+          <MdAdd className="text-lg" />
           Yangi Foydalanuvchi
         </button>
       </div>
@@ -167,7 +171,7 @@ export default function UsersPage() {
           <input 
             type="text" 
             placeholder="Ism yoki telefon bo'yicha qidirish..."
-            className="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
+            className="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all font-medium"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
@@ -349,8 +353,8 @@ export default function UsersPage() {
               onChange={(e) => setFormData({...formData, password: e.target.value})}
             />
           </div>
-          <button type="submit" disabled={saving} className="w-full py-4 bg-blue-600 text-white font-bold rounded-2xl mt-4 hover:shadow-lg transition-all disabled:opacity-50">
-            {saving ? 'Saqlanmoqda...' : editingUser ? "Saqlash" : "Foydalanuvchini qo'shish"}
+          <button type="submit" disabled={saving} className="w-full py-4 bg-indigo-600 text-white font-black text-xs uppercase tracking-widest rounded-2xl mt-4 shadow-xl shadow-indigo-500/20 hover:shadow-indigo-500/40 transition-all disabled:opacity-50 hover:-translate-y-0.5">
+            {saving ? 'Saqlanmoqda...' : editingUser ? "O'zgarishlarni Saqlash" : "Foydalanuvchini qo'shish"}
           </button>
         </form>
 

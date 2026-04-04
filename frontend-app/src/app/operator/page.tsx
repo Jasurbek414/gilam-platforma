@@ -50,7 +50,7 @@ export default function OperatorDashboard() {
 
   const newOrdersCount = orders.filter(o => o.status === 'NEW').length;
   const inProgressCount = orders.filter(o => ['WASHING', 'DRYING', 'AT_FACILITY'].includes(o.status)).length;
-  const deliveryCount = orders.filter(o => ['OUT_FOR_DELIVERY', 'DRIVER_ASSIGNED', 'PICKED_UP'].includes(o.status)).length;
+  const deliveryCount = orders.filter(o => ['OUT_FOR_DELIVERY', 'DRIVER_ASSIGNED', 'PICKED_UP', 'READY_FOR_DELIVERY'].includes(o.status)).length;
   const completedCount = orders.filter(o => o.status === 'DELIVERED').length;
 
   const stats = [
@@ -63,22 +63,23 @@ export default function OperatorDashboard() {
   const recentOrders = orders.slice(0, 5);
 
   const getChartData = () => {
-    if (timeRange === 'today') {
-      return {
-        labels: ['8:00', '10:00', '12:00', '14:00', '16:00', '18:00'],
-        values: [10, 20, 15, 30, 25, 35]
-      };
-    } else if (timeRange === 'week') {
-      return {
-        labels: ['Du', 'Se', 'Ch', 'Pa', 'Ju', 'Sha', 'Yak'],
-        values: [70, 85, 60, 95, 80, 40, 30]
-      };
-    } else {
-      return {
-        labels: ['1-hafta', '2-hafta', '3-hafta', '4-hafta'],
-        values: [120, 180, 150, 190]
-      };
-    }
+    // Basic day-of-week aggregation
+    const days = ['Du', 'Se', 'Ch', 'Pa', 'Ju', 'Sha', 'Yak'];
+    const counts = [0, 0, 0, 0, 0, 0, 0];
+    
+    orders.forEach(o => {
+      const d = new Date(o.createdAt).getDay(); // 0 is Sun
+      const idx = d === 0 ? 6 : d - 1; // Map to 0-6 (Mon-Sun)
+      counts[idx]++;
+    });
+
+    const max = Math.max(...counts, 1);
+    const scaled = counts.map(v => (v / max) * 100);
+
+    return {
+      labels: days,
+      values: scaled
+    };
   };
 
   const chartData = getChartData();

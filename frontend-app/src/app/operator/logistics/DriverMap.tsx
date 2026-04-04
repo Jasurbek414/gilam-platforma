@@ -90,27 +90,39 @@ interface Props {
 export default function DriverMap({ drivers, selected, onSelect, mapType, showTraffic }: Props) {
   const tileUrl = useMemo(() => {
     switch (mapType) {
-      case 'satellite': return 'https://sat04.maps.yandex.net/tiles?l=sat&v=3.518.0&x={x}&y={y}&z={z}&lang=ru_RU';
-      case 'terrain': return 'https://sat04.maps.yandex.net/tiles?l=sat,skl&v=3.518.0&x={x}&y={y}&z={z}&lang=ru_RU';
-      default: return 'https://vec04.maps.yandex.net/tiles?l=map&v=2.26.0&x={x}&y={y}&z={z}&lang=ru_RU';
+      case 'satellite': 
+        return 'https://sat01.maps.yandex.net/tiles?l=sat&v=3.518.0&x={x}&y={y}&z={z}&lang=ru_RU';
+      case 'terrain': 
+        return 'https://sat01.maps.yandex.net/tiles?l=sat,skl&v=3.518.0&x={x}&y={y}&z={z}&lang=ru_RU';
+      default: 
+        return 'https://vec01.maps.yandex.net/tiles?l=map&v=21.09.21&x={x}&y={y}&z={z}&scale=1&lang=ru_RU';
     }
   }, [mapType]);
 
   const trafficUrl = 'https://core-jams-rdr-cache.maps.yandex.net/tiles?l=trf&x={x}&y={y}&z={z}&scale=1&lang=ru_RU';
-  const attribution = '&copy; <a href="https://yandex.ru/maps/">Yandeks</a>';
+  
   return (
-    <div className="w-full h-full relative group bg-slate-50">
+    <div className="w-full h-full relative group bg-slate-100">
       <MapContainer
         center={[41.2995, 69.2401]}
         zoom={12}
         zoomControl={false}
-        style={{ height: '100%', width: '100%', background: '#f8fafc' }}
+        style={{ height: '100%', width: '100%', background: '#f1f5f9' }}
         className="z-0"
       >
         <TileLayer
-          attribution={attribution}
+          attribution='&copy; Yandex'
           url={tileUrl}
         />
+        
+        {/* Universal Overlay: Standard Labels if Yandex Satellite is used */}
+        {mapType === 'satellite' && (
+          <TileLayer 
+             url="https://{s}.basemaps.cartocdn.com/light_only_labels/{z}/{x}/{y}{r}.png"
+             opacity={0.8}
+             zIndex={5}
+          />
+        )}
 
         {showTraffic && (
           <TileLayer

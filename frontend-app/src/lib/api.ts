@@ -95,6 +95,7 @@ export const companiesApi = {
 export const usersApi = {
   getAll: () => request<any[]>('/users'),
   getByCompany: (companyId: string) => request<any[]>(`/users/company/${companyId}`),
+  getOperators: () => request<any[]>('/users/operators'),
   getOne: (id: string) => request<any>(`/users/${id}`),
   create: (data: any) => request<any>('/users', { method: 'POST', body: JSON.stringify(data) }),
   update: (id: string, data: any) => request<any>(`/users/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
@@ -152,9 +153,13 @@ export const campaignsApi = {
 
 // ===== CALLS API =====
 export const callsApi = {
-  getAll: (companyId: string) => request<any[]>(`/calls/company/${companyId}`),
+  getAll: () => request<any[]>('/calls'),
+  getStats: () => request<any>('/calls/stats'),
   getOne: (id: string) => request<any>(`/calls/${id}`),
-  create: (data: any) => request<any>('/calls', { method: 'POST', body: JSON.stringify(data) }),
+  createOutgoing: (data: any) => request<any>('/calls/outgoing', { method: 'POST', body: JSON.stringify(data) }),
+  answer: (id: string) => request<any>(`/calls/${id}/answer`, { method: 'PUT' }),
+  complete: (id: string, data: any) => request<any>(`/calls/${id}/complete`, { method: 'PUT', body: JSON.stringify(data) }),
+  miss: (id: string) => request<any>(`/calls/${id}/miss`, { method: 'PUT' }),
 };
 
 // ===== TELEPHONY API =====

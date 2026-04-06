@@ -12,12 +12,14 @@ import {
   MdShoppingCart,
   MdSettings,
   MdLogout,
-  MdLocalShipping
+  MdLocalShipping,
+  MdSupportAgent,
 } from 'react-icons/md';
 
 const superAdminLinks = [
   { name: 'Boshqaruv Paneli', href: '/admin', icon: MdDashboard },
   { name: 'Korxonalar', href: '/admin/companies', icon: MdBusiness },
+  { name: 'Operatorlar', href: '/admin/operators', icon: MdSupportAgent },
   { name: 'Foydalanuvchilar', href: '/admin/users', icon: MdPeople },
   { name: 'Buyurtmalar (Kuzatish)', href: '/admin/orders', icon: MdShoppingCart },
   { name: 'Sozlamalar', href: '/admin/settings', icon: MdSettings },

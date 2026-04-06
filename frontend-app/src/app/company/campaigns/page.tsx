@@ -42,7 +42,7 @@ export default function CampaignsPage() {
     setIsLoading(true);
     try {
       const [camps, users] = await Promise.all([
-        campaignsApi.getAll(),
+        campaignsApi.getAll(user.companyId),
         usersApi.getByCompany(user.companyId),
       ]);
       setCampaigns(camps);

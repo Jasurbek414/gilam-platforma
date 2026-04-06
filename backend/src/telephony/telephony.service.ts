@@ -11,8 +11,9 @@ export class TelephonyService {
   ) {}
 
   async getSipConfig(companyId: string) {
+    if (!companyId) return {};
     const company = await this.companyRepository.findOne({ where: { id: companyId } });
-    if (!company) throw new NotFoundException('Company not found');
+    if (!company) return {};
     return company.sipCredentials || {};
   }
 

@@ -7,7 +7,7 @@ import {
 } from 'react-icons/md';
 import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
-import { campaignsApi } from '@/lib/api';
+import { campaignsApi, getUser } from '@/lib/api';
 
 // Barcha kampaniyalardan raqamlarni yassi ro'yxatga chiqaramiz
 interface PhoneEntry {
@@ -180,7 +180,9 @@ export default function PhoneNumbersPage() {
   const load = useCallback(async () => {
     setIsLoading(true);
     try {
-      const camps = await campaignsApi.getAll();
+      const user = getUser();
+      const companyId = user?.companyId || user?.company?.id || '';
+      const camps = await campaignsApi.getAll(companyId);
       setCampaigns(camps);
       setPhoneList(buildPhoneList(camps));
     } catch (e: any) {

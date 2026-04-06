@@ -24,18 +24,22 @@ export class CompaniesController {
     if (!user) {
        throw new UnauthorizedException('Sessiya muddati tugadi');
     }
-    
+
     if (user.role === UserRole.SUPER_ADMIN) {
       return this.companiesService.findAll();
     }
-    
-    // For CompanyAdmin or other authorized personnel within a company
+
     if (!user.companyId) {
-       return []; // No company assigned
+       return [];
     }
 
-    const company = await this.companiesService.findOne(user.companyId);
-    return [company];
+    try {
+      const company = await this.companiesService.findOne(user.companyId);
+      return [company];
+    } catch {
+      // CompanyId bazada mavjud emas (stale token) — bo'sh ro'yxat qaytaramiz
+      return [];
+    }
   }
 
   @Get('stats')

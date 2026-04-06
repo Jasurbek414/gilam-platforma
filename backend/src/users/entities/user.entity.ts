@@ -13,6 +13,7 @@ export enum UserRole {
 
 export enum UserStatus {
   ACTIVE = 'ACTIVE',
+  INACTIVE = 'INACTIVE',
   OFFLINE = 'OFFLINE',
 }
 

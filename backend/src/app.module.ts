@@ -12,6 +12,9 @@ import { OrdersModule } from './orders/orders.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { TelephonyModule } from './telephony/telephony.module';
 import { MessagesModule } from './messages/messages.module';
+import { CampaignsModule } from './campaigns/campaigns.module';
+import { GatewayModule } from './gateway/gateway.module';
+import { CallsModule } from './calls/calls.module';
 
 @Module({
   imports: [
@@ -30,7 +33,7 @@ import { MessagesModule } from './messages/messages.module';
         password: configService.get<string>('DB_PASSWORD'),
         database: configService.get<string>('DB_NAME'),
         autoLoadEntities: true,
-        synchronize: true, // Only for development; in production use migrations
+        synchronize: true,
       }),
     }),
     CompaniesModule,
@@ -42,6 +45,9 @@ import { MessagesModule } from './messages/messages.module';
     NotificationsModule,
     TelephonyModule,
     MessagesModule,
+    CampaignsModule,
+    CallsModule,
+    GatewayModule,
   ],
   controllers: [AppController],
   providers: [AppService],

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useRef, useMemo, Suspense } from 'react';
 import { 
   MdChat, MdSearch, MdFilterList, MdSend, MdAttachFile, 
   MdSentimentSatisfiedAlt, MdMoreVert, MdLocalShipping, 
@@ -13,7 +13,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useSearchParams } from 'next/navigation';
 import { useChat } from '@/context/ChatContext';
 
-export default function OperatorMessagesPage() {
+function OperatorMessagesContent() {
   const searchParams = useSearchParams();
   const { messages, sendMessage, socket } = useChat();
   
@@ -245,5 +245,13 @@ export default function OperatorMessagesPage() {
          .scrollbar-hide::-webkit-scrollbar { display: none; }
       `}</style>
     </div>
+  );
+}
+
+export default function OperatorMessagesPage() {
+  return (
+    <Suspense fallback={<div className="flex items-center justify-center min-h-[400px]"><div className="w-10 h-10 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin" /></div>}>
+      <OperatorMessagesContent />
+    </Suspense>
   );
 }

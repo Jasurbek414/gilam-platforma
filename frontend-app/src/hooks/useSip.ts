@@ -9,7 +9,7 @@ export interface SipCredentials {
   server: string; domain: string; username: string; password: string; displayName: string;
 }
 
-const SIP_DOMAIN = process.env.NEXT_PUBLIC_SIP_DOMAIN || '84.54.75.26';
+const SIP_DOMAIN = process.env.NEXT_PUBLIC_SIP_DOMAIN || '10.100.100.1';
 
 export function useSip(_credentials?: SipCredentials | null) {
   const [status, setStatus]           = useState<SipStatus>('registered'); // MicroSIP always ready

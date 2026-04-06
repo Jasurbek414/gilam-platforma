@@ -69,7 +69,7 @@ export class SipBridgeGateway implements OnGatewayInit, OnGatewayConnection, OnG
   private initSip() {
     const SIP_SERVER = '10.100.100.1';
     const SIP_PORT = 5060;
-    const LOCAL_PORT = 55060;
+    const LOCAL_PORT = 0; // Let OS choose free port
     const EXTENSION = '101';
     const PASSWORD = 'a1234567a';
 

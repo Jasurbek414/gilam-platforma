@@ -14,6 +14,7 @@ import * as dgram from 'dgram';
 import { CallsService } from '../calls/calls.service';
 
 @WebSocketGateway({
+  namespace: '/sip',
   cors: {
     origin: '*',
   },

@@ -13,8 +13,7 @@ import { Logger, OnModuleInit } from '@nestjs/common';
 import * as dgram from 'dgram';
 import { CallsService } from '../calls/calls.service';
 
-@WebSocketGateway({
-  namespace: '/sip',
+@WebSocketGateway(3002, {
   cors: {
     origin: '*',
   },

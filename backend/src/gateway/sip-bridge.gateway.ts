@@ -83,8 +83,8 @@ export class SipBridgeGateway implements OnGatewayInit, OnGatewayConnection, OnG
 
       // Handle Authentication Challenge
       if (message.includes('SIP/2.0 401 Unauthorized') || message.includes('SIP/2.0 407 Proxy Authentication Required')) {
-        this.logger.debug('SIP: Auth required');
-        this.register(true, message);
+        this.logger.debug('SIP: Auth required, retrying in 2s...');
+        setTimeout(() => this.register(true, message), 2000);
       }
 
       // Handle Ringing/Progress

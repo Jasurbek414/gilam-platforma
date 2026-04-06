@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Call } from './entities/call.entity';
 import { CallsService } from './calls.service';
@@ -14,7 +14,7 @@ import { AuthModule } from '../auth/auth.module';
   imports: [
     TypeOrmModule.forFeature([Call, Customer, Order, User]),
     CampaignsModule,
-    GatewayModule,
+    forwardRef(() => GatewayModule),
     AuthModule,
   ],
   controllers: [CallsController],

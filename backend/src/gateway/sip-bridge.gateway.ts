@@ -10,6 +10,7 @@ import {
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 import { Logger, Inject, forwardRef } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import * as dgram from 'dgram';
 import * as crypto from 'crypto';
 import { CallsService } from '../calls/calls.service';
@@ -56,7 +57,11 @@ export class SipBridgeGateway implements OnGatewayInit, OnGatewayConnection, OnG
   private currentOperatorId: string | null = null;
   private currentCompanyId: string | null = null;
 
-  constructor(private callsService: CallsService) {}
+  constructor(
+    @Inject(forwardRef(() => CallsService))
+    private callsService: CallsService,
+    private configService: ConfigService,
+  ) {}
 
   afterInit() {
     this.udp = dgram.createSocket('udp4');
@@ -239,35 +244,49 @@ export class SipBridgeGateway implements OnGatewayInit, OnGatewayConnection, OnG
   }
 
   @SubscribeMessage('sip:call')
-  async handleCall(@MessageBody() data: { target: string }, @ConnectedSocket() client: any) {
+  async handleCall(@MessageBody() data: { target: string, operatorId?: string, companyId?: string }, @ConnectedSocket() client: any) {
+    this.logger.log(`SIP CALL REQUEST: to ${data.target}`);
+    
     if (!this.registered) {
+      this.logger.warn('SIP CALL FAILED: Not registered');
       client.emit('sip:error', { message: 'SIP serverga ulanilmagan' });
       return;
     }
 
-    this.currentOperatorId = client.user?.id || 'manual-operator';
-    this.currentCompanyId = client.user?.company?.id || null;
+    this.currentOperatorId = data.operatorId || client.user?.id || 'manual-operator';
+    this.currentCompanyId = data.companyId || client.user?.company?.id || null;
+
+    if (!this.currentCompanyId) {
+       this.logger.warn('SIP CALL CAUTION: Missing CompanyId');
+    }
 
     const cleanTarget = data.target.replace(/\D/g, '');
-    const branch = 'z9hG4bK' + Math.random().toString(36).slice(2);
-    const tag = Math.random().toString(36).slice(2, 10);
-    const callId = Math.random().toString(36).slice(2) + '@gilam';
-    this.activeCallId = callId;
-    this.activeBranch = branch;
-    this.activeTag = tag;
-    this.lastDialedTarget = cleanTarget;
-
+    this.logger.log(`SIP OUT: Dialing ${cleanTarget} (Operator: ${this.currentOperatorId}, Company: ${this.currentCompanyId})`);
+    
     try {
       if (this.currentOperatorId && this.currentCompanyId) {
+        this.logger.debug(`Saving call log to DB for operator ${this.currentOperatorId}...`);
         const dbCall = await this.callsService.createOutgoing(this.currentOperatorId, this.currentCompanyId, {
           callerPhone: cleanTarget,
           campaignId: undefined
         });
         this.activeCallDbId = dbCall.id;
+        this.logger.log(`Call log saved to DB with ID: ${this.activeCallDbId}`);
+      } else {
+        this.logger.warn(`SKIPPING DB LOG: Missing OperatorId (${this.currentOperatorId}) or CompanyId (${this.currentCompanyId})`);
       }
     } catch (e) {
-      this.logger.error(`Database log error: ${e.message}`);
+      this.logger.error(`DATABASE LOG ERROR: ${e.message}`, e.stack);
     }
+
+    const branch = 'z9hG4bK' + Math.random().toString(36).slice(2);
+    const tag = Math.random().toString(36).slice(2, 10);
+    const callId = Math.random().toString(36).slice(2) + '@gilam';
+    this.cseq = 1;
+    this.activeCallId = callId;
+    this.activeBranch = branch;
+    this.activeTag = tag;
+    this.lastDialedTarget = cleanTarget;
 
     const sdp = [
       'v=0',

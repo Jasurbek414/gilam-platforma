@@ -39,10 +39,12 @@ export function useSip(_credentials: SipCredentials | null) {
     if (typeof window === 'undefined') return;
 
     setStatus('connecting');
+    const token = localStorage.getItem('token');
     const socket = io(`${BACKEND_URL}/sip`, {
       transports: ['websocket'],
       reconnection: true,
       reconnectionDelay: 3000,
+      auth: { token },
     });
     socketRef.current = socket;
 
@@ -102,7 +104,15 @@ export function useSip(_credentials: SipCredentials | null) {
   }, []);
 
   const makeCall = useCallback((target: string) => {
-    socketRef.current?.emit('sip:call', { target });
+    if (typeof window === 'undefined') return;
+    const userStr = localStorage.getItem('user');
+    const user = userStr ? JSON.parse(userStr) : null;
+    
+    socketRef.current?.emit('sip:call', { 
+      target,
+      operatorId: user?.id,
+      companyId: user?.company?.id
+    });
   }, []);
 
   const hangup = useCallback(() => {

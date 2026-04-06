@@ -13,8 +13,8 @@ export interface SipCredentials {
   displayName: string;
 }
 
-const BACKEND_URL = process.env.NEXT_PUBLIC_WS_URL || 'http://127.0.0.1:3000';
-const SIP_WS_URL = 'http://127.0.0.1:3002';
+const BACKEND_URL = process.env.NEXT_PUBLIC_WS_URL || 'http://10.100.100.18:3000';
+const SIP_WS_URL = 'http://10.100.100.18:3002';
 
 export function useSip(_credentials?: SipCredentials | null) {
   const [status, setStatus] = useState<SipStatus>('idle');

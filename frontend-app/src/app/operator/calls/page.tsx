@@ -332,9 +332,16 @@ function OperatorCallsContent() {
           </div>
 
           <button
+            onClick={() => sip.makeCall(dialNum)}
+            className="w-full mt-2 py-2 bg-slate-200 text-slate-500 font-black rounded-xl text-[8px] uppercase tracking-widest hover:bg-slate-300 transition-all"
+          >
+            DEBUG: Force Start
+          </button>
+
+          <button
             onClick={() => handleMakeCall(dialNum)}
             disabled={!dialNum || sip.status !== 'registered'}
-            className="w-full mt-6 py-4 bg-indigo-600 text-white font-black rounded-2xl text-[10px] uppercase tracking-[0.2em] shadow-xl shadow-indigo-100/40 hover:bg-indigo-700 active:scale-95 transition-all flex items-center justify-center gap-3 disabled:opacity-30 disabled:cursor-not-allowed flex-shrink-0"
+            className="w-full mt-4 py-4 bg-indigo-600 text-white font-black rounded-2xl text-[10px] uppercase tracking-[0.2em] shadow-xl shadow-indigo-100/40 hover:bg-indigo-700 active:scale-95 transition-all flex items-center justify-center gap-3 disabled:opacity-30 disabled:cursor-not-allowed flex-shrink-0"
           >
             <MdCall size={20} /> Qo'ng'iroq qilish
           </button>

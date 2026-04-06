@@ -406,6 +406,11 @@ export class SipBridgeGateway implements OnGatewayInit, OnGatewayConnection, OnG
     // 486 Busy Here
   }
 
+  @SubscribeMessage('client:log')
+  handleClientLog(@MessageBody() data: { message: string }) {
+    this.logger.debug(`CLIENT LOG: ${data.message}`);
+  }
+
   @SubscribeMessage('sip:status')
   handleStatus(@ConnectedSocket() client: Socket) {
     client.emit('sip:status', { registered: this.registered });

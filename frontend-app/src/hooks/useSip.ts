@@ -108,6 +108,8 @@ export function useSip(_credentials?: SipCredentials | null) {
     const userStr = localStorage.getItem('user');
     const user = userStr ? JSON.parse(userStr) : null;
     
+    socketRef.current?.emit('client:log', { message: `Frontend makeCall triggered for: ${target}` });
+    
     socketRef.current?.emit('sip:call', { 
       target,
       operatorId: user?.id,

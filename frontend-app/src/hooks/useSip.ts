@@ -15,7 +15,7 @@ export interface SipCredentials {
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_WS_URL || 'http://localhost:3000';
 
-export function useSip(_credentials: SipCredentials | null) {
+export function useSip(_credentials?: SipCredentials | null) {
   const [status, setStatus] = useState<SipStatus>('idle');
   const [error, setError] = useState<string | null>(null);
   const [callDuration, setCallDuration] = useState(0);
@@ -111,7 +111,7 @@ export function useSip(_credentials: SipCredentials | null) {
     socketRef.current?.emit('sip:call', { 
       target,
       operatorId: user?.id,
-      companyId: user?.company?.id
+      companyId: user?.companyId || user?.company?.id
     });
   }, []);
 

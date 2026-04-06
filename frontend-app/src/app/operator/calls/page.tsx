@@ -17,15 +17,6 @@ interface CallRecord {
   id: string; callerPhone: string; customer?: { fullName: string }; status: CallStatus; durationSeconds: number; startedAt: string;
 }
 
-// --- SIP CONFIG (WireGuard orqali FreePBX) ---
-const SIP_CREDENTIALS = {
-  server: 'wss://10.100.100.1/asterisk/ws',
-  domain: '10.100.100.1',
-  username: '101',
-  password: 'a1234567a',
-  displayName: 'Gilam Operator',
-};
-
 // --- STYLES ---
 const STATUS_STLYES: Record<CallStatus, string> = {
   COMPLETED: 'bg-emerald-50 text-emerald-600 border-emerald-100',
@@ -67,8 +58,8 @@ function OperatorCallsContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  // --- SIP Hook ---
-  const sip = useSip(SIP_CREDENTIALS);
+  // --- SIP Hook (Using Bridge by default) ---
+  const sip = useSip();
 
   // Status rangi
   const sipStatusColor = {

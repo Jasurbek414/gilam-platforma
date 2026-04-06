@@ -133,6 +133,38 @@ async function seed() {
     }
     console.log('✅ 6 ta xizmat turi yaratildi (Yulduz Gilam uchun)');
 
+    // ===== 3b. KAMPANIYALAR YARATISH =====
+    // Pokiza uchun asosiy kampaniya
+    const campaignId = uuidv4();
+    await client.query(`
+      INSERT INTO campaigns (id, company_id, name, phone_number, extra_numbers, description, status, driver_id, created_at, updated_at)
+      VALUES ($1, $2, $3, $4, $5::jsonb, $6, 'ACTIVE', $7, NOW(), NOW())
+      ON CONFLICT DO NOTHING
+    `, [campaignId, companyId, 'Asosiy qo\'ng\'iroq liniyasi', '+998712345678', '[]', 'Toshkent shahri bo\'yicha asosiy kampaniya', driverId]);
+    console.log('✅ Kampaniya yaratildi: "Asosiy qo\'ng\'iroq liniyasi"');
+
+    // Pokiza uchun 2-kampaniya
+    const campaign2Id = uuidv4();
+    await client.query(`
+      INSERT INTO campaigns (id, company_id, name, phone_number, extra_numbers, description, status, driver_id, created_at, updated_at)
+      VALUES ($1, $2, $3, $4, $5::jsonb, $6, 'ACTIVE', $7, NOW(), NOW())
+      ON CONFLICT DO NOTHING
+    `, [campaign2Id, companyId, 'Chilonzor filiali', '+998711112233', '[]', 'Chilonzor tumani uchun kampaniya', driverId]);
+    console.log('✅ Kampaniya yaratildi: "Chilonzor filiali"');
+
+    // Kampaniyaga operator ulash
+    await client.query(`
+      INSERT INTO campaign_operators (campaign_id, operator_id)
+      VALUES ($1, $2)
+      ON CONFLICT DO NOTHING
+    `, [campaignId, operatorId]);
+    await client.query(`
+      INSERT INTO campaign_operators (campaign_id, operator_id)
+      VALUES ($1, $2)
+      ON CONFLICT DO NOTHING
+    `, [campaign2Id, operatorId]);
+    console.log('✅ Operatorlar kampaniyalarga ulandi');
+
     // ===== 4. TEST MIJOZLAR =====
     const customers = [
       { name: 'Aliyev Vali', phone1: '+998901112233', address: 'Toshkent sh., Chilonzor tumani, 7-kvartal, 15-uy' },

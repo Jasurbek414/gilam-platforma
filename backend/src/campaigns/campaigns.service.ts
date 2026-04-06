@@ -71,6 +71,7 @@ export class CampaignsService {
       phoneNumber: dto.phoneNumber,
       extraNumbers: dto.extraNumbers || [],
       description: dto.description,
+      status: dto.status,
       driverId: dto.driverId,
     });
     if (dto.operatorIds?.length) {

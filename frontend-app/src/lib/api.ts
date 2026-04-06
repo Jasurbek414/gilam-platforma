@@ -144,7 +144,7 @@ export const notificationsApi = {
 
 // ===== CAMPAIGNS API =====
 export const campaignsApi = {
-  getAll: (companyId: string) => request<any[]>(`/campaigns/company/${companyId}`),
+  getAll: (_companyId?: string) => request<any[]>(`/campaigns`),
   getOne: (id: string) => request<any>(`/campaigns/${id}`),
   create: (data: any) => request<any>('/campaigns', { method: 'POST', body: JSON.stringify(data) }),
   update: (id: string, data: any) => request<any>(`/campaigns/${id}`, { method: 'PUT', body: JSON.stringify(data) }),

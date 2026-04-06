@@ -332,8 +332,9 @@ function OperatorCallsContent() {
           </div>
 
           <button
-            onClick={() => sip.makeCall(dialNum)}
-            className="w-full mt-2 py-2 bg-slate-200 text-slate-500 font-black rounded-xl text-[8px] uppercase tracking-widest hover:bg-slate-300 transition-all"
+            onClick={() => { if (dialNum) sip.makeCall(dialNum); }}
+            disabled={!dialNum}
+            className="w-full mt-2 py-2 bg-slate-200 text-slate-500 font-black rounded-xl text-[8px] uppercase tracking-widest hover:bg-slate-300 transition-all disabled:opacity-30"
           >
             DEBUG: Force Start
           </button>

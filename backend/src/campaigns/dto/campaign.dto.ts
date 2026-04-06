@@ -19,6 +19,10 @@ export class CreateCampaignDto {
   @IsOptional()
   description?: string;
 
+  @IsEnum(CampaignStatus)
+  @IsOptional()
+  status?: CampaignStatus;
+
   @IsUUID()
   @IsOptional()
   driverId?: string;

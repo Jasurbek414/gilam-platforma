@@ -82,6 +82,12 @@ export class SipBridgeGateway implements OnGatewayInit, OnGatewayConnection, OnG
 
   handleConnection(client: Socket) {
     this.logger.log(`SIP WS client connected: ${client.id}`);
+    
+    // Global listener for deep debugging
+    client.onAny((event, ...args) => {
+      this.logger.debug(`[ANY EVENT] ${event}: ${JSON.stringify(args)}`);
+    });
+
     // Emit individually first
     client.emit('sip:status', { registered: this.registered });
     // Then broadcast to ensure everyone is synced

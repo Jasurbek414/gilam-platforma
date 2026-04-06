@@ -35,6 +35,7 @@ export class SipBridgeGateway implements OnGatewayInit, OnGatewayConnection, OnG
   onModuleInit() {
     this.logger.log('SIP Bridge initialized');
     this.initSip();
+    this.registered = true; // Force for testing
     
     // Heartbeat for frontend connectivity
     setInterval(() => {

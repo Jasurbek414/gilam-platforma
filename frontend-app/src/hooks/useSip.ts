@@ -13,7 +13,8 @@ export interface SipCredentials {
   displayName: string;
 }
 
-const BACKEND_URL = process.env.NEXT_PUBLIC_WS_URL || 'http://localhost:3000';
+const BACKEND_URL = process.env.NEXT_PUBLIC_WS_URL || 'http://127.0.0.1:3000';
+const SIP_WS_URL = 'http://127.0.0.1:3002';
 
 export function useSip(_credentials?: SipCredentials | null) {
   const [status, setStatus] = useState<SipStatus>('idle');
@@ -40,8 +41,8 @@ export function useSip(_credentials?: SipCredentials | null) {
 
     setStatus('connecting');
     const token = localStorage.getItem('token');
-    const socket = io(`${BACKEND_URL}/sip`, {
-      transports: ['websocket'],
+    const socket = io(SIP_WS_URL, {
+      transports: ['polling', 'websocket'],
       reconnection: true,
       reconnectionDelay: 3000,
       auth: { token },

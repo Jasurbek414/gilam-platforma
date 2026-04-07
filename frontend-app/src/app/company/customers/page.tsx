@@ -9,27 +9,35 @@ import {
   MdDelete, 
   MdPhone, 
   MdLocationOn, 
-  MdHistory,
   MdClose,
   MdCheckCircle
 } from 'react-icons/md';
 import Modal from '@/components/ui/Modal';
 import { customersApi, getUser } from '@/lib/api';
+import { User, Customer } from '@/types';
 import toast from 'react-hot-toast';
+import dynamic from 'next/dynamic';
+
+const MapPicker = dynamic(() => import('@/components/ui/MapPicker'), { 
+  ssr: false,
+  loading: () => <div className="h-[300px] bg-slate-50 animate-pulse rounded-2xl flex items-center justify-center text-slate-400 font-bold uppercase text-xs tracking-widest">Xarita yuklanmoqda...</div>
+});
 
 export default function CustomersPage() {
-  const [customers, setCustomers] = useState<any[]>([]);
+  const [customers, setCustomers] = useState<Customer[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-  const [selectedCustomer, setSelectedCustomer] = useState<any>(null);
+  const [isMapOpen, setIsMapOpen] = useState(false);
+  const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
   const [formData, setFormData] = useState({
     fullName: '',
     phone: '',
-    address: ''
+    address: '',
+    location: null as { lat: number, lng: number } | null
   });
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<User | null>(null);
 
   useEffect(() => {
     const currentUser = getUser();
@@ -69,17 +77,19 @@ export default function CustomersPage() {
     }
   };
 
-  const handleOpenModal = (customer?: any) => {
+  const handleOpenModal = (customer?: Customer) => {
+    setIsMapOpen(false);
     if (customer) {
       setSelectedCustomer(customer);
       setFormData({
         fullName: customer.fullName,
         phone: customer.phone,
-        address: customer.address
+        address: customer.address,
+        location: null // Location is optional for editing for now
       });
     } else {
       setSelectedCustomer(null);
-      setFormData({ fullName: '', phone: '', address: '' });
+      setFormData({ fullName: '', phone: '', address: '', location: null });
     }
     setIsModalOpen(true);
   };
@@ -95,14 +105,14 @@ export default function CustomersPage() {
           companyId: user.companyId,
           operatorId: user.id
         });
-        toast.success('Mijoz ma\'lumotlari yangilandi');
+        toast.success('Mijoz ma&apos;lumotlari yangilandi');
       } else {
         await customersApi.create({
           ...formData,
           companyId: user.companyId,
           operatorId: user.id
         });
-        toast.success('Yangi mijoz qo\'shildi');
+        toast.success('Yangi mijoz qo&apos;shildi');
       }
       setIsModalOpen(false);
       fetchCustomers(user.companyId);
@@ -112,14 +122,14 @@ export default function CustomersPage() {
   };
 
   const confirmDelete = async () => {
-    if (!selectedCustomer) return;
+    if (!selectedCustomer || !user) return;
     try {
       await customersApi.remove(selectedCustomer.id);
-      toast.success('Mijoz o\'chirildi');
+      toast.success('Mijoz o&apos;chirildi');
       setIsDeleteModalOpen(false);
-      fetchCustomers(user.company.id);
+      fetchCustomers(user.companyId);
     } catch (err) {
-      toast.error('Mijozni o\'chirishda xatolik yuz berdi');
+      toast.error('Mijozni o&apos;chirishda xatolik yuz berdi');
     }
   };
 
@@ -153,7 +163,7 @@ export default function CustomersPage() {
             className="flex items-center gap-2 px-6 py-3 bg-indigo-600 text-white font-black rounded-xl shadow-lg shadow-indigo-500/25 hover:shadow-indigo-500/40 hover:-translate-y-0.5 transition-all text-sm uppercase tracking-widest"
           >
             <MdAdd className="text-xl" />
-            Qo'shish
+            Qo&apos;shish
           </button>
         </div>
       </div>
@@ -171,13 +181,13 @@ export default function CustomersPage() {
               <thead>
                 <tr className="bg-slate-50 border-b border-slate-100 text-[10px] font-black text-slate-400 uppercase tracking-widest">
                   <th className="px-6 py-4">Mijoz / Telefon</th>
-                  <th className="px-6 py-4">Mas'ul Operator</th>
+                  <th className="px-6 py-4">Mas&apos;ul Operator</th>
                   <th className="px-6 py-4">Manzil</th>
                   <th className="px-6 py-4 text-right">Amallar</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 text-sm">
-                {customers.length > 0 ? customers.map((c) => (
+                {customers.length > 0 ? (customers as any[]).map((c) => (
                   <tr key={c.id} className="hover:bg-slate-50/50 transition-colors group">
                     <td className="px-6 py-5">
                       <div className="flex items-center gap-3">
@@ -199,7 +209,7 @@ export default function CustomersPage() {
                           {c.operator?.fullName?.[0]?.toUpperCase() || '?'}
                         </div>
                         <span className="font-bold text-xs text-slate-600 truncate max-w-[120px]">
-                          {c.operator?.fullName?.split(' ')[0] || 'Noma\'lum'}
+                          {c.operator?.fullName?.split(' ')[0] || 'Noma&apos;lum'}
                         </span>
                       </div>
                     </td>
@@ -221,7 +231,7 @@ export default function CustomersPage() {
                         <button 
                           onClick={() => { setSelectedCustomer(c); setIsDeleteModalOpen(true); }}
                           className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-all"
-                          title="O'chirish"
+                          title="O&apos;chirish"
                         >
                           <MdDelete className="text-xl" />
                         </button>
@@ -248,12 +258,12 @@ export default function CustomersPage() {
       <Modal 
         isOpen={isModalOpen} 
         onClose={() => setIsModalOpen(false)} 
-        title={selectedCustomer ? "Mijozni Tahrirlash" : "Yangi Mijoz Qo'shish"}
+        title={selectedCustomer ? "Mijozni Tahrirlash" : "Yangi Mijoz Qo&apos;shish"}
       >
-        <form onSubmit={handleSave} className="space-y-6 p-1">
+        <form onSubmit={handleSave} className="space-y-6 p-1 max-h-[80vh] overflow-y-auto pr-2">
           <div className="space-y-4">
             <div>
-              <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2 ml-1">F.I.SH (To'liq ism)</label>
+              <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2 ml-1">F.I.SH (To&apos;liq ism)</label>
               <input 
                 type="text" 
                 required
@@ -277,19 +287,37 @@ export default function CustomersPage() {
                 />
               </div>
             </div>
-            <div>
+            <div className="space-y-2">
               <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2 ml-1">Manzil</label>
-              <div className="relative">
+              <div className="relative group">
                 <MdLocationOn className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400 text-lg" />
                 <input 
                   type="text" 
                   required
-                  className="w-full pl-12 pr-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-4 focus:ring-indigo-500/5 focus:border-indigo-500 outline-none transition-all font-bold text-slate-700"
-                  placeholder="Shahar, ko'cha, uy bino..."
+                  className="w-full pl-12 pr-12 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-4 focus:ring-indigo-500/5 focus:border-indigo-500 outline-none transition-all font-bold text-slate-700"
+                  placeholder="Shahar, ko&apos;cha, uy bino..."
                   value={formData.address}
                   onChange={(e) => setFormData({...formData, address: e.target.value})}
                 />
+                <button 
+                  type="button"
+                  onClick={() => setIsMapOpen(!isMapOpen)}
+                  className={`absolute right-3 top-2 p-2 rounded-xl transition-all ${isMapOpen ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/30' : 'bg-white text-slate-400 hover:text-indigo-600 hover:bg-slate-50 border border-slate-100'}`}
+                  title="Xaritadan tanlash"
+                >
+                  <MdLocationOn className="text-xl" />
+                </button>
               </div>
+
+              {isMapOpen && (
+                <div className="mt-4 animate-in slide-in-from-top-4 duration-300">
+                  <MapPicker 
+                    onLocationSelect={(lat, lng, address) => {
+                      setFormData(prev => ({ ...prev, address, location: { lat, lng } }));
+                    }} 
+                  />
+                </div>
+              )}
             </div>
           </div>
 
@@ -297,13 +325,13 @@ export default function CustomersPage() {
             <button 
               type="button" 
               onClick={() => setIsModalOpen(false)}
-              className="flex-1 py-4 bg-slate-100 text-slate-500 font-black rounded-2xl text-[10px] uppercase tracking-widest hover:bg-slate-200 transition-all"
+              className="flex-1 py-4 bg-slate-100 text-slate-500 font-black rounded-2xl text-[10px] uppercase tracking-widest hover:bg-slate-200 transition-all font-black"
             >
               Bekor qilish
             </button>
             <button 
               type="submit"
-              className="flex-1 py-4 bg-indigo-600 text-white font-black rounded-2xl text-[10px] uppercase tracking-widest shadow-xl shadow-indigo-500/20 hover:bg-indigo-700 hover:-translate-y-1 active:scale-95 transition-all"
+              className="flex-1 py-4 bg-indigo-600 text-white font-black rounded-2xl text-[10px] uppercase tracking-widest shadow-xl shadow-indigo-500/20 hover:bg-indigo-700 hover:-translate-y-1 active:scale-95 transition-all font-black"
             >
               <div className="flex items-center justify-center gap-2">
                 <MdCheckCircle className="text-lg" />
@@ -318,31 +346,31 @@ export default function CustomersPage() {
       <Modal 
         isOpen={isDeleteModalOpen} 
         onClose={() => setIsDeleteModalOpen(false)} 
-        title="Mijozni O'chirish"
+        title="Mijozni O&apos;chirish"
       >
         <div className="space-y-6">
-          <div className="p-4 bg-rose-50 border border-rose-100 rounded-2xl flex items-start gap-4">
+          <div className="p-4 bg-rose-50 border border-rose-100 rounded-2xl flex items-start gap-4 font-black">
             <div className="w-10 h-10 bg-rose-100 text-rose-600 rounded-xl flex items-center justify-center shrink-0">
               <MdDelete className="text-2xl" />
             </div>
             <div>
-              <p className="text-sm font-black text-slate-800">Mijozni o'chirib tashlamoqchimisiz?</p>
-              <p className="text-xs text-slate-500 mt-1 font-medium">Bu amalni ortga qaytarib bo'lmaydi. Mijozning barcha ma'lumotlari tizimdan o'chiriladi.</p>
+              <p className="text-sm font-black text-slate-800">Mijozni o&apos;chirib tashlamoqchimisiz?</p>
+              <p className="text-xs text-slate-500 mt-1 font-medium">Bu amalni ortga qaytarib bo&apos;lmaydi. Mijozning barcha ma&apos;lumotlari tizimdan o&apos;chiriladi.</p>
             </div>
           </div>
           
           <div className="flex gap-3">
             <button 
               onClick={() => setIsDeleteModalOpen(false)}
-              className="flex-1 py-4 bg-slate-100 text-slate-500 font-black rounded-2xl text-[10px] uppercase tracking-widest hover:bg-slate-200 transition-all"
+              className="flex-1 py-4 bg-slate-100 text-slate-500 font-black rounded-2xl text-[10px] uppercase tracking-widest hover:bg-slate-200 transition-all font-black"
             >
-              Yo'q, qolsin
+              Yo&apos;q, qolsin
             </button>
             <button 
               onClick={confirmDelete}
-              className="flex-1 py-4 bg-rose-600 text-white font-black rounded-2xl text-[10px] uppercase tracking-widest shadow-xl shadow-rose-500/20 hover:bg-rose-700 hover:-translate-y-1 active:scale-95 transition-all"
+              className="flex-1 py-4 bg-rose-600 text-white font-black rounded-2xl text-[10px] uppercase tracking-widest shadow-xl shadow-rose-500/20 hover:bg-rose-700 hover:-translate-y-1 active:scale-95 transition-all font-black"
             >
-              Ha, o'chirilsin
+              Ha, o&apos;chirilsin
             </button>
           </div>
         </div>

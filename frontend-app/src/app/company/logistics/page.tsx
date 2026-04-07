@@ -117,7 +117,7 @@ export default function LogisticsPage() {
 
       const script = document.createElement('script');
       script.id = id;
-      script.src = 'https://api-maps.yandex.ru/2.1/?lang=uz_UZ&apikey=f3424d5d-222c-4734-9271-e5d8a0c5c567';
+      script.src = 'https://api-maps.yandex.ru/2.1/?lang=uz_UZ&load=package.full';
       script.async = true;
       script.onload = () => {
         if (window.ymaps) window.ymaps.ready(initMap);

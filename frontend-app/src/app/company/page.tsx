@@ -10,7 +10,8 @@ import {
   MdAdd, 
   MdPerson, 
   MdLocationOn, 
-  MdAttachMoney
+  MdAttachMoney,
+  MdClose
 } from 'react-icons/md';
 import Modal from '@/components/ui/Modal';
 import { ordersApi, usersApi, getUser, customersApi, servicesApi } from '@/lib/api';
@@ -35,8 +36,7 @@ export default function CompanyDashboardPage() {
   const [formData, setFormData] = useState({
     phone: '',
     customerName: '',
-    serviceId: '',
-    quantity: '1',
+    items: [{ serviceId: '', quantity: '1' }],
     address: ''
   });
 
@@ -62,8 +62,11 @@ export default function CompanyDashboardPage() {
       setCompanyStats(statsData);
       setUsers(usersData);
       setServices(servicesData);
-      if (servicesData.length > 0 && !formData.serviceId) {
-        setFormData(prev => ({ ...prev, serviceId: servicesData[0].id }));
+      if (servicesData.length > 0 && formData.items[0].serviceId === '') {
+        setFormData(prev => ({ 
+          ...prev, 
+          items: [{ serviceId: servicesData[0].id, quantity: '1' }] 
+        }));
       }
     } catch (err) {
       console.error('Ma\'lumotlarni yuklashda xato:', err);
@@ -74,8 +77,8 @@ export default function CompanyDashboardPage() {
 
   const handleCreateOrder = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.phone || !formData.serviceId) {
-      toast.error('Telefon va xizmat turini kiriting');
+    if (!formData.phone || formData.items.length === 0) {
+      toast.error('Telefon va kamida bitta xizmatni kiriting');
       return;
     }
 
@@ -99,24 +102,64 @@ export default function CompanyDashboardPage() {
         customerId,
         companyId: user.company.id,
         operatorId: user.id,
-        items: [{
-          serviceId: formData.serviceId,
-          quantity: Number(formData.quantity) || 1,
+        items: formData.items.map(item => ({
+          serviceId: item.serviceId,
+          quantity: Number(item.quantity) || 1,
           width: 0,
           length: 0
-        }]
+        }))
       });
 
       toast.success('Buyurtma muvaffaqiyatli yaratildi!');
       setIsModalOpen(false);
-      setFormData({ phone: '', customerName: '', serviceId: '', quantity: '1', address: '' });
-      setSelectedCustomer(null);
+      resetFormData();
       loadData(user.company.id); // Yangilash
     } catch (err: any) {
       toast.error(err.message || 'Xatolik yuz berdi');
     } finally {
       setSubmitting(false);
     }
+  };
+
+  const resetFormData = () => {
+    setFormData({ 
+       phone: '', 
+       customerName: '', 
+       items: [{ serviceId: services[0]?.id || '', quantity: '1' }], 
+       address: '' 
+    });
+    setSelectedCustomer(null);
+  };
+
+  const addOrderItem = () => {
+    setFormData(prev => ({
+      ...prev,
+      items: [...prev.items, { serviceId: services[0]?.id || '', quantity: '1' }]
+    }));
+  };
+
+  const removeOrderItem = (index: number) => {
+    if (formData.items.length <= 1) return;
+    setFormData(prev => {
+      const newItems = [...prev.items];
+      newItems.splice(index, 1);
+      return { ...prev, items: newItems };
+    });
+  };
+
+  const updateOrderItem = (index: number, field: string, value: string) => {
+    setFormData(prev => {
+      const newItems = [...prev.items];
+      newItems[index] = { ...newItems[index], [field]: value };
+      return { ...prev, items: newItems };
+    });
+  };
+
+  const calculateTotal = () => {
+    return formData.items.reduce((acc, item) => {
+      const s = services.find(x => x.id === item.serviceId);
+      return acc + (Number(s?.price || 0) * Number(item.quantity || 0));
+    }, 0);
   };
 
   if (loading || !user) {
@@ -322,123 +365,131 @@ export default function CompanyDashboardPage() {
         onClose={() => setIsModalOpen(false)} 
         title="Tezkor Buyurtma Yaratish"
       >
-        <form onSubmit={handleCreateOrder} className="space-y-6">
-          <div className="grid grid-cols-1 gap-5">
+        <form onSubmit={handleCreateOrder} className="space-y-6 max-h-[80vh] overflow-y-auto px-1">
+          <div className="grid grid-cols-1 gap-6">
             
-            {/* Mijoz Ma'lumotlari Section */}
-            <div className="p-4 bg-slate-50/80 rounded-2xl border border-slate-100 space-y-4">
-              <div className="flex items-center gap-2 mb-1">
-                <div className="w-1.5 h-4 bg-blue-600 rounded-full"></div>
-                <h3 className="text-[11px] font-black text-slate-400 uppercase tracking-[0.15em]">Mijoz ma'lumotlari</h3>
+            {/* Mijoz Section */}
+            <div className="p-5 bg-slate-50/80 rounded-2xl border border-slate-100 space-y-5">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="w-1.5 h-4 bg-blue-600 rounded-full"></div>
+                  <h3 className="text-[11px] font-black text-slate-400 uppercase tracking-[0.15em]">Mijoz</h3>
+                </div>
+                {selectedCustomer && (
+                  <span className="text-[10px] bg-emerald-500 text-white px-2 py-0.5 rounded-full font-black animate-pulse">BAZADA MAVJUD</span>
+                )}
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1.5 ml-1">Telefon</label>
-                  <div className="relative">
-                    <input
-                      type="text"
-                      required
-                      placeholder="+998"
-                      className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all font-bold text-slate-700 shadow-sm"
-                      value={formData.phone}
-                      onChange={async (e) => {
-                        const val = e.target.value;
-                        setFormData({...formData, phone: val});
-                        if (val.length >= 7) {
-                          const found = await customersApi.search(user.company.id, val);
-                          if (found && found.length > 0) {
-                            setSelectedCustomer(found[0]);
-                            setFormData(prev => ({...prev, customerName: found[0].fullName, address: found[0].address}));
-                          } else {
-                            setSelectedCustomer(null);
-                          }
-                        }
-                      }}
-                    />
-                    {selectedCustomer && (
-                      <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                        <span className="flex h-2 w-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.6)]"></span>
-                      </div>
-                    )}
-                  </div>
-                  {selectedCustomer && (
-                    <div className="mt-2 flex items-center gap-1.5 px-2 py-1 bg-emerald-50 rounded-lg border border-emerald-100 animate-in fade-in zoom-in duration-300">
-                      <MdPerson className="text-emerald-600 text-sm" />
-                      <span className="text-[10px] font-bold text-emerald-700 truncate max-w-[150px]">
-                        {selectedCustomer.fullName}
-                      </span>
-                    </div>
-                  )}
-                </div>
-
-                <div>
-                  <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1.5 ml-1">F.I.SH (Ism)</label>
                   <input
                     type="text"
-                    placeholder="To'liq ism"
+                    required
+                    placeholder="+998"
+                    className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all font-bold text-slate-700 shadow-sm"
+                    value={formData.phone}
+                    onChange={async (e) => {
+                      const val = e.target.value;
+                      setFormData({...formData, phone: val});
+                      if (val.length >= 7) {
+                        const found = await customersApi.search(user.company.id, val);
+                        if (found && found.length > 0) {
+                          setSelectedCustomer(found[0]);
+                          setFormData(prev => ({...prev, customerName: found[0].fullName, address: found[0].address}));
+                        } else {
+                          setSelectedCustomer(null);
+                        }
+                      }
+                    }}
+                  />
+                </div>
+                <div>
+                  <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1.5 ml-1">Ism / F.I.SH</label>
+                  <input
+                    type="text"
+                    placeholder="Ismni kiriting"
                     className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all font-bold text-slate-700 shadow-sm"
                     value={formData.customerName}
                     onChange={(e) => setFormData({...formData, customerName: e.target.value})}
                   />
                 </div>
               </div>
-
               <div>
                 <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1.5 ml-1">Manzil</label>
-                <div className="relative">
-                  <MdLocationOn className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
-                  <input
-                    type="text"
-                    placeholder="Ko'cha, uy, mo'ljal..."
-                    className="w-full pl-11 pr-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all font-bold text-slate-700 shadow-sm"
-                    value={formData.address}
-                    onChange={(e) => setFormData({...formData, address: e.target.value})}
-                  />
-                </div>
+                <input
+                  type="text"
+                  placeholder="Ko'cha, uy, mo'ljal..."
+                  className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all font-bold text-slate-700 shadow-sm"
+                  value={formData.address}
+                  onChange={(e) => setFormData({...formData, address: e.target.value})}
+                />
               </div>
             </div>
 
-            {/* Buyurtma Tafsilotlari Section */}
-            <div className="p-4 bg-blue-50/30 rounded-2xl border border-blue-100 space-y-4">
-              <div className="flex items-center gap-2 mb-1">
-                <div className="w-1.5 h-4 bg-indigo-600 rounded-full"></div>
-                <h3 className="text-[11px] font-black text-indigo-400 uppercase tracking-[0.15em]">Xizmat tafsilotlari</h3>
+            {/* Xizmatlar Section */}
+            <div className="p-5 bg-white rounded-2xl border border-slate-100 shadow-sm space-y-4">
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-2">
+                  <div className="w-1.5 h-4 bg-indigo-600 rounded-full"></div>
+                  <h3 className="text-[11px] font-black text-slate-400 uppercase tracking-[0.15em]">Xizmatlar ro'yxati</h3>
+                </div>
+                <button 
+                  type="button"
+                  onClick={addOrderItem}
+                  className="p-1.5 bg-indigo-50 text-indigo-600 rounded-lg hover:bg-indigo-100 transition-colors"
+                >
+                  <MdAdd className="text-xl" />
+                </button>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="relative">
-                  <label className="block text-[10px] font-bold text-indigo-500/70 uppercase mb-1.5 ml-1">Xizmat turi</label>
-                  <select
-                    className="w-full px-4 py-3 bg-white border border-blue-100 rounded-xl focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all font-bold text-slate-700 shadow-sm appearance-none cursor-pointer"
-                    value={formData.serviceId}
-                    onChange={(e) => setFormData({...formData, serviceId: e.target.value})}
-                  >
-                    {services.map(s => (
-                      <option key={s.id} value={s.id}>{s.name} — {Number(s.price).toLocaleString()} so'm</option>
-                    ))}
-                  </select>
-                  <div className="absolute right-4 top-[38px] pointer-events-none text-indigo-400">
-                    <svg className="w-4 h-4 fill-current" viewBox="0 0 20 20"><path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"/></svg>
+              <div className="space-y-4">
+                {formData.items.map((item, index) => (
+                  <div key={index} className="grid grid-cols-12 gap-3 items-end group animate-in slide-in-from-left-2 duration-300">
+                    <div className="col-span-12 md:col-span-7">
+                      <label className="block text-[9px] font-black text-slate-400 uppercase mb-1 ml-1 tracking-tighter">Xizmat turi</label>
+                      <select
+                        className="w-full px-4 py-3 bg-slate-50/50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all font-bold text-slate-700 text-sm appearance-none cursor-pointer"
+                        value={item.serviceId}
+                        onChange={(e) => updateOrderItem(index, 'serviceId', e.target.value)}
+                      >
+                        {services.map(s => (
+                          <option key={s.id} value={s.id}>{s.name} — {Number(s.price).toLocaleString()}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className="col-span-12 md:col-span-3">
+                      <label className="block text-[9px] font-black text-slate-400 uppercase mb-1 ml-1 tracking-tighter">Kvadrat (m²)</label>
+                      <input
+                        type="number"
+                        step="0.1"
+                        className="w-full px-4 py-3 bg-slate-50/50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all font-bold text-slate-700 text-sm"
+                        value={item.quantity}
+                        onChange={(e) => updateOrderItem(index, 'quantity', e.target.value)}
+                      />
+                    </div>
+                    <div className="col-span-12 md:col-span-2 flex justify-end pb-1">
+                      <button 
+                        type="button"
+                        onClick={() => removeOrderItem(index)}
+                        className="w-10 h-10 flex items-center justify-center text-rose-300 hover:text-rose-500 hover:bg-rose-50 rounded-xl transition-all"
+                      >
+                        <MdClose /> 
+                      </button>
+                    </div>
                   </div>
-                </div>
+                ))}
+              </div>
 
-                <div>
-                  <label className="block text-[10px] font-bold text-indigo-500/70 uppercase mb-1.5 ml-1">Kvadratura (m²)</label>
-                  <div className="relative">
-                    <input
-                      type="number"
-                      step="0.1"
-                      className="w-full px-4 py-3 bg-white border border-blue-100 rounded-xl focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all font-bold text-slate-700 shadow-sm"
-                      value={formData.quantity}
-                      onChange={(e) => setFormData({...formData, quantity: e.target.value})}
-                    />
-                    <span className="absolute right-4 top-1/2 -translate-y-1/2 text-xs font-black text-indigo-300">M²</span>
-                  </div>
+              {/* Jami Summa Display */}
+              <div className="mt-6 pt-4 border-t border-slate-100 flex justify-between items-center">
+                <span className="text-xs font-black text-slate-400 uppercase tracking-widest">Umumiy Summa</span>
+                <div className="text-xl font-black text-slate-800 tracking-tighter flex items-baseline gap-1">
+                  {calculateTotal().toLocaleString()}
+                  <span className="text-[10px] text-slate-400 uppercase">so'm</span>
                 </div>
               </div>
             </div>
-
           </div>
 
           {/* Action Buttons */}
@@ -447,22 +498,19 @@ export default function CompanyDashboardPage() {
               type="button"
               disabled={submitting}
               onClick={() => setIsModalOpen(false)}
-              className="px-6 py-4 text-xs font-black text-slate-400 hover:text-slate-600 transition-colors uppercase tracking-widest"
+              className="px-6 py-4 text-xs font-black text-slate-400 hover:text-slate-500 transition-colors uppercase tracking-widest"
             >
-              Bekor qilish
+              Yopish
             </button>
             <button 
               type="submit"
               disabled={submitting}
-              className={`flex-1 py-4 bg-gradient-to-r from-blue-600 to-indigo-600 text-white text-[11px] font-black rounded-2xl shadow-xl shadow-blue-500/25 hover:shadow-blue-500/40 hover:-translate-y-1 active:scale-95 transition-all uppercase tracking-[0.2em] flex items-center justify-center gap-3 ${submitting ? 'opacity-80' : ''}`}
+              className={`flex-1 py-4.5 bg-slate-900 text-white text-[10px] font-black rounded-2xl shadow-xl shadow-slate-900/20 hover:shadow-slate-900/40 hover:-translate-y-1 active:scale-95 transition-all uppercase tracking-[0.25em] flex items-center justify-center gap-3 ${submitting ? 'opacity-80' : ''}`}
             >
               {submitting ? (
                 <div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin"></div>
               ) : (
-                <>
-                  <MdAttachMoney className="text-lg" />
-                  Saqlash va Yuborish
-                </>
+                <>SAQLASH VA YOPIY QILISH</>
               )}
             </button>
           </div>

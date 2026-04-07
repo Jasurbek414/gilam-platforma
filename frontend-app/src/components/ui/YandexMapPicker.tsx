@@ -1,161 +1,122 @@
 'use client';
 
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import { MapContainer, TileLayer, Marker, useMap, useMapEvents } from 'react-leaflet';
+import L from 'leaflet';
+import 'leaflet/dist/leaflet.css';
 
-declare global {
-  interface Window {
-    ymaps: any;
-  }
-}
+// Fix for default marker icon in Leaflet
+const icon = L.icon({
+  iconUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon.png',
+  shadowUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-shadow.png',
+  iconSize: [25, 41],
+  iconAnchor: [12, 41],
+});
 
-interface YandexMapPickerProps {
+interface GoogleMapPickerProps {
   onLocationSelect: (lat: number, lng: number, address: string) => void;
   initialLocation?: { lat: number, lng: number };
   searchQuery?: string;
 }
 
-export default function YandexMapPicker({ onLocationSelect, initialLocation, searchQuery }: YandexMapPickerProps) {
-  const mapRef = useRef<HTMLDivElement>(null);
-  const mapInstance = useRef<any>(null);
-  const markerRef = useRef<any>(null);
-  const [isReady, setIsReady] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
+// Map updater to handle flying/panning
+function MapUpdater({ center, zoom }: { center: [number, number], zoom: number }) {
+  const map = useMap();
   useEffect(() => {
-    const initMap = () => {
-      if (!mapRef.current || !window.ymaps || mapInstance.current) return;
+    map.flyTo(center, zoom, { duration: 1.5 });
+  }, [center, zoom, map]);
+  return null;
+}
 
-      try {
-        const center = initialLocation ? [initialLocation.lat, initialLocation.lng] : [41.2995, 69.2401];
-        
-        mapInstance.current = new window.ymaps.Map(mapRef.current, {
-          center: center,
-          zoom: 16,
-          controls: ['zoomControl', 'fullscreenControl', 'geolocationControl']
-        });
+// Location selection handler
+function LocationMarker({ onSelect, initialPos }: { onSelect: any, initialPos: [number, number] }) {
+  const [position, setPosition] = useState<[number, number]>(initialPos);
+  const map = useMapEvents({
+    click(e) {
+      const { lat, lng } = e.latlng;
+      setPosition([lat, lng]);
+      onSelect(lat, lng);
+    },
+  });
 
-        markerRef.current = new window.ymaps.Placemark(center, {
-          hintContent: 'Manzilni belgilang'
-        }, {
-          preset: 'islands#redDotIconWithCaption',
-          draggable: true
-        });
-
-        // Event: Click on map
-        mapInstance.current.events.add('click', (e: any) => {
-          const coords = e.get('coords');
-          markerRef.current.geometry.setCoordinates(coords);
-          getAddress(coords);
-        });
-
-        // Event: Marker drag
-        markerRef.current.events.add('dragend', () => {
-          const coords = markerRef.current.geometry.getCoordinates();
-          getAddress(coords);
-        });
-
-        mapInstance.current.geoObjects.add(markerRef.current);
-        setIsReady(true);
-      } catch (err) {
-        console.error('Yandex Map Init Error:', err);
-        setError('Xaritani yuklashda xatolik');
+  return (
+    <Marker position={position} icon={icon} draggable={true} eventHandlers={{
+      dragend: (e) => {
+        const marker = e.target;
+        const { lat, lng } = marker.getLatLng();
+        setPosition([lat, lng]);
+        onSelect(lat, lng);
       }
-    };
+    }} />
+  );
+}
 
-    const getAddress = (coords: [number, number]) => {
-      if (!window.ymaps) return;
-      window.ymaps.geocode(coords).then((res: any) => {
-        const firstGeoObject = res.geoObjects.get(0);
-        const address = firstGeoObject ? firstGeoObject.getAddressLine() : `${coords[0]}, ${coords[1]}`;
-        onLocationSelect(coords[0], coords[1], address);
-      });
-    };
+export default function GoogleMapPicker({ onLocationSelect, initialLocation, searchQuery }: GoogleMapPickerProps) {
+  const [coords, setCoords] = useState<[number, number] | null>(null);
+  const [zoom, setZoom] = useState(13);
+  const [loading, setLoading] = useState(false);
 
-    const loadScript = () => {
-      if (window.ymaps) {
-        window.ymaps.ready(initMap);
-        return;
-      }
-
-      const id = 'yandex-maps-api-script';
-      if (document.getElementById(id)) return;
-
-      const script = document.createElement('script');
-      script.id = id;
-      script.src = 'https://api-maps.yandex.ru/2.1/?lang=uz_UZ&load=package.full';
-      script.async = true;
-      script.onload = () => {
-        if (window.ymaps) window.ymaps.ready(initMap);
-      };
-      script.onerror = () => setError('Xarita skripti yuklanmadi');
-      document.head.appendChild(script);
-    };
-
-    loadScript();
-
-    return () => {
-      // We don't destroy the map to keep the ref clean during HMR
-    };
-  }, [initialLocation, onLocationSelect]);
-
-  // Unified Search Logic
+  // Handle address geocoding using Nominatim (Free)
   useEffect(() => {
-    if (!isReady || !searchQuery || searchQuery.length < 3 || !window.ymaps || !mapInstance.current) return;
+    if (!searchQuery || searchQuery.length < 3) return;
 
-    const timer = setTimeout(() => {
-      if (!window.ymaps || !mapInstance.current) return;
-      
+    const delayDebounceFn = setTimeout(() => {
+      setLoading(true);
       const q = searchQuery.toLowerCase().includes('toshkent') ? searchQuery : `Toshkent, ${searchQuery}`;
       
-      window.ymaps.geocode(q, { 
-        results: 1,
-        boundedBy: [[41.1, 69.1], [41.5, 69.5]], // Bound to Tashkent area
-        strictBounds: false
-      }).then((res: any) => {
-        const obj = res.geoObjects.get(0);
-        if (obj && mapInstance.current && markerRef.current) {
-          const coords = obj.geometry.getCoordinates();
-          
-          mapInstance.current.setCenter(coords, 17, {
-            checkZoomRange: true,
-            duration: 800
-          });
-          
-          markerRef.current.geometry.setCoordinates(coords);
-        }
-      }).catch((e: any) => {
-        console.warn('Yandex Geocode search failed, skipping auto-move:', e);
-      });
+      fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(q)}&limit=1`)
+        .then(res => res.json())
+        .then(data => {
+          if (data && data.length > 0) {
+            const lat = parseFloat(data[0].lat);
+            const lng = parseFloat(data[0].lon);
+            setCoords([lat, lng]);
+            setZoom(18); // Zoom in close to see buildings
+          }
+        })
+        .catch(err => console.error('Geocoding error:', err))
+        .finally(() => setLoading(false));
     }, 1000);
 
-    return () => clearTimeout(timer);
-  }, [searchQuery, isReady]);
+    return () => clearTimeout(delayDebounceFn);
+  }, [searchQuery]);
+
+  const handleSelect = (lat: number, lng: number) => {
+    // Reverse geocoding to get address string
+    fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`)
+      .then(res => res.json())
+      .then(data => {
+        const addr = data.display_name || 'Tanlangan manzil';
+        onLocationSelect(lat, lng, addr);
+      });
+  };
+
+  const initialPos: [number, number] = initialLocation ? [initialLocation.lat, initialLocation.lng] : [41.2995, 69.2401];
 
   return (
     <div className="w-full h-[350px] rounded-2xl overflow-hidden border-2 border-slate-100 shadow-inner relative bg-slate-50">
-      <div ref={mapRef} className="w-full h-full" />
-      
-      {!isReady && !error && (
-        <div className="absolute inset-0 bg-white/60 backdrop-blur-[2px] z-[100] flex flex-col items-center justify-center">
+      <MapContainer 
+        center={initialPos} 
+        zoom={zoom} 
+        style={{ height: '100%', width: '100%' }}
+      >
+        {/* Google Maps Roadmap Layer (Very detailed for Tashkent) */}
+        <TileLayer
+          attribution='&copy; Google Maps'
+          url="https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}"
+        />
+        <LocationMarker onSelect={handleSelect} initialPos={initialPos} />
+        {coords && <MapUpdater center={coords} zoom={zoom} />}
+      </MapContainer>
+
+      {loading && (
+        <div className="absolute inset-0 bg-white/40 backdrop-blur-[1px] z-[1000] flex items-center justify-center">
           <div className="w-8 h-8 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin"></div>
-          <p className="mt-2 text-[10px] font-black text-blue-600 uppercase tracking-widest">Xarita tayyorlanmoqda...</p>
         </div>
       )}
 
-      {error && (
-        <div className="absolute inset-0 bg-rose-50 z-[100] flex flex-col items-center justify-center p-6 text-center">
-          <p className="text-rose-600 font-bold text-sm">{error}</p>
-          <button 
-            onClick={() => window.location.reload()}
-            className="mt-4 px-4 py-2 bg-rose-600 text-white rounded-xl text-xs font-black shadow-lg shadow-rose-500/20"
-          >
-            SAHIFANI YANGILASH
-          </button>
-        </div>
-      )}
-      
-      <div className="absolute bottom-4 left-4 z-[50] bg-white px-3 py-2 rounded-xl shadow-lg border border-slate-100 pointer-events-none">
-        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Yandex Maps API 2.1</p>
+      <div className="absolute bottom-4 left-4 z-[1000] bg-white px-3 py-1.5 rounded-xl shadow-lg border border-slate-100 pointer-events-none">
+        <p className="text-[9px] font-black text-slate-400调节 uppercase tracking-widest text-center">Google Maps • Detailed</p>
       </div>
     </div>
   );

@@ -33,6 +33,7 @@ export class CustomersService {
   async findAllByCompany(companyId: string): Promise<Customer[]> {
     return this.customerRepository.find({
       where: { companyId },
+      relations: ['operator'],
       order: { createdAt: 'DESC' },
     });
   }

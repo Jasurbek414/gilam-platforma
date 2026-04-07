@@ -1,5 +1,6 @@
 import { Column, CreateDateColumn, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm';
 import { Company } from '../../companies/entities/company.entity';
+import { User } from '../../users/entities/user.entity';
 
 @Entity('customers')
 export class Customer {
@@ -30,6 +31,10 @@ export class Customer {
 
   @Column({ name: 'operator_id', type: 'uuid', nullable: true })
   operatorId: string;
+
+  @ManyToOne(() => User, { nullable: true })
+  @JoinColumn({ name: 'operator_id' })
+  operator: User;
 
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;

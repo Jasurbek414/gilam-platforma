@@ -170,8 +170,8 @@ export default function CustomersPage() {
               <thead>
                 <tr className="bg-slate-50 border-b border-slate-100 text-[10px] font-black text-slate-400 uppercase tracking-widest">
                   <th className="px-6 py-4">Mijoz / Telefon</th>
+                  <th className="px-6 py-4">Mas'ul Operator</th>
                   <th className="px-6 py-4">Manzil</th>
-                  <th className="px-6 py-4">Qo'shilgan sana</th>
                   <th className="px-6 py-4 text-right">Amallar</th>
                 </tr>
               </thead>
@@ -193,13 +193,20 @@ export default function CustomersPage() {
                       </div>
                     </td>
                     <td className="px-6 py-5">
-                      <div className="flex items-center gap-2 text-slate-600 font-medium max-w-[200px] truncate">
+                      <div className="flex items-center gap-2">
+                        <div className="w-6 h-6 bg-slate-100 text-slate-500 rounded-full flex items-center justify-center text-[10px] font-black">
+                          {c.operator?.fullName?.[0]?.toUpperCase() || '?'}
+                        </div>
+                        <span className="font-bold text-xs text-slate-600 truncate max-w-[120px]">
+                          {c.operator?.fullName?.split(' ')[0] || 'Noma\'lum'}
+                        </span>
+                      </div>
+                    </td>
+                    <td className="px-6 py-5">
+                      <div className="flex items-center gap-2 text-slate-600 font-medium max-w-[180px] truncate">
                         <MdLocationOn className="text-slate-400 shrink-0" />
                         {c.address}
                       </div>
-                    </td>
-                    <td className="px-6 py-5 text-slate-500 font-bold text-xs">
-                      {new Date(c.createdAt).toLocaleDateString('uz-UZ', { day: 'numeric', month: 'long', year: 'numeric' })}
                     </td>
                     <td className="px-6 py-5">
                       <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">

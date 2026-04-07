@@ -82,7 +82,7 @@ export default function YandexMapPicker({ onLocationSelect, initialLocation, sea
 
       const script = document.createElement('script');
       script.id = id;
-      script.src = 'https://api-maps.yandex.ru/2.1/?lang=uz_UZ&apikey=f3424d5d-222c-4734-9271-e5d8a0c5c567';
+      script.src = 'https://api-maps.yandex.ru/2.1/?lang=uz_UZ&load=package.full&apikey=f3424d5d-222c-4734-9271-e5d8a0c5c567';
       script.async = true;
       script.onload = () => {
         if (window.ymaps) window.ymaps.ready(initMap);
@@ -103,14 +103,19 @@ export default function YandexMapPicker({ onLocationSelect, initialLocation, sea
     if (!isReady || !searchQuery || searchQuery.length < 3 || !window.ymaps || !mapInstance.current) return;
 
     const timer = setTimeout(() => {
+      if (!window.ymaps || !mapInstance.current) return;
+      
       const q = searchQuery.toLowerCase().includes('toshkent') ? searchQuery : `Toshkent, ${searchQuery}`;
       
-      window.ymaps.geocode(q, { results: 1 }).then((res: any) => {
+      window.ymaps.geocode(q, { 
+        results: 1,
+        boundedBy: [[41.1, 69.1], [41.5, 69.5]], // Bound to Tashkent area
+        strictBounds: false
+      }).then((res: any) => {
         const obj = res.geoObjects.get(0);
         if (obj && mapInstance.current && markerRef.current) {
           const coords = obj.geometry.getCoordinates();
           
-          // Use basic setCenter for maximum compatibility
           mapInstance.current.setCenter(coords, 17, {
             checkZoomRange: true,
             duration: 800
@@ -118,8 +123,10 @@ export default function YandexMapPicker({ onLocationSelect, initialLocation, sea
           
           markerRef.current.geometry.setCoordinates(coords);
         }
-      }).catch((e: any) => console.error('Geocode error:', e));
-    }, 800);
+      }).catch((e: any) => {
+        console.warn('Yandex Geocode search failed, skipping auto-move:', e);
+      });
+    }, 1000);
 
     return () => clearTimeout(timer);
   }, [searchQuery, isReady]);

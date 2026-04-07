@@ -39,30 +39,47 @@ export default function LogisticsPage() {
       
       const realDrivers = allUsers.filter((u: any) => u.role === 'DRIVER');
       
-      // Map orders to points
-      const points = allOrders.map((o: any) => {
-        // Generating random offset around Tashkent for realism since we don't have accurate coords yet
-        const offsetLat = (Math.random() - 0.5) * 0.1;
-        const offsetLng = (Math.random() - 0.5) * 0.1;
-        return {
-          id: o.id,
-          name: o.customer?.fullName || 'Mijoz',
-          pos: [41.311081 + offsetLat, 69.240562 + offsetLng],
-          type: (o.status === 'NEW' || o.status === 'DRIVER_ASSIGNED') ? 'pickup' : 'delivery'
-        }
-      });
+      // Map orders to points using real locations from DB
+      const points = allOrders
+        .filter((o: any) => o.customer?.location || (o.customer?.address))
+        .map((o: any) => {
+          let pos = [41.311081, 69.240562]; // Default Tashkent
+          
+          if (o.customer?.location) {
+            if (typeof o.customer.location === 'object') {
+              pos = [o.customer.location.lat, o.customer.location.lng];
+            } else if (typeof o.customer.location === 'string' && o.customer.location.includes(',')) {
+              pos = o.customer.location.split(',').map(Number);
+            }
+          }
+          
+          return {
+            id: o.id,
+            name: o.customer?.fullName || 'Mijoz',
+            pos: pos,
+            type: (o.status === 'NEW' || o.status === 'DRIVER_ASSIGNED') ? 'pickup' : 'delivery'
+          }
+        });
       
-      // Auto-generate coords for drivers that lack it
+      // Map real drivers
       const mappedDrivers = realDrivers.map((d: any, i: number) => {
-        const offsetLat = (Math.random() - 0.5) * 0.05;
-        const offsetLng = (Math.random() - 0.5) * 0.05;
+        let pos = [41.311081 + (i*0.01), 69.240562 + (i*0.01)]; // Small offset if no location
+        
+        if (d.currentLocation) {
+          if (typeof d.currentLocation === 'object') {
+            pos = [d.currentLocation.lat, d.currentLocation.lng];
+          } else if (typeof d.currentLocation === 'string' && d.currentLocation.includes(',')) {
+            pos = d.currentLocation.split(',').map(Number);
+          }
+        }
+
         return {
           id: d.id,
           name: d.fullName,
-          pos: d.currentLocation ? [Number(d.currentLocation.split(',')[0]), Number(d.currentLocation.split(',')[1])] : [41.311081 + offsetLat, 69.240562 + offsetLng],
+          pos: pos,
           car: d.phone,
           status: d.status === 'ACTIVE' ? 'Liniyada' : 'Dam olishda',
-          tasks: points.length > 0 ? (i % 3) + 1 : 0
+          tasks: points.filter(p => p.type === 'pickup').length // Just example count
         };
       });
 

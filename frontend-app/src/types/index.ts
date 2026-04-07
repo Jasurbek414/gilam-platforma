@@ -18,6 +18,7 @@ export interface User {
   companyId: string;
   company?: Company;
   status: 'ACTIVE' | 'INACTIVE';
+  currentLocation?: string | { lat: number, lng: number }; // For drivers
   createdAt: string;
 }
 
@@ -25,7 +26,10 @@ export interface Customer {
   id: string;
   fullName: string;
   phone: string;
+  phone1?: string;
+  phone2?: string;
   address: string;
+  location?: string | { lat: number, lng: number } | any;
   companyId: string;
   operatorId?: string;
   operator?: User;
@@ -36,6 +40,7 @@ export interface Service {
   id: string;
   name: string;
   price: number;
+  measurementUnit: string;
   companyId: string;
   createdAt: string;
 }
@@ -64,6 +69,7 @@ export interface Order {
   status: OrderStatus;
   totalAmount: number;
   items: OrderItem[];
+  notes?: string;
   createdAt: string;
   updatedAt: string;
 }

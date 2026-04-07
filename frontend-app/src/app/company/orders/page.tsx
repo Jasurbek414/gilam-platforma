@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { MdAdd, MdSearch, MdFilterList, MdShoppingCart, MdPerson, MdPhone, MdClose, MdExpandMore, MdExpandLess } from 'react-icons/md';
+import { MdAdd, MdSearch, MdFilterList, MdShoppingCart, MdPerson, MdPhone, MdClose, MdExpandMore, MdExpandLess, MdPrint } from 'react-icons/md';
 import Modal from '@/components/ui/Modal';
 import { ordersApi, customersApi, servicesApi, getUser, getLoginPath } from '@/lib/api';
 import { useRouter } from 'next/navigation';
@@ -192,6 +192,80 @@ export default function CompanyOrdersPage() {
     }
   };
 
+  const handlePrint = (order: any) => {
+    const printWindow = window.open('', '_blank', 'width=800,height=600');
+    if (!printWindow) return;
+
+    const itemsHtml = order.items.map((item: any) => `
+      <tr>
+        <td style="padding: 8px; border-bottom: 1px solid #eee;">${item.service?.name || 'Xizmat'}</td>
+        <td style="padding: 8px; border-bottom: 1px solid #eee; text-align: center;">${item.width || '-'} x ${item.length || '-'}</td>
+        <td style="padding: 8px; border-bottom: 1px solid #eee; text-align: center;">${item.quantity}</td>
+        <td style="padding: 8px; border-bottom: 1px solid #eee; text-align: right;">${Number(item.service?.price || 0).toLocaleString()}</td>
+      </tr>
+    `).join('');
+
+    printWindow.document.write(`
+      <html>
+        <head>
+          <title>Kvitansiya #${order.id.split('-')[0].toUpperCase()}</title>
+          <style>
+            body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 20px; color: #333; }
+            .header { text-align: center; border-bottom: 2px solid #333; padding-bottom: 10px; margin-bottom: 20px; }
+            .info { display: flex; justify-content: space-between; margin-bottom: 20px; }
+            table { width: 100%; border-collapse: collapse; }
+            th { text-align: left; background: #f9f9f9; padding: 10px; border-bottom: 2px solid #eee; }
+            .total { text-align: right; margin-top: 20px; font-size: 1.2em; font-weight: bold; }
+            .footer { margin-top: 40px; text-align: center; font-size: 0.9em; color: #666; border-top: 1px solid #eee; padding-top: 10px; }
+            @media print { .no-print { display: none; } }
+          </style>
+        </head>
+        <body>
+          <div class="header">
+            <h1 style="margin:0">${user?.company?.name || 'GILAM TOZALASH'}</h1>
+            <p style="margin:5px 0">Professional Tozalash Xizmati</p>
+          </div>
+          <div class="info">
+            <div>
+              <p><b>Mijoz:</b> ${order.customer?.fullName}</p>
+              <p><b>Tel:</b> ${order.customer?.phone1}</p>
+              <p><b>Manzil:</b> ${order.customer?.address || '-'}</p>
+            </div>
+            <div style="text-align: right;">
+              <p><b>Buyurtma #:</b> ${order.id.split('-')[0].toUpperCase()}</p>
+              <p><b>Sana:</b> ${new Date(order.createdAt).toLocaleString()}</p>
+              <p><b>Holat:</b> ${statusLabels[order.status]}</p>
+            </div>
+          </div>
+          <table>
+            <thead>
+              <tr>
+                <th>Xizmat</th>
+                <th style="text-align: center;">O'lcham</th>
+                <th style="text-align: center;">Soni</th>
+                <th style="text-align: right;">Narxi</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${itemsHtml}
+            </tbody>
+          </table>
+          <div class="total">
+            JAMI: ${Number(order.totalAmount).toLocaleString()} so'm
+          </div>
+          <div class="footer">
+            <p>Xizmatimizdan foydalanganingiz uchun rahmat!</p>
+            <p>Tel: +998 90 123 45 67</p>
+          </div>
+          <script>
+            window.onload = function() { window.print(); window.close(); };
+          </script>
+        </body>
+      </html>
+    `);
+    printWindow.document.close();
+  };
+
   const statusLabels: Record<string, string> = {
     'NEW': 'Yangi',
     'DRIVER_ASSIGNED': 'Haydovchi kutilyapti',
@@ -290,6 +364,7 @@ export default function CompanyOrdersPage() {
                 <th className="py-5 px-6 text-center">Xizmatlar</th>
                 <th className="py-5 px-6 text-center">Joriy Holat</th>
                 <th className="py-5 px-6 text-right">Summa (so'm)</th>
+                <th className="py-5 px-6 text-right">Amal</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
@@ -338,6 +413,15 @@ export default function CompanyOrdersPage() {
                     <span className="font-black text-slate-800 text-sm">
                       {Number(order.totalAmount).toLocaleString()}
                     </span>
+                  </td>
+                  <td className="py-5 px-6 text-right">
+                    <button 
+                      onClick={() => handlePrint(order)}
+                      className="p-2.5 bg-slate-100 text-slate-600 rounded-xl hover:bg-blue-600 hover:text-white transition-all shadow-sm"
+                      title="Kvitansiya chiqarish"
+                    >
+                      <MdPrint className="text-xl" />
+                    </button>
                   </td>
                 </tr>
               )) : (

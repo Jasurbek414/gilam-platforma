@@ -1,5 +1,15 @@
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/api';
 
+import { 
+  User, 
+  Company, 
+  Customer, 
+  Service, 
+  Order, 
+  Notification, 
+  Call 
+} from '@/types';
+
 // ===== TOKEN BOSHQARUVI =====
 export function getToken(): string | null {
   if (typeof window === 'undefined') return null;
@@ -15,13 +25,13 @@ export function removeToken() {
   localStorage.removeItem('user');
 }
 
-export function getUser(): any | null {
+export function getUser(): User | null {
   if (typeof window === 'undefined') return null;
   const raw = localStorage.getItem('user');
   return raw ? JSON.parse(raw) : null;
 }
 
-export function setUser(user: any) {
+export function setUser(user: User) {
   localStorage.setItem('user', JSON.stringify(user));
 }
 
@@ -56,14 +66,12 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
       ? errorData.message.join(', ') 
       : (errorData.message || `HTTP ${res.status}`);
     
-    // Create a custom error that mimics Axios or similar structures for consistency
     const error: any = new Error(errorMessage);
     error.status = res.status;
     error.response = { data: errorData };
     throw error;
   }
 
-  // 204 No Content yoki bo'sh body uchun (DELETE so'rovlari)
   const contentType = res.headers.get('content-type');
   if (res.status === 204 || !contentType || !contentType.includes('application/json')) {
     return null as T;
@@ -75,13 +83,13 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
 // ===== AUTH API =====
 export const authApi = {
   login: (phone: string, password: string) =>
-    request<{ access_token: string; user: any }>('/auth/login', {
+    request<{ access_token: string; user: User }>('/auth/login', {
       method: 'POST',
       body: JSON.stringify({ phone, password }),
     }),
 
   register: (data: { phone: string; password: string; fullName: string; role: string; companyId?: string }) =>
-    request<{ access_token: string; user: any }>('/auth/register', {
+    request<{ access_token: string; user: User }>('/auth/register', {
       method: 'POST',
       body: JSON.stringify(data),
     }),
@@ -89,68 +97,68 @@ export const authApi = {
 
 // ===== COMPANIES API =====
 export const companiesApi = {
-  getAll: () => request<any[]>('/companies'),
-  getOne: (id: string) => request<any>(`/companies/${id}`),
-  getStats: () => request<any>('/companies/stats'),
-  create: (data: any) => request<any>('/companies', { method: 'POST', body: JSON.stringify(data) }),
-  update: (id: string, data: any) => request<any>(`/companies/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+  getAll: () => request<Company[]>('/companies'),
+  getOne: (id: string) => request<Company>(`/companies/${id}`),
+  getStats: () => request<Record<string, number>>('/companies/stats'),
+  create: (data: Partial<Company>) => request<Company>('/companies', { method: 'POST', body: JSON.stringify(data) }),
+  update: (id: string, data: Partial<Company>) => request<Company>(`/companies/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
   remove: (id: string) => request<void>(`/companies/${id}`, { method: 'DELETE' }),
 };
 
 // ===== USERS API =====
 export const usersApi = {
-  getAll: () => request<any[]>('/users'),
-  getByCompany: (companyId: string) => request<any[]>(`/users/company/${companyId}`),
-  getOperators: () => request<any[]>('/users/operators'),
-  getOne: (id: string) => request<any>(`/users/${id}`),
-  create: (data: any) => request<any>('/users', { method: 'POST', body: JSON.stringify(data) }),
-  update: (id: string, data: any) => request<any>(`/users/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+  getAll: () => request<User[]>('/users'),
+  getByCompany: (companyId: string) => request<User[]>(`/users/company/${companyId}`),
+  getOperators: () => request<User[]>('/users/operators'),
+  getOne: (id: string) => request<User>(`/users/${id}`),
+  create: (data: Partial<User> & { password?: string }) => request<User>('/users', { method: 'POST', body: JSON.stringify(data) }),
+  update: (id: string, data: Partial<User> & { password?: string }) => request<User>(`/users/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
   remove: (id: string) => request<void>(`/users/${id}`, { method: 'DELETE' }),
 };
 
 // ===== CUSTOMERS API =====
 export const customersApi = {
-  getByCompany: (companyId: string) => request<any[]>(`/customers/company/${companyId}`),
-  search: (companyId: string, query: string) => request<any[]>(`/customers/search/${companyId}?q=${encodeURIComponent(query)}`),
-  getOne: (id: string) => request<any>(`/customers/${id}`),
-  create: (data: any) => request<any>('/customers', { method: 'POST', body: JSON.stringify(data) }),
-  update: (id: string, data: any) => request<any>(`/customers/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+  getByCompany: (companyId: string) => request<Customer[]>(`/customers/company/${companyId}`),
+  search: (companyId: string, query: string) => request<Customer[]>(`/customers/search/${companyId}?q=${encodeURIComponent(query)}`),
+  getOne: (id: string) => request<Customer>(`/customers/${id}`),
+  create: (data: Partial<Customer>) => request<Customer>('/customers', { method: 'POST', body: JSON.stringify(data) }),
+  update: (id: string, data: Partial<Customer>) => request<Customer>(`/customers/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
   remove: (id: string) => request<void>(`/customers/${id}`, { method: 'DELETE' }),
 };
 
 // ===== SERVICES API =====
 export const servicesApi = {
-  getByCompany: (companyId: string) => request<any[]>(`/services/company/${companyId}`),
-  getOne: (id: string) => request<any>(`/services/${id}`),
-  create: (data: any) => request<any>('/services', { method: 'POST', body: JSON.stringify(data) }),
-  update: (id: string, data: any) => request<any>(`/services/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+  getByCompany: (companyId: string) => request<Service[]>(`/services/company/${companyId}`),
+  getOne: (id: string) => request<Service>(`/services/${id}`),
+  create: (data: Partial<Service>) => request<Service>('/services', { method: 'POST', body: JSON.stringify(data) }),
+  update: (id: string, data: Partial<Service>) => request<Service>(`/services/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
   remove: (id: string) => request<void>(`/services/${id}`, { method: 'DELETE' }),
 };
 
 // ===== ORDERS API =====
 export const ordersApi = {
-  getAll: () => request<any[]>('/orders'),
-  getByCompany: (companyId: string) => request<any[]>(`/orders/company/${companyId}`),
-  getCompanyStats: (companyId: string) => request<any>(`/orders/company/${companyId}/stats`),
-  getDriverOrders: (driverId: string) => request<any[]>(`/orders/driver/${driverId}`),
-  getOne: (id: string) => request<any>(`/orders/${id}`),
-  create: (data: any) => request<any>('/orders', { method: 'POST', body: JSON.stringify(data) }),
-  updateStatus: (id: string, data: any) => request<any>(`/orders/${id}/status`, { method: 'PATCH', body: JSON.stringify(data) }),
+  getAll: () => request<Order[]>('/orders'),
+  getByCompany: (companyId: string) => request<Order[]>(`/orders/company/${companyId}`),
+  getCompanyStats: (companyId: string) => request<Record<string, number>>(`/orders/company/${companyId}/stats`),
+  getDriverOrders: (driverId: string) => request<Order[]>(`/orders/driver/${driverId}`),
+  getOne: (id: string) => request<Order>(`/orders/${id}`),
+  create: (data: any) => request<Order>('/orders', { method: 'POST', body: JSON.stringify(data) }),
+  updateStatus: (id: string, data: { status: string; driverId?: string }) => request<Order>(`/orders/${id}/status`, { method: 'PATCH', body: JSON.stringify(data) }),
 };
 
 // ===== NOTIFICATIONS API =====
 export const notificationsApi = {
-  getSuperadmin: () => request<any[]>('/notifications/superadmin'),
-  getByCompany: (companyId: string) => request<any[]>(`/notifications/company/${companyId}`),
-  getByUser: (userId: string) => request<any[]>(`/notifications/user/${userId}`),
-  markAsRead: (id: string) => request<any>(`/notifications/${id}/read`, { method: 'PATCH' }),
-  markAllAsReadCompany: (companyId: string) => request<any>(`/notifications/company/${companyId}/read-all`, { method: 'PATCH' }),
-  markAllAsReadSuperAdmin: () => request<any>('/notifications/superadmin/read-all', { method: 'PATCH' }),
+  getSuperadmin: () => request<Notification[]>('/notifications/superadmin'),
+  getByCompany: (companyId: string) => request<Notification[]>(`/notifications/company/${companyId}`),
+  getByUser: (userId: string) => request<Notification[]>(`/notifications/user/${userId}`),
+  markAsRead: (id: string) => request<Notification>(`/notifications/${id}/read`, { method: 'PATCH' }),
+  markAllAsReadCompany: (companyId: string) => request<void>(`/notifications/company/${companyId}/read-all`, { method: 'PATCH' }),
+  markAllAsReadSuperAdmin: () => request<void>('/notifications/superadmin/read-all', { method: 'PATCH' }),
 };
 
 // ===== CAMPAIGNS API =====
 export const campaignsApi = {
-  getAll: (_companyId?: string) => request<any[]>(`/campaigns`),
+  getAll: () => request<any[]>(`/campaigns`),
   getOne: (id: string) => request<any>(`/campaigns/${id}`),
   create: (data: any) => request<any>('/campaigns', { method: 'POST', body: JSON.stringify(data) }),
   update: (id: string, data: any) => request<any>(`/campaigns/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
@@ -159,13 +167,13 @@ export const campaignsApi = {
 
 // ===== CALLS API =====
 export const callsApi = {
-  getAll: () => request<any[]>('/calls'),
-  getStats: () => request<any>('/calls/stats'),
-  getOne: (id: string) => request<any>(`/calls/${id}`),
-  createOutgoing: (data: any) => request<any>('/calls/outgoing', { method: 'POST', body: JSON.stringify(data) }),
-  answer: (id: string) => request<any>(`/calls/${id}/answer`, { method: 'PUT' }),
-  complete: (id: string, data: any) => request<any>(`/calls/${id}/complete`, { method: 'PUT', body: JSON.stringify(data) }),
-  miss: (id: string) => request<any>(`/calls/${id}/miss`, { method: 'PUT' }),
+  getAll: () => request<Call[]>('/calls'),
+  getStats: () => request<Record<string, number>>('/calls/stats'),
+  getOne: (id: string) => request<Call>(`/calls/${id}`),
+  createOutgoing: (data: Partial<Call>) => request<Call>('/calls/outgoing', { method: 'POST', body: JSON.stringify(data) }),
+  answer: (id: string) => request<Call>(`/calls/${id}/answer`, { method: 'PUT' }),
+  complete: (id: string, data: any) => request<Call>(`/calls/${id}/complete`, { method: 'PUT', body: JSON.stringify(data) }),
+  miss: (id: string) => request<Call>(`/calls/${id}/miss`, { method: 'PUT' }),
 };
 
 // ===== TELEPHONY API =====

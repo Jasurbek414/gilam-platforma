@@ -1,4 +1,12 @@
-import { Column, CreateDateColumn, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm';
+import {
+  Column,
+  CreateDateColumn,
+  Entity,
+  JoinColumn,
+  ManyToOne,
+  PrimaryGeneratedColumn,
+  UpdateDateColumn,
+} from 'typeorm';
 import { Company } from '../../companies/entities/company.entity';
 
 export enum UserRole {
@@ -25,7 +33,10 @@ export class User {
   @Column({ name: 'company_id', type: 'uuid', nullable: true })
   companyId: string;
 
-  @ManyToOne(() => Company, (company) => company.users, { nullable: true, onDelete: 'CASCADE' })
+  @ManyToOne(() => Company, (company) => company.users, {
+    nullable: true,
+    onDelete: 'CASCADE',
+  })
   @JoinColumn({ name: 'company_id' })
   company: Company;
 

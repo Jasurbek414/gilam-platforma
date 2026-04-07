@@ -42,71 +42,84 @@ export class OrdersService {
     const { items, ...orderData } = createOrderDto;
 
     // Run within transaction for ACID compliance
-    return this.orderRepository.manager.transaction(async (manager: EntityManager) => {
-      // 1. Create Order shell
-      const order = manager.create(Order, {
-        ...orderData,
-        status: OrderStatus.NEW,
-        totalAmount: 0,
-      });
-      const savedOrder = await manager.save(order);
-
-      let totalAmount = 0;
-
-      if (items && items.length > 0) {
-        // 2. Fetch all services at once (Optimization)
-        const serviceIds = items.map(i => i.serviceId);
-        const services = await manager.find(Service, {
-          where: { id: In(serviceIds) }
+    return this.orderRepository.manager.transaction(
+      async (manager: EntityManager) => {
+        // 1. Create Order shell
+        const order = manager.create(Order, {
+          ...orderData,
+          status: OrderStatus.NEW,
+          totalAmount: 0,
         });
-        
-        const serviceMap = new Map(services.map(s => [s.id, s]));
-        const orderItems: OrderItem[] = [];
+        const savedOrder = await manager.save(order);
 
-        for (const itemDto of items) {
-          const service = serviceMap.get(itemDto.serviceId);
-          if (!service) {
-            throw new NotFoundException(`Xizmat #${itemDto.serviceId} topilmadi`);
-          }
+        let totalAmount = 0;
 
-          const totalPrice = this.calculateItemPrice(itemDto, service);
-          totalAmount += totalPrice;
-
-          const orderItem = manager.create(OrderItem, {
-            orderId: savedOrder.id,
-            serviceId: itemDto.serviceId,
-            barcode: itemDto.barcode,
-            width: itemDto.width,
-            length: itemDto.length,
-            quantity: itemDto.quantity,
-            totalPrice,
+        if (items && items.length > 0) {
+          // 2. Fetch all services at once (Optimization)
+          const serviceIds = items.map((i) => i.serviceId);
+          const services = await manager.find(Service, {
+            where: { id: In(serviceIds) },
           });
 
-          orderItems.push(orderItem);
+          const serviceMap = new Map(services.map((s) => [s.id, s]));
+          const orderItems: OrderItem[] = [];
+
+          for (const itemDto of items) {
+            const service = serviceMap.get(itemDto.serviceId);
+            if (!service) {
+              throw new NotFoundException(
+                `Xizmat #${itemDto.serviceId} topilmadi`,
+              );
+            }
+
+            const totalPrice = this.calculateItemPrice(itemDto, service);
+            totalAmount += totalPrice;
+
+            const orderItem = manager.create(OrderItem, {
+              orderId: savedOrder.id,
+              serviceId: itemDto.serviceId,
+              barcode: itemDto.barcode,
+              width: itemDto.width,
+              length: itemDto.length,
+              quantity: itemDto.quantity,
+              totalPrice,
+            });
+
+            orderItems.push(orderItem);
+          }
+
+          await manager.save(orderItems);
         }
 
-        await manager.save(orderItems);
-      }
+        // 3. Finalize Order total
+        savedOrder.totalAmount = totalAmount;
+        const finalOrder = await manager.save(savedOrder);
 
-      // 3. Finalize Order total
-      savedOrder.totalAmount = totalAmount;
-      const finalOrder = await manager.save(savedOrder);
+        // Side Effect: Notification (Post-transaction or safe async)
+        this.notificationsService
+          .create({
+            companyId: finalOrder.companyId,
+            title: 'Yangi buyurtma',
+            text: `Yangi buyurtma qabul qilindi. ID: ${finalOrder.id.substring(0, 8)}`,
+            type: 'order',
+          })
+          .catch((err) => console.error('Notification failed:', err));
 
-      // Side Effect: Notification (Post-transaction or safe async)
-      this.notificationsService.create({
-        companyId: finalOrder.companyId,
-        title: 'Yangi buyurtma',
-        text: `Yangi buyurtma qabul qilindi. ID: ${finalOrder.id.substring(0,8)}`,
-        type: 'order'
-      }).catch(err => console.error('Notification failed:', err));
-
-      return finalOrder;
-    });
+        return finalOrder;
+      },
+    );
   }
 
   async findAll() {
     return this.orderRepository.find({
-      relations: ['customer', 'driver', 'operator', 'items', 'items.service', 'company'],
+      relations: [
+        'customer',
+        'driver',
+        'operator',
+        'items',
+        'items.service',
+        'company',
+      ],
       order: { createdAt: 'DESC' },
     });
   }
@@ -122,7 +135,14 @@ export class OrdersService {
   async findOne(id: string) {
     const order = await this.orderRepository.findOne({
       where: { id },
-      relations: ['customer', 'driver', 'operator', 'items', 'items.service', 'company'],
+      relations: [
+        'customer',
+        'driver',
+        'operator',
+        'items',
+        'items.service',
+        'company',
+      ],
     });
 
     if (!order) {
@@ -146,7 +166,7 @@ export class OrdersService {
           companyId: order.companyId,
           title: 'Haydovchi tayinlandi',
           text: `Buyurtmaga haydovchi biriktirildi.`,
-          type: 'order'
+          type: 'order',
         });
       }
     }
@@ -160,12 +180,12 @@ export class OrdersService {
     const saved = await this.orderRepository.save(order);
 
     if (updateDto.status) {
-       await this.notificationsService.create({
-         companyId: order.companyId,
-         title: 'Buyurtma holati o\'zgardi',
-         text: `Holati: ${updateDto.status}`,
-         type: 'order'
-       });
+      await this.notificationsService.create({
+        companyId: order.companyId,
+        title: "Buyurtma holati o'zgardi",
+        text: `Holati: ${updateDto.status}`,
+        type: 'order',
+      });
     }
 
     return saved;
@@ -188,13 +208,23 @@ export class OrdersService {
     });
 
     const totalOrders = orders.length;
-    const totalRevenue = orders.reduce((sum, o) => sum + Number(o.totalAmount), 0);
-    const newOrders = orders.filter(o => o.status === OrderStatus.NEW).length;
-    const inProgress = orders.filter(o =>
-      [OrderStatus.DRIVER_ASSIGNED, OrderStatus.PICKED_UP, OrderStatus.AT_FACILITY,
-       OrderStatus.WASHING, OrderStatus.DRYING].includes(o.status)
+    const totalRevenue = orders.reduce(
+      (sum, o) => sum + Number(o.totalAmount),
+      0,
+    );
+    const newOrders = orders.filter((o) => o.status === OrderStatus.NEW).length;
+    const inProgress = orders.filter((o) =>
+      [
+        OrderStatus.DRIVER_ASSIGNED,
+        OrderStatus.PICKED_UP,
+        OrderStatus.AT_FACILITY,
+        OrderStatus.WASHING,
+        OrderStatus.DRYING,
+      ].includes(o.status),
     ).length;
-    const completed = orders.filter(o => o.status === OrderStatus.DELIVERED).length;
+    const completed = orders.filter(
+      (o) => o.status === OrderStatus.DELIVERED,
+    ).length;
 
     return { totalOrders, totalRevenue, newOrders, inProgress, completed };
   }

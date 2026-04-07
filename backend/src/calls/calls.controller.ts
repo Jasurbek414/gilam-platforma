@@ -46,7 +46,11 @@ export class CallsController {
   @Roles(UserRole.COMPANY_ADMIN, UserRole.SUPER_ADMIN, UserRole.OPERATOR)
   findAll(@Request() req: any, @Query() query: GetCallsQueryDto) {
     if (req.user.role === UserRole.OPERATOR) {
-      return this.callsService.findOperatorCalls(req.user.id, req.user.companyId, query);
+      return this.callsService.findOperatorCalls(
+        req.user.id,
+        req.user.companyId,
+        query,
+      );
     }
     return this.callsService.findAll(req.user.companyId, query);
   }
@@ -64,7 +68,11 @@ export class CallsController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.OPERATOR, UserRole.COMPANY_ADMIN)
   createOutgoing(@Body() dto: CreateCallDto, @Request() req: any) {
-    return this.callsService.createOutgoing(req.user.id, req.user.companyId, dto);
+    return this.callsService.createOutgoing(
+      req.user.id,
+      req.user.companyId,
+      dto,
+    );
   }
 
   // ─── QABUL QILISH ─────────────────────────────────────────────────────────
@@ -79,8 +87,17 @@ export class CallsController {
   @Put(':id/complete')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.OPERATOR, UserRole.COMPANY_ADMIN)
-  completeCall(@Param('id') id: string, @Body() dto: CompleteCallDto, @Request() req: any) {
-    return this.callsService.completeCall(id, req.user.id, req.user.companyId, dto);
+  completeCall(
+    @Param('id') id: string,
+    @Body() dto: CompleteCallDto,
+    @Request() req: any,
+  ) {
+    return this.callsService.completeCall(
+      id,
+      req.user.id,
+      req.user.companyId,
+      dto,
+    );
   }
 
   // ─── JAVOBSIZ ─────────────────────────────────────────────────────────────

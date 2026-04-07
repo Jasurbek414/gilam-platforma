@@ -38,10 +38,10 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
       const payload = this.jwtService.verify(token);
       const userId = payload.sub;
-      
+
       this.connectedUsers.set(userId, socket.id);
       socket.join(`user-${userId}`); // Join private room
-      
+
       console.log(`User connected to chat: ${userId}`);
     } catch (e) {
       socket.disconnect();
@@ -62,7 +62,8 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @SubscribeMessage('sendMessage')
   async handleSendMessage(
     @ConnectedSocket() socket: Socket,
-    @MessageBody() data: { recipientId: string; text: string; companyId: string },
+    @MessageBody()
+    data: { recipientId: string; text: string; companyId: string },
   ) {
     const senderSocketId = socket.id;
     let senderId: string | null = null;
@@ -86,7 +87,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
     // Notify recipient if connected
     this.server.to(`user-${data.recipientId}`).emit('newMessage', message);
-    
+
     // Echo to sender (for multi-device sync if needed, but here just confirmation)
     return message;
   }

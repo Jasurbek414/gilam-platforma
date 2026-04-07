@@ -7,12 +7,12 @@ import * as bcrypt from 'bcrypt';
 export class AuthService {
   constructor(
     private usersService: UsersService,
-    private jwtService: JwtService
+    private jwtService: JwtService,
   ) {}
 
   async validateUser(phone: string, pass: string): Promise<any> {
     const user = await this.usersService.findByPhone(phone);
-    if (user && await bcrypt.compare(pass, user.passwordHash)) {
+    if (user && (await bcrypt.compare(pass, user.passwordHash))) {
       const { passwordHash, ...result } = user;
       return result;
     }
@@ -20,7 +20,12 @@ export class AuthService {
   }
 
   async login(user: any) {
-    const payload = { phone: user.phone, sub: user.id, role: user.role, companyId: user.companyId };
+    const payload = {
+      phone: user.phone,
+      sub: user.id,
+      role: user.role,
+      companyId: user.companyId,
+    };
     return {
       access_token: this.jwtService.sign(payload),
       user,
@@ -32,7 +37,7 @@ export class AuthService {
     if (existing) {
       throw new UnauthorizedException('User with this phone already exists');
     }
-    
+
     const user = await this.usersService.create({
       phone: registerDto.phone,
       passwordHash: registerDto.password,
@@ -40,7 +45,7 @@ export class AuthService {
       role: registerDto.role,
       companyId: registerDto.companyId,
     });
-    
+
     return this.login(user);
   }
 }

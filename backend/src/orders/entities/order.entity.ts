@@ -1,4 +1,13 @@
-import { Column, CreateDateColumn, Entity, JoinColumn, ManyToOne, OneToMany, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm';
+import {
+  Column,
+  CreateDateColumn,
+  Entity,
+  JoinColumn,
+  ManyToOne,
+  OneToMany,
+  PrimaryGeneratedColumn,
+  UpdateDateColumn,
+} from 'typeorm';
 import { Company } from '../../companies/entities/company.entity';
 import { User } from '../../users/entities/user.entity';
 import { Customer } from '../../customers/entities/customer.entity';
@@ -59,13 +68,30 @@ export class Order {
   @Column({ type: 'enum', enum: OrderStatus, default: OrderStatus.NEW })
   status: OrderStatus;
 
-  @Column({ type: 'decimal', name: 'total_amount', precision: 12, scale: 2, default: 0 })
+  @Column({
+    type: 'decimal',
+    name: 'total_amount',
+    precision: 12,
+    scale: 2,
+    default: 0,
+  })
   totalAmount: number;
 
-  @Column({ type: 'decimal', name: 'paid_amount', precision: 12, scale: 2, default: 0 })
+  @Column({
+    type: 'decimal',
+    name: 'paid_amount',
+    precision: 12,
+    scale: 2,
+    default: 0,
+  })
   paidAmount: number;
 
-  @Column({ type: 'enum', enum: PaymentStatus, name: 'payment_status', default: PaymentStatus.UNPAID })
+  @Column({
+    type: 'enum',
+    enum: PaymentStatus,
+    name: 'payment_status',
+    default: PaymentStatus.UNPAID,
+  })
   paymentStatus: PaymentStatus;
 
   @Column({ type: 'text', nullable: true })

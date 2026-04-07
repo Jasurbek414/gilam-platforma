@@ -28,18 +28,30 @@ export class MessagesService {
 
   async getConversations(userId: string) {
     // Basic logic to get unique speakers for a user
-    const sent = await this.messageRepository.find({ where: { senderId: userId }, relations: ['recipient'] });
-    const received = await this.messageRepository.find({ where: { recipientId: userId }, relations: ['sender'] });
-    
+    const sent = await this.messageRepository.find({
+      where: { senderId: userId },
+      relations: ['recipient'],
+    });
+    const received = await this.messageRepository.find({
+      where: { recipientId: userId },
+      relations: ['sender'],
+    });
+
     const others = new Set();
     const results: any[] = [];
-    
-    [...sent.map(m => m.recipient), ...received.map(m => m.sender)].forEach(user => {
-      if (user && (user as any).id !== userId && !others.has((user as any).id)) {
-        others.add((user as any).id);
-        results.push(user);
-      }
-    });
+
+    [...sent.map((m) => m.recipient), ...received.map((m) => m.sender)].forEach(
+      (user) => {
+        if (
+          user &&
+          (user as any).id !== userId &&
+          !others.has((user as any).id)
+        ) {
+          others.add((user as any).id);
+          results.push(user);
+        }
+      },
+    );
 
     return results;
   }

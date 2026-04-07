@@ -1,4 +1,16 @@
-import { Controller, Get, Post, Put, Delete, Body, Param, ParseUUIDPipe, UseGuards, ForbiddenException, Query } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Put,
+  Delete,
+  Body,
+  Param,
+  ParseUUIDPipe,
+  UseGuards,
+  ForbiddenException,
+  Query,
+} from '@nestjs/common';
 import { UsersService } from './users.service';
 import { CreateUserDto, UpdateUserDto } from './dto/user.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
@@ -16,12 +28,15 @@ export class UsersController {
   create(@Body() dto: CreateUserDto, @CurrentUser() user: User) {
     // OPERATOR yaratish faqat SUPER_ADMIN uchun
     if (dto.role === UserRole.OPERATOR && user.role !== UserRole.SUPER_ADMIN) {
-      throw new ForbiddenException('Operator yaratish faqat Super Admin uchun ruxsat etilgan');
+      throw new ForbiddenException(
+        'Operator yaratish faqat Super Admin uchun ruxsat etilgan',
+      );
     }
     // CompanyAdmin faqat o'z kompaniyasi uchun yarata oladi
     const finalDto = {
       ...dto,
-      companyId: user.role === UserRole.SUPER_ADMIN ? dto.companyId : user.companyId,
+      companyId:
+        user.role === UserRole.SUPER_ADMIN ? dto.companyId : user.companyId,
       passwordHash: dto.password,
     };
     return this.usersService.create(finalDto);
@@ -46,9 +61,10 @@ export class UsersController {
   @Get('company/:companyId')
   findAllByCompany(
     @Param('companyId', ParseUUIDPipe) companyId: string,
-    @CurrentUser() user: User
+    @CurrentUser() user: User,
   ) {
-    const targetId = user.role === UserRole.SUPER_ADMIN ? companyId : user.companyId;
+    const targetId =
+      user.role === UserRole.SUPER_ADMIN ? companyId : user.companyId;
     return this.usersService.findAllByCompany(targetId);
   }
 
@@ -62,7 +78,7 @@ export class UsersController {
   update(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: UpdateUserDto,
-    @CurrentUser() user: User
+    @CurrentUser() user: User,
   ) {
     // Ensure the updated user belongs to the same company
     return this.usersService.update(id, dto);

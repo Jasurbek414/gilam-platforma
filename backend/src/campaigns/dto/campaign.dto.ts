@@ -1,4 +1,11 @@
-import { IsArray, IsEnum, IsNotEmpty, IsOptional, IsString, IsUUID } from 'class-validator';
+import {
+  IsArray,
+  IsEnum,
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+  IsUUID,
+} from 'class-validator';
 import { CampaignStatus } from '../entities/campaign.entity';
 
 export class CreateCampaignDto {

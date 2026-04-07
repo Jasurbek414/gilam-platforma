@@ -1,7 +1,11 @@
-import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  ConflictException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { User, UserRole } from './entities/user.entity';
+import { User, UserRole, UserStatus } from './entities/user.entity';
 import { CreateUserDto, UpdateUserDto } from './dto/user.dto';
 import * as bcrypt from 'bcrypt';
 
@@ -13,7 +17,10 @@ export class UsersService {
   ) {}
 
   async findByPhone(phone: string): Promise<User | null> {
-    return this.usersRepository.findOne({ where: { phone }, relations: ['company'] });
+    return this.usersRepository.findOne({
+      where: { phone },
+      relations: ['company'],
+    });
   }
 
   async findOne(id: string): Promise<User> {
@@ -49,27 +56,26 @@ export class UsersService {
     });
   }
 
-  async create(userData: Partial<User> & { password?: string }): Promise<User> {
-    // Telefon dublikatini tekshirish
-    if (userData.phone) {
-      const existing = await this.findByPhone(userData.phone);
-      if (existing) {
-        throw new ConflictException(`Bu telefon raqam allaqachon ro'yxatdan o'tgan: ${userData.phone}`);
-      }
+  async create(dto: CreateUserDto): Promise<User> {
+    const existing = await this.findByPhone(dto.phone);
+    if (existing) {
+      throw new ConflictException(
+        `Bu telefon raqam allaqachon ro'yxatdan o'tgan: ${dto.phone}`,
+      );
     }
 
     const salt = await bcrypt.genSalt(10);
-    const rawPassword = (userData as any).password || userData.passwordHash || '123456';
+    const rawPassword = dto.password || '123456';
     const passwordHash = await bcrypt.hash(rawPassword, salt);
 
     const user = this.usersRepository.create({
-      ...userData,
+      fullName: dto.fullName,
+      phone: dto.phone,
+      role: dto.role as UserRole,
+      companyId: dto.companyId,
+      status: UserStatus.ACTIVE,
       passwordHash,
-      role: userData.role || UserRole.CUSTOMER,
     });
-
-    // password fieldni tozalash (entity da yo'q)
-    delete (user as any).password;
 
     return this.usersRepository.save(user);
   }

@@ -1,4 +1,13 @@
-import { Controller, Get, Post, Body, Param, Patch, ParseUUIDPipe, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Param,
+  Patch,
+  ParseUUIDPipe,
+  UseGuards,
+} from '@nestjs/common';
 import { OrdersService } from './orders.service';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { UpdateOrderStatusDto } from './dto/update-order-status.dto';
@@ -26,19 +35,21 @@ export class OrdersController {
   @Get('company/:companyId')
   findAllByCompany(
     @Param('companyId', ParseUUIDPipe) companyId: string,
-    @CurrentUser() user: User
+    @CurrentUser() user: User,
   ) {
     // Security: Only allow users to see their own company's orders
-    const targetCompanyId = user.role === UserRole.SUPER_ADMIN ? companyId : user.companyId;
+    const targetCompanyId =
+      user.role === UserRole.SUPER_ADMIN ? companyId : user.companyId;
     return this.ordersService.findAllByCompany(targetCompanyId);
   }
 
   @Get('company/:companyId/stats')
   getCompanyStats(
     @Param('companyId', ParseUUIDPipe) companyId: string,
-    @CurrentUser() user: User
+    @CurrentUser() user: User,
   ) {
-    const targetCompanyId = user.role === UserRole.SUPER_ADMIN ? companyId : user.companyId;
+    const targetCompanyId =
+      user.role === UserRole.SUPER_ADMIN ? companyId : user.companyId;
     return this.ordersService.getCompanyStats(targetCompanyId);
   }
 

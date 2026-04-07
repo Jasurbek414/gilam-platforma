@@ -12,7 +12,7 @@ import { AuthModule } from '../auth/auth.module';
   imports: [
     TypeOrmModule.forFeature([Order, OrderItem, Service]),
     NotificationsModule,
-    AuthModule
+    AuthModule,
   ],
   controllers: [OrdersController],
   providers: [OrdersService],

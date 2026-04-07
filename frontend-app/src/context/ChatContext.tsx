@@ -47,7 +47,11 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setMessages(prev => [...prev, message]);
     });
 
-    setSocket(socketInstance);
+    const initSocket = () => {
+      setSocket(socketInstance);
+    };
+
+    initSocket();
 
     return () => {
       socketInstance.disconnect();

@@ -46,9 +46,12 @@ export class CampaignsService {
       .leftJoinAndSelect('c.operators', 'operators')
       .leftJoinAndSelect('c.driver', 'driver')
       .where('c.status = :status', { status: 'ACTIVE' })
-      .andWhere(':phone = ANY(ARRAY(SELECT jsonb_array_elements_text(c.extra_numbers)))', {
-        phone: phoneNumber,
-      })
+      .andWhere(
+        ':phone = ANY(ARRAY(SELECT jsonb_array_elements_text(c.extra_numbers)))',
+        {
+          phone: phoneNumber,
+        },
+      )
       .getOne();
 
     return byExtra;
@@ -75,21 +78,29 @@ export class CampaignsService {
       driverId: dto.driverId,
     });
     if (dto.operatorIds?.length) {
-      campaign.operators = await this.usersRepo.findBy({ id: In(dto.operatorIds) });
+      campaign.operators = await this.usersRepo.findBy({
+        id: In(dto.operatorIds),
+      });
     } else {
       campaign.operators = [];
     }
     return this.campaignsRepo.save(campaign);
   }
 
-  async update(id: string, companyId: string, dto: UpdateCampaignDto): Promise<Campaign> {
+  async update(
+    id: string,
+    companyId: string,
+    dto: UpdateCampaignDto,
+  ): Promise<Campaign> {
     const campaign = await this.findOne(id, companyId);
     if (dto.name !== undefined) campaign.name = dto.name;
     if (dto.phoneNumber !== undefined) campaign.phoneNumber = dto.phoneNumber;
-    if (dto.extraNumbers !== undefined) campaign.extraNumbers = dto.extraNumbers;
+    if (dto.extraNumbers !== undefined)
+      campaign.extraNumbers = dto.extraNumbers;
     if (dto.description !== undefined) campaign.description = dto.description;
     if (dto.status !== undefined) campaign.status = dto.status;
-    if (dto.driverId !== undefined) campaign.driverId = dto.driverId || undefined;
+    if (dto.driverId !== undefined)
+      campaign.driverId = dto.driverId || undefined;
     if (dto.operatorIds !== undefined) {
       campaign.operators = dto.operatorIds.length
         ? await this.usersRepo.findBy({ id: In(dto.operatorIds) })

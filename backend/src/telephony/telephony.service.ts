@@ -12,13 +12,17 @@ export class TelephonyService {
 
   async getSipConfig(companyId: string) {
     if (!companyId) return {};
-    const company = await this.companyRepository.findOne({ where: { id: companyId } });
+    const company = await this.companyRepository.findOne({
+      where: { id: companyId },
+    });
     if (!company) return {};
     return company.sipCredentials || {};
   }
 
   async updateSipConfig(companyId: string, credentials: any) {
-    const company = await this.companyRepository.findOne({ where: { id: companyId } });
+    const company = await this.companyRepository.findOne({
+      where: { id: companyId },
+    });
     if (!company) throw new NotFoundException('Company not found');
     company.sipCredentials = credentials;
     await this.companyRepository.save(company);

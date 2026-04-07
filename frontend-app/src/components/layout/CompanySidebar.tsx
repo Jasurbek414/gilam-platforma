@@ -11,7 +11,6 @@ import {
   MdShoppingCart,
   MdLocalShipping,
   MdPeople,
-  MdSettings,
   MdLogout,
   MdStore,
   MdAssessment,
@@ -37,8 +36,11 @@ export default function CompanySidebar() {
 
   useEffect(() => {
     const user = getUser();
-    if (user?.company?.name) setCompanyName(user.company.name);
-    else if (user?.fullName) setCompanyName(user.fullName);
+    if (user?.company?.name) {
+       setCompanyName(user.company.name);
+    } else if (user?.fullName) {
+       setCompanyName(user.fullName);
+    }
   }, []);
 
   const handleLogout = () => {
@@ -115,7 +117,7 @@ export default function CompanySidebar() {
               onClick={() => setIsLogoutModalOpen(false)}
               className="flex-1 py-4 bg-slate-100 text-slate-500 font-bold rounded-2xl hover:bg-slate-200 transition-all"
             >
-              Yo'q, qolaman
+              Yo&apos;q, qolaman
             </button>
             <button 
               onClick={confirmLogout}

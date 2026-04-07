@@ -57,7 +57,10 @@ export class NotificationsService {
   }
 
   async markAllAsReadForSuperAdmin() {
-    await this.notificationRepo.update({ companyId: IsNull() }, { isRead: true });
+    await this.notificationRepo.update(
+      { companyId: IsNull() },
+      { isRead: true },
+    );
     return { success: true };
   }
 }

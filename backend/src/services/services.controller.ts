@@ -1,4 +1,14 @@
-import { Controller, Get, Post, Put, Delete, Body, Param, ParseUUIDPipe, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Put,
+  Delete,
+  Body,
+  Param,
+  ParseUUIDPipe,
+  UseGuards,
+} from '@nestjs/common';
 import { ServicesService } from './services.service';
 import { CreateServiceDto, UpdateServiceDto } from './dto/service.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
@@ -19,9 +29,10 @@ export class ServicesController {
   @Get('company/:companyId')
   findAllByCompany(
     @Param('companyId', ParseUUIDPipe) companyId: string,
-    @CurrentUser() user: User
+    @CurrentUser() user: User,
   ) {
-    const targetId = user.role === UserRole.SUPER_ADMIN ? companyId : user.companyId;
+    const targetId =
+      user.role === UserRole.SUPER_ADMIN ? companyId : user.companyId;
     return this.servicesService.findAllByCompany(targetId);
   }
 

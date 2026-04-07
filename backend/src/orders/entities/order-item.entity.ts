@@ -1,4 +1,10 @@
-import { Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
+import {
+  Column,
+  Entity,
+  JoinColumn,
+  ManyToOne,
+  PrimaryGeneratedColumn,
+} from 'typeorm';
 import { Order } from './order.entity';
 import { Service } from '../../services/entities/service.entity';
 import { User } from '../../users/entities/user.entity';
@@ -43,7 +49,11 @@ export class OrderItem {
   @Column({ type: 'decimal', name: 'total_price', precision: 12, scale: 2 })
   totalPrice: number;
 
-  @Column({ type: 'enum', enum: OrderItemStatus, default: OrderItemStatus.PENDING })
+  @Column({
+    type: 'enum',
+    enum: OrderItemStatus,
+    default: OrderItemStatus.PENDING,
+  })
   status: OrderItemStatus;
 
   @Column({ name: 'worker_id', type: 'uuid', nullable: true })

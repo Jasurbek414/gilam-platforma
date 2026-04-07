@@ -15,6 +15,7 @@ import {
 } from 'react-icons/md';
 import Modal from '@/components/ui/Modal';
 import { ordersApi, usersApi, getUser, customersApi, servicesApi } from '@/lib/api';
+import { User, Order, Service, Customer } from '@/types';
 import { useRouter } from 'next/navigation';
 import toast from 'react-hot-toast';
 
@@ -25,14 +26,14 @@ export default function CompanyDashboardPage() {
   const [startDate, setStartDate] = useState(new Date(new Date().setDate(new Date().getDate() - 30)).toISOString().split('T')[0]);
   const [endDate, setEndDate] = useState(new Date().toISOString().split('T')[0]);
   
-  const [orders, setOrders] = useState<any[]>([]);
-  const [users, setUsers] = useState<any[]>([]);
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [users, setUsers] = useState<User[]>([]);
   const [companyStats, setCompanyStats] = useState<any>(null);
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
-  const [services, setServices] = useState<any[]>([]);
-  const [selectedCustomer, setSelectedCustomer] = useState<any>(null);
+  const [services, setServices] = useState<Service[]>([]);
+  const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
   const [formData, setFormData] = useState({
     phone: '',
     customerName: '',
@@ -42,12 +43,12 @@ export default function CompanyDashboardPage() {
 
   useEffect(() => {
     const currentUser = getUser();
-    if (!currentUser || !currentUser.company) {
+    if (!currentUser || !currentUser.companyId) {
       router.push('/');
       return;
     }
     setUser(currentUser);
-    loadData(currentUser.company.id);
+    loadData(currentUser.companyId);
   }, [router]);
 
   async function loadData(companyId: string) {
@@ -77,6 +78,7 @@ export default function CompanyDashboardPage() {
 
   const handleCreateOrder = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!user) return;
     if (!formData.phone || formData.items.length === 0) {
       toast.error('Telefon va kamida bitta xizmatni kiriting');
       return;
@@ -92,7 +94,7 @@ export default function CompanyDashboardPage() {
           fullName: formData.customerName || 'Ismsiz Mijoz',
           phone: formData.phone,
           address: formData.address || 'Kiritilmagan',
-          companyId: user.company.id,
+          companyId: user.companyId,
           operatorId: user.id
         });
         customerId = newCustomer.id;
@@ -101,7 +103,7 @@ export default function CompanyDashboardPage() {
       // 2. Buyurtma yaratish
       await ordersApi.create({
         customerId,
-        companyId: user.company.id,
+        companyId: user.companyId,
         operatorId: user.id,
         items: formData.items.map(item => ({
           serviceId: item.serviceId,
@@ -114,7 +116,7 @@ export default function CompanyDashboardPage() {
       toast.success('Buyurtma muvaffaqiyatli yaratildi!');
       setIsModalOpen(false);
       resetFormData();
-      loadData(user.company.id); // Yangilash
+      loadData(user.companyId); // Yangilash
     } catch (err: any) {
       toast.error(err.message || 'Xatolik yuz berdi');
     } finally {
@@ -222,10 +224,10 @@ export default function CompanyDashboardPage() {
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center p-6 bg-white rounded-2xl shadow-sm border border-slate-100">
         <div>
           <h1 className="text-2xl font-black text-slate-800 tracking-tight">
-            Xush kelibsiz, {user.fullName.split(' ')[0]} 👋
+            Xush kelibsiz, {user.fullName?.split(' ')[0]} 👋
           </h1>
           <p className="text-slate-500 mt-1 font-medium text-sm">
-            Tashkilot: <span className="text-blue-600 font-bold">{user.company.name}</span> boshqaruv panelidasiz.
+            Tashkilot: <span className="text-blue-600 font-bold">{user.company?.name || 'Noma&apos;lum'}</span> boshqaruv panelidasiz.
           </p>
         </div>
         <div className="mt-4 md:mt-0 flex flex-wrap items-center gap-3">
@@ -278,8 +280,8 @@ export default function CompanyDashboardPage() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden flex flex-col">
           <div className="px-6 py-5 flex justify-between items-center border-b border-slate-100 bg-slate-50/50">
-            <h2 className="text-lg font-bold text-slate-800">So'nggi Buyurtmalar</h2>
-            <button className="text-sm font-medium text-blue-600 hover:underline" onClick={() => router.push('/company/orders')}>Barchasini ko'rish</button>
+            <h2 className="text-lg font-bold text-slate-800">So&apos;nggi Buyurtmalar</h2>
+            <button className="text-sm font-medium text-blue-600 hover:underline" onClick={() => router.push('/company/orders')}>Barchasini ko&apos;rish</button>
           </div>
           <div className="p-0 overflow-x-auto text-nowrap">
             <table className="w-full text-left">
@@ -318,7 +320,7 @@ export default function CompanyDashboardPage() {
                   )
                 }) : (
                   <tr>
-                    <td colSpan={4} className="px-6 py-8 text-center text-slate-500 font-medium">Hozircha buyurtmalar yo'q</td>
+                    <td colSpan={4} className="px-6 py-8 text-center text-slate-500 font-medium">Hozircha buyurtmalar yo&apos;q</td>
                   </tr>
                 )}
               </tbody>
@@ -394,7 +396,7 @@ export default function CompanyDashboardPage() {
                       const val = e.target.value;
                       setFormData({...formData, phone: val});
                       if (val.length >= 7) {
-                        const found = await customersApi.search(user.company.id, val);
+                        const found = await customersApi.search(user.companyId, val);
                         if (found && found.length > 0) {
                           setSelectedCustomer(found[0]);
                           setFormData(prev => ({...prev, customerName: found[0].fullName, address: found[0].address}));

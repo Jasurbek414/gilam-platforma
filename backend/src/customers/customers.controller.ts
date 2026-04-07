@@ -1,4 +1,15 @@
-import { Controller, Get, Post, Put, Delete, Body, Param, Query, ParseUUIDPipe, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Put,
+  Delete,
+  Body,
+  Param,
+  Query,
+  ParseUUIDPipe,
+  UseGuards,
+} from '@nestjs/common';
 import { CustomersService } from './customers.service';
 import { CreateCustomerDto, UpdateCustomerDto } from './dto/customer.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
@@ -20,9 +31,10 @@ export class CustomersController {
   @Get('company/:companyId')
   findAllByCompany(
     @Param('companyId', ParseUUIDPipe) companyId: string,
-    @CurrentUser() user: User
+    @CurrentUser() user: User,
   ) {
-    const targetId = user.role === UserRole.SUPER_ADMIN ? companyId : user.companyId;
+    const targetId =
+      user.role === UserRole.SUPER_ADMIN ? companyId : user.companyId;
     return this.customersService.findAllByCompany(targetId);
   }
 
@@ -30,9 +42,10 @@ export class CustomersController {
   search(
     @Param('companyId', ParseUUIDPipe) companyId: string,
     @Query('q') query: string,
-    @CurrentUser() user: User
+    @CurrentUser() user: User,
   ) {
-    const targetId = user.role === UserRole.SUPER_ADMIN ? companyId : user.companyId;
+    const targetId =
+      user.role === UserRole.SUPER_ADMIN ? companyId : user.companyId;
     return this.customersService.search(targetId, query || '');
   }
 

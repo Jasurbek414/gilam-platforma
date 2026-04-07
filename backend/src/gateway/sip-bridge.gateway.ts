@@ -20,7 +20,13 @@ import { CallsService } from '../calls/calls.service';
   },
   namespace: '/sip',
 })
-export class SipBridgeGateway implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect, OnModuleInit {
+export class SipBridgeGateway
+  implements
+    OnGatewayInit,
+    OnGatewayConnection,
+    OnGatewayDisconnect,
+    OnModuleInit
+{
   @WebSocketServer() server: Server;
   private logger = new Logger('SipBridgeGateway');
   private udpSocket: dgram.Socket;
@@ -28,7 +34,7 @@ export class SipBridgeGateway implements OnGatewayInit, OnGatewayConnection, OnG
   private cseq = 100;
   private currentOperatorId: string | null = null;
   private currentCompanyId: string | null = null;
-  
+
   // Call session tracking
   private activeCall: {
     id: string;
@@ -39,7 +45,8 @@ export class SipBridgeGateway implements OnGatewayInit, OnGatewayConnection, OnG
     status: 'calling' | 'in_call' | 'idle';
   } | null = null;
   // SIP registration state (reused across retries)
-  private regCallId: string = Math.random().toString(36).substring(10) + '@10.100.100.18';
+  private regCallId: string =
+    Math.random().toString(36).substring(10) + '@10.100.100.18';
   private regFromTag: string = Math.random().toString(36).substring(7);
   private authRetryCount = 0;
   private readonly MAX_AUTH_RETRIES = 3;
@@ -64,7 +71,7 @@ export class SipBridgeGateway implements OnGatewayInit, OnGatewayConnection, OnG
 
   handleConnection(client: any) {
     this.logger.log(`SIP WS client connected: ${client.id}`);
-    
+
     // Diagnostic listener
     client.onAny((event, ...args) => {
       this.logger.debug(`[ANY EVENT] ${event}: ${JSON.stringify(args)}`);
@@ -89,7 +96,10 @@ export class SipBridgeGateway implements OnGatewayInit, OnGatewayConnection, OnG
       this.logger.debug(`SIP IN: ${message.split('\n')[0]}`);
 
       // Handle Registration Success
-      if (message.includes('SIP/2.0 200 OK') && message.includes('CSeq: ' + this.cseq + ' REGISTER')) {
+      if (
+        message.includes('SIP/2.0 200 OK') &&
+        message.includes('CSeq: ' + this.cseq + ' REGISTER')
+      ) {
         if (!this.registered) {
           this.registered = true;
           this.logger.log('SIP: Registered successfully!');
@@ -98,28 +108,45 @@ export class SipBridgeGateway implements OnGatewayInit, OnGatewayConnection, OnG
       }
 
       // Handle Authentication Challenge (only for REGISTER, not INVITE)
-      const isRegisterChallenge = message.includes('CSeq:') && message.includes('REGISTER');
-      if ((message.includes('SIP/2.0 401') || message.includes('SIP/2.0 407')) && isRegisterChallenge) {
+      const isRegisterChallenge =
+        message.includes('CSeq:') && message.includes('REGISTER');
+      if (
+        (message.includes('SIP/2.0 401') || message.includes('SIP/2.0 407')) &&
+        isRegisterChallenge
+      ) {
         if (this.authRetryCount < this.MAX_AUTH_RETRIES) {
           this.authRetryCount++;
-          this.logger.debug(`SIP: Auth required, retry ${this.authRetryCount}/${this.MAX_AUTH_RETRIES}...`);
+          this.logger.debug(
+            `SIP: Auth required, retry ${this.authRetryCount}/${this.MAX_AUTH_RETRIES}...`,
+          );
           setTimeout(() => this.register(true, message), 2000);
         } else {
-          this.logger.warn('SIP: Max auth retries reached. Marking as registered via trusted IP fallback.');
+          this.logger.warn(
+            'SIP: Max auth retries reached. Marking as registered via trusted IP fallback.',
+          );
           this.registered = true;
           this.server.emit('sip:status', { registered: true });
         }
       }
 
       // Handle INVITE auth challenge (proxy auth)
-      const isInviteChallenge = message.includes('CSeq:') && message.includes('INVITE');
-      if ((message.includes('SIP/2.0 401') || message.includes('SIP/2.0 407')) && isInviteChallenge) {
+      const isInviteChallenge =
+        message.includes('CSeq:') && message.includes('INVITE');
+      if (
+        (message.includes('SIP/2.0 401') || message.includes('SIP/2.0 407')) &&
+        isInviteChallenge
+      ) {
         this.logger.warn('SIP: INVITE auth required — server rejected call');
-        this.server.emit('sip:call_failed', { reason: 'Autentifikatsiya talab qilindi (401)' });
+        this.server.emit('sip:call_failed', {
+          reason: 'Autentifikatsiya talab qilindi (401)',
+        });
       }
 
       // Handle Ringing/Progress
-      if (message.includes('SIP/2.0 180 Ringing') || message.includes('SIP/2.0 183 Session Progress')) {
+      if (
+        message.includes('SIP/2.0 180 Ringing') ||
+        message.includes('SIP/2.0 183 Session Progress')
+      ) {
         this.server.emit('sip:ringing');
       }
 
@@ -132,16 +159,22 @@ export class SipBridgeGateway implements OnGatewayInit, OnGatewayConnection, OnG
 
       // Handle INVITE error responses (4xx/5xx)
       const inviteErrorMatch = message.match(/SIP\/2\.0 ([4-9]\d\d) (.+)/);
-      if (inviteErrorMatch && isInviteChallenge && !message.includes('401') && !message.includes('407')) {
+      if (
+        inviteErrorMatch &&
+        isInviteChallenge &&
+        !message.includes('401') &&
+        !message.includes('407')
+      ) {
         const code = inviteErrorMatch[1];
         const reason = inviteErrorMatch[2].trim();
         const errorMap: Record<string, string> = {
           '404': 'Raqam topilmadi',
           '480': 'Abonent vaqtincha mavjud emas',
           '486': 'Band',
-          '503': 'Xizmat mavjud emas (extension yoqligi yoki ro\'yxatdan o\'tmagan)',
-          '488': 'Muvofiq media formati yo\'q',
-          '403': 'Ruxsat yo\'q',
+          '503':
+            "Xizmat mavjud emas (extension yoqligi yoki ro'yxatdan o'tmagan)",
+          '488': "Muvofiq media formati yo'q",
+          '403': "Ruxsat yo'q",
         };
         const friendlyReason = errorMap[code] || `${code} ${reason}`;
         this.logger.warn(`SIP: INVITE xato: ${code} ${reason}`);
@@ -149,14 +182,22 @@ export class SipBridgeGateway implements OnGatewayInit, OnGatewayConnection, OnG
       }
 
       // Handle Hung up / Disconnected
-      if (message.includes('BYE sip:') || message.includes('SIP/2.0 487 Request Terminated') || message.includes('SIP/2.0 603 Declined')) {
+      if (
+        message.includes('BYE sip:') ||
+        message.includes('SIP/2.0 487 Request Terminated') ||
+        message.includes('SIP/2.0 603 Declined')
+      ) {
         this.server.emit('sip:call_ended');
         this.saveCallLog('COMPLETED');
         this.activeCall = null;
       }
 
       // Capture To-Tag for active call (needed for BYE)
-      if (this.activeCall && (message.includes('SIP/2.0 200 OK') || message.includes('SIP/2.0 180 Ringing'))) {
+      if (
+        this.activeCall &&
+        (message.includes('SIP/2.0 200 OK') ||
+          message.includes('SIP/2.0 180 Ringing'))
+      ) {
         const toTagMatch = message.match(/To:.*tag=([^;\r\n]+)/);
         if (toTagMatch) {
           this.activeCall.toTag = toTagMatch[1];
@@ -208,11 +249,22 @@ export class SipBridgeGateway implements OnGatewayInit, OnGatewayConnection, OnG
       const realm = realmMatch ? realmMatch[1] : DOMAIN;
       const nonce = nonceMatch ? nonceMatch[1] : '';
 
-      const ha1 = crypto.createHash('md5').update(`${EXTENSION}:${realm}:${PASSWORD}`).digest('hex');
-      const ha2 = crypto.createHash('md5').update(`REGISTER:sip:${DOMAIN}`).digest('hex');
-      const response = crypto.createHash('md5').update(`${ha1}:${nonce}:${ha2}`).digest('hex');
+      const ha1 = crypto
+        .createHash('md5')
+        .update(`${EXTENSION}:${realm}:${PASSWORD}`)
+        .digest('hex');
+      const ha2 = crypto
+        .createHash('md5')
+        .update(`REGISTER:sip:${DOMAIN}`)
+        .digest('hex');
+      const response = crypto
+        .createHash('md5')
+        .update(`${ha1}:${nonce}:${ha2}`)
+        .digest('hex');
 
-      headers.push(`Authorization: Digest username="${EXTENSION}", realm="${realm}", nonce="${nonce}", uri="sip:${DOMAIN}", response="${response}", algorithm=MD5`);
+      headers.push(
+        `Authorization: Digest username="${EXTENSION}", realm="${realm}", nonce="${nonce}", uri="sip:${DOMAIN}", response="${response}", algorithm=MD5`,
+      );
     }
 
     headers.push('Content-Length: 0', '', '');
@@ -225,7 +277,7 @@ export class SipBridgeGateway implements OnGatewayInit, OnGatewayConnection, OnG
   handleCall(@ConnectedSocket() client: Socket, @MessageBody() data: any) {
     const target = data.target;
     this.logger.log(`SIP CALL REQUEST: to ${target}`);
-    
+
     this.currentOperatorId = data.operatorId || 'manual-operator';
     this.currentCompanyId = data.companyId || 'diagnostic-company';
 
@@ -238,14 +290,14 @@ export class SipBridgeGateway implements OnGatewayInit, OnGatewayConnection, OnG
     const branch = 'z9hG4bK-' + Math.random().toString(36).substring(7);
     const callId = Math.random().toString(36).substring(10) + '@10.100.100.18';
     const fromTag = Math.random().toString(36).substring(7);
-    
+
     this.activeCall = {
       id: callId,
       target,
       fromTag,
       toTag: null,
       branch,
-      status: 'calling'
+      status: 'calling',
     };
 
     // SDP for PCMA (G.711a)
@@ -260,7 +312,7 @@ export class SipBridgeGateway implements OnGatewayInit, OnGatewayConnection, OnG
       'a=rtpmap:101 telephone-event/8000',
       'a=fmtp:101 0-16',
       'a=sendrecv',
-      ''
+      '',
     ].join('\r\n');
 
     const invite = [
@@ -275,7 +327,7 @@ export class SipBridgeGateway implements OnGatewayInit, OnGatewayConnection, OnG
       `Max-Forwards: 70`,
       `Content-Length: ${sdp.length}`,
       '',
-      sdp
+      sdp,
     ].join('\r\n');
 
     this.udpSocket.send(invite, 5060, '10.100.100.1');
@@ -292,7 +344,7 @@ export class SipBridgeGateway implements OnGatewayInit, OnGatewayConnection, OnG
     const callId = this.activeCall.id;
     const fromTag = this.activeCall.fromTag;
     const toTag = this.activeCall.toTag;
-    
+
     let method = 'BYE';
     if (!toTag) method = 'CANCEL'; // If not answered yet, use CANCEL
 
@@ -306,7 +358,7 @@ export class SipBridgeGateway implements OnGatewayInit, OnGatewayConnection, OnG
       `Max-Forwards: 70`,
       `Content-Length: 0`,
       '',
-      ''
+      '',
     ].join('\r\n');
 
     this.udpSocket.send(request, 5060, '10.100.100.1');
@@ -326,8 +378,8 @@ export class SipBridgeGateway implements OnGatewayInit, OnGatewayConnection, OnG
           this.currentOperatorId,
           this.currentCompanyId,
           {
-            callerPhone: '101' // Manual for now or target
-          }
+            callerPhone: '101', // Manual for now or target
+          },
         );
       } catch (err) {
         this.logger.error('Failed to save call log');

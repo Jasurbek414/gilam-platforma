@@ -1,4 +1,15 @@
-import { Controller, Get, Post, Body, Param, Patch, ParseUUIDPipe, UseGuards, ForbiddenException, UnauthorizedException } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Param,
+  Patch,
+  ParseUUIDPipe,
+  UseGuards,
+  ForbiddenException,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { NotificationsService } from './notifications.service';
 import { CreateNotificationDto } from './dto/create-notification.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
@@ -27,9 +38,10 @@ export class NotificationsController {
   @Get('company/:companyId')
   getByCompany(
     @Param('companyId', ParseUUIDPipe) companyId: string,
-    @CurrentUser() user: User
+    @CurrentUser() user: User,
   ) {
-    const targetId = user.role === UserRole.SUPER_ADMIN ? companyId : user.companyId;
+    const targetId =
+      user.role === UserRole.SUPER_ADMIN ? companyId : user.companyId;
     return this.notificationsService.getByCompany(targetId);
   }
 
@@ -46,9 +58,10 @@ export class NotificationsController {
   @Patch('company/:companyId/read-all')
   markAllAsReadCompany(
     @Param('companyId', ParseUUIDPipe) companyId: string,
-    @CurrentUser() user: User
+    @CurrentUser() user: User,
   ) {
-    const targetId = user.role === UserRole.SUPER_ADMIN ? companyId : user.companyId;
+    const targetId =
+      user.role === UserRole.SUPER_ADMIN ? companyId : user.companyId;
     return this.notificationsService.markAllAsReadForCompany(targetId);
   }
 

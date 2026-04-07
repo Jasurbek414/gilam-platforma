@@ -1,34 +1,24 @@
 'use client';
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { MdNotifications, MdSearch, MdPayment, MdSettings, MdSecurity, MdDoneAll } from 'react-icons/md';
 
 import { notificationsApi, getUser } from '@/lib/api';
+import { User, Notification } from '@/types';
 
 export default function Topbar() {
   const [showNotifications, setShowNotifications] = useState(false);
-  const [notifications, setNotifications] = useState<any[]>([]);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
   const dropdownRef = useRef<HTMLDivElement>(null);
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<User | null>(null);
 
-  useEffect(() => {
-    const currentUser = getUser();
-    setUser(currentUser);
-    if (currentUser) {
-      loadNotifications(currentUser);
-      // oddiy polling (har 15 soniyada yangilash, web-socket o'rniga)
-      const interval = setInterval(() => loadNotifications(currentUser), 15000);
-      return () => clearInterval(interval);
-    }
-  }, []);
-
-  async function loadNotifications(currentUser: any) {
+  const loadNotifications = useCallback(async (currentUser: User) => {
     try {
-      let data;
+      let data: Notification[] = [];
       if (currentUser.role === 'SUPER_ADMIN') {
         data = await notificationsApi.getSuperadmin();
-      } else if (currentUser.company) {
-        data = await notificationsApi.getByCompany(currentUser.company.id);
+      } else if (currentUser.companyId) {
+        data = await notificationsApi.getByCompany(currentUser.companyId);
       } else {
         data = await notificationsApi.getByUser(currentUser.id);
       }
@@ -36,7 +26,17 @@ export default function Topbar() {
     } catch (e) {
       console.error(e);
     }
-  }
+  }, []);
+
+  useEffect(() => {
+    const currentUser = getUser();
+    setUser(currentUser);
+    if (currentUser) {
+      loadNotifications(currentUser);
+      const interval = setInterval(() => loadNotifications(currentUser), 15000);
+      return () => clearInterval(interval);
+    }
+  }, [loadNotifications]);
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -54,8 +54,8 @@ export default function Topbar() {
     try {
       if (user?.role === 'SUPER_ADMIN') {
         await notificationsApi.markAllAsReadSuperAdmin();
-      } else if (user?.company?.id) {
-        await notificationsApi.markAllAsReadCompany(user.company.id);
+      } else if (user?.companyId) {
+        await notificationsApi.markAllAsReadCompany(user.companyId);
       }
       setNotifications(notifications.map(n => ({ ...n, isRead: true })));
     } catch (e) { console.error(e); }
@@ -102,7 +102,6 @@ export default function Topbar() {
             )}
           </button>
 
-          {/* Notifications Dropdown */}
           {showNotifications && (
             <div className="absolute right-0 mt-3 w-80 lg:w-96 bg-white rounded-2xl shadow-2xl border border-slate-100 overflow-hidden animate-in fade-in zoom-in duration-200 origin-top-right">
               <div className="p-4 border-b border-slate-50 bg-slate-50/50 flex justify-between items-center">
@@ -112,7 +111,7 @@ export default function Topbar() {
                     onClick={markAllAsRead}
                     className="flex items-center gap-1 text-[10px] font-black text-blue-600 uppercase bg-blue-50 px-2 py-1 rounded-lg hover:bg-blue-100 transition-colors"
                   >
-                    <MdDoneAll /> Hammasini o'qish
+                    <MdDoneAll /> Hammasini o&apos;qish
                   </button>
                 )}
               </div>
@@ -131,7 +130,7 @@ export default function Topbar() {
                       </div>
                       <div className="flex-1">
                         <p className={`text-sm leading-tight ${!n.isRead ? 'font-bold text-slate-900' : 'text-slate-600'}`}>
-                          {n.text}
+                          {n.message}
                         </p>
                         <span className="text-[10px] font-bold text-slate-400 mt-1 block uppercase">
                           {new Date(n.createdAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
@@ -142,14 +141,14 @@ export default function Topbar() {
                 ) : (
                   <div className="p-10 text-center">
                     <MdNotifications className="text-4xl text-slate-100 mx-auto mb-2" />
-                    <p className="text-slate-400 text-xs font-bold uppercase tracking-widest">Yangi bildirishnomalar yo'q</p>
+                    <p className="text-slate-400 text-xs font-bold uppercase tracking-widest">Yangi bildirishnomalar yo&apos;q</p>
                   </div>
                 )}
               </div>
               
               <div className="p-3 border-t border-slate-50 bg-slate-50/30">
                 <button className="w-full py-2 text-center text-xs font-black text-slate-500 hover:text-blue-600 transition-colors uppercase tracking-widest">
-                  Barcha bildirishnomalarni ko'rish
+                  Barcha bildirishnomalarni ko&apos;rish
                 </button>
               </div>
             </div>
@@ -159,7 +158,7 @@ export default function Topbar() {
         {user && (
           <div className="flex items-center gap-3 border-l border-slate-200 pl-6 cursor-pointer group">
             <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-700 flex items-center justify-center text-white font-black shadow-lg shadow-blue-500/20 group-hover:scale-105 transition-transform">
-              {user.fullName[0]?.toUpperCase()}
+              {user.fullName[0]?.toUpperCase() || 'U'}
             </div>
             <div className="hidden md:block">
               <p className="text-sm font-black text-slate-800 leading-tight">{user.fullName}</p>

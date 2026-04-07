@@ -16,6 +16,9 @@ export class MessagesController {
   @Get('history/:otherUserId')
   async getHistory(@Request() req, @Param('otherUserId') otherUserId: string) {
     const userId = req.user.id;
-    return await this.messagesService.findAllByConversation(userId, otherUserId);
+    return await this.messagesService.findAllByConversation(
+      userId,
+      otherUserId,
+    );
   }
 }

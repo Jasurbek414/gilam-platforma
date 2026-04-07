@@ -70,14 +70,18 @@ export class CallsService {
 
   // ─── UMUMIY KIRUVCHI QO'NG'IROQ (Asterisk / Zadarma / boshqa) ───────────────
   async handleIncomingWebhook(dto: WebhookIncomingCallDto): Promise<Call> {
-    const campaign = await this.campaignsService.findByPhoneNumber(dto.calledPhone);
+    const campaign = await this.campaignsService.findByPhoneNumber(
+      dto.calledPhone,
+    );
     if (!campaign) {
       throw new BadRequestException(`Kampaniya topilmadi: ${dto.calledPhone}`);
     }
 
     // Avvalgi urinishmi? (takroriy webhook)
     if (dto.sipCallId) {
-      const existing = await this.callsRepo.findOne({ where: { sipCallId: dto.sipCallId } });
+      const existing = await this.callsRepo.findOne({
+        where: { sipCallId: dto.sipCallId },
+      });
       if (existing) return existing;
     }
 
@@ -130,7 +134,9 @@ export class CallsService {
     });
     if (!call) throw new NotFoundException("Qo'ng'iroq topilmadi");
     if (call.status !== CallStatus.RINGING) {
-      throw new BadRequestException("Qo'ng'iroq allaqachon javob berilgan yoki tugagan");
+      throw new BadRequestException(
+        "Qo'ng'iroq allaqachon javob berilgan yoki tugagan",
+      );
     }
     call.status = CallStatus.ANSWERED;
     call.operatorId = operatorId;
@@ -159,7 +165,10 @@ export class CallsService {
       relations: ['campaign', 'customer', 'order', 'operator'],
     });
     if (!call) throw new NotFoundException("Qo'ng'iroq topilmadi");
-    if (call.status !== CallStatus.ANSWERED && call.status !== CallStatus.RINGING) {
+    if (
+      call.status !== CallStatus.ANSWERED &&
+      call.status !== CallStatus.RINGING
+    ) {
       throw new BadRequestException("Qo'ng'iroq allaqachon tugagan");
     }
 
@@ -194,12 +203,17 @@ export class CallsService {
     // 2. Kampaniyaning o'z haydovchisi → campaign.driverId
     let resolvedDriverId = dto.driverId;
     if (!resolvedDriverId && call.campaignId) {
-      const campaign = await this.campaignsService.findOne(call.campaignId, callCompanyId);
+      const campaign = await this.campaignsService.findOne(
+        call.campaignId,
+        callCompanyId,
+      );
       resolvedDriverId = campaign?.driverId;
     }
 
     if (resolvedDriverId && call.customerId) {
-      const driver = await this.usersRepo.findOne({ where: { id: resolvedDriverId, companyId: callCompanyId } });
+      const driver = await this.usersRepo.findOne({
+        where: { id: resolvedDriverId, companyId: callCompanyId },
+      });
       if (driver && !call.orderId) {
         const order = this.ordersRepo.create({
           companyId: callCompanyId,
@@ -245,12 +259,19 @@ export class CallsService {
     call.status = CallStatus.MISSED;
     call.endedAt = new Date();
     const updated = await this.callsRepo.save(call);
-    this.callsGateway.notifyCallUpdate(companyId, { callId, status: CallStatus.MISSED });
+    this.callsGateway.notifyCallUpdate(companyId, {
+      callId,
+      status: CallStatus.MISSED,
+    });
     return updated;
   }
 
   // ─── CHIQUVCHI ───────────────────────────────────────────────────────────────
-  async createOutgoing(operatorId: string, companyId: string, dto: CreateCallDto): Promise<Call> {
+  async createOutgoing(
+    operatorId: string,
+    companyId: string,
+    dto: CreateCallDto,
+  ): Promise<Call> {
     const existingCustomer = await this.customersRepo.findOne({
       where: [
         { phone1: dto.callerPhone, companyId },
@@ -283,7 +304,8 @@ export class CallsService {
       .leftJoinAndSelect('call.order', 'order')
       .where('call.companyId = :companyId', { companyId });
     if (status) qb.andWhere('call.status = :status', { status });
-    if (campaignId) qb.andWhere('call.campaignId = :campaignId', { campaignId });
+    if (campaignId)
+      qb.andWhere('call.campaignId = :campaignId', { campaignId });
     if (search) {
       qb.andWhere(
         '(call.callerPhone ILIKE :s OR customer.full_name ILIKE :s)',
@@ -295,7 +317,11 @@ export class CallsService {
     return { data, total, page: Number(page), limit: Number(limit) };
   }
 
-  async findOperatorCalls(operatorId: string, companyId: string, query: GetCallsQueryDto) {
+  async findOperatorCalls(
+    operatorId: string,
+    companyId: string,
+    query: GetCallsQueryDto,
+  ) {
     const { page = 1, limit = 30, status, campaignId } = query;
     const skip = (Number(page) - 1) * Number(limit);
     const qb = this.callsRepo
@@ -306,7 +332,8 @@ export class CallsService {
       .where('call.companyId = :companyId', { companyId })
       .andWhere('call.operatorId = :operatorId', { operatorId });
     if (status) qb.andWhere('call.status = :status', { status });
-    if (campaignId) qb.andWhere('call.campaignId = :campaignId', { campaignId });
+    if (campaignId)
+      qb.andWhere('call.campaignId = :campaignId', { campaignId });
     qb.orderBy('call.createdAt', 'DESC').skip(skip).take(Number(limit));
     const [data, total] = await qb.getManyAndCount();
     return { data, total, page: Number(page), limit: Number(limit) };
@@ -331,7 +358,9 @@ export class CallsService {
         .where('c.companyId = :companyId', { companyId })
         .andWhere('c.createdAt >= :today', { today })
         .getCount(),
-      this.callsRepo.count({ where: { companyId, status: CallStatus.COMPLETED } }),
+      this.callsRepo.count({
+        where: { companyId, status: CallStatus.COMPLETED },
+      }),
       this.callsRepo.count({ where: { companyId, status: CallStatus.MISSED } }),
     ]);
     return {

@@ -10,7 +10,7 @@ import { AuthModule } from '../auth/auth.module';
   imports: [
     TypeOrmModule.forFeature([Company]),
     NotificationsModule,
-    AuthModule
+    AuthModule,
   ],
   controllers: [CompaniesController],
   providers: [CompaniesService],

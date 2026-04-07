@@ -1,4 +1,16 @@
-import { Controller, Get, Post, Put, Delete, Body, Param, ParseUUIDPipe, UseGuards, UnauthorizedException, ForbiddenException } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Put,
+  Delete,
+  Body,
+  Param,
+  ParseUUIDPipe,
+  UseGuards,
+  UnauthorizedException,
+  ForbiddenException,
+} from '@nestjs/common';
 import { CompaniesService } from './companies.service';
 import { CreateCompanyDto, UpdateCompanyDto } from './dto/company.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
@@ -22,7 +34,7 @@ export class CompaniesController {
   @Get()
   async findAll(@CurrentUser() user: User) {
     if (!user) {
-       throw new UnauthorizedException('Sessiya muddati tugadi');
+      throw new UnauthorizedException('Sessiya muddati tugadi');
     }
 
     if (user.role === UserRole.SUPER_ADMIN) {
@@ -30,7 +42,7 @@ export class CompaniesController {
     }
 
     if (!user.companyId) {
-       return [];
+      return [];
     }
 
     try {
@@ -52,7 +64,7 @@ export class CompaniesController {
   findOne(@Param('id', ParseUUIDPipe) id: string, @CurrentUser() user: User) {
     // Only same company or superadmin
     if (user.role !== UserRole.SUPER_ADMIN && user.companyId !== id) {
-       throw new ForbiddenException('Ruxsat etilmagan');
+      throw new ForbiddenException('Ruxsat etilmagan');
     }
     return this.companiesService.findOne(id);
   }
@@ -60,12 +72,12 @@ export class CompaniesController {
   @Put(':id')
   @Roles(UserRole.SUPER_ADMIN, UserRole.COMPANY_ADMIN)
   update(
-    @Param('id', ParseUUIDPipe) id: string, 
+    @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: UpdateCompanyDto,
-    @CurrentUser() user: User
+    @CurrentUser() user: User,
   ) {
     if (user.role !== UserRole.SUPER_ADMIN && user.companyId !== id) {
-       throw new ForbiddenException('Ruxsat etilmagan');
+      throw new ForbiddenException('Ruxsat etilmagan');
     }
     return this.companiesService.update(id, dto);
   }

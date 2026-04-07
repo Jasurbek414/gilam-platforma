@@ -33,9 +33,9 @@ export default function CustomersPage() {
 
   useEffect(() => {
     const currentUser = getUser();
-    if (currentUser) {
+    if (currentUser && currentUser.companyId) {
       setUser(currentUser);
-      fetchCustomers(currentUser.company.id);
+      fetchCustomers(currentUser.companyId);
     }
   }, []);
 
@@ -59,13 +59,13 @@ export default function CustomersPage() {
     
     if (q.length > 2) {
       try {
-        const found = await customersApi.search(user.company.id, q);
+        const found = await customersApi.search(user.companyId, q);
         setCustomers(found);
       } catch (err) {
         console.error('Search error:', err);
       }
     } else if (q.length === 0) {
-      fetchCustomers(user.company.id);
+      fetchCustomers(user.companyId);
     }
   };
 
@@ -92,19 +92,20 @@ export default function CustomersPage() {
       if (selectedCustomer) {
         await customersApi.update(selectedCustomer.id, {
           ...formData,
-          companyId: user.company.id
+          companyId: user.companyId,
+          operatorId: user.id
         });
         toast.success('Mijoz ma\'lumotlari yangilandi');
       } else {
         await customersApi.create({
           ...formData,
-          companyId: user.company.id,
+          companyId: user.companyId,
           operatorId: user.id
         });
         toast.success('Yangi mijoz qo\'shildi');
       }
       setIsModalOpen(false);
-      fetchCustomers(user.company.id);
+      fetchCustomers(user.companyId);
     } catch (err: any) {
       toast.error(err.response?.data?.message || 'Xatolik yuz berdi');
     }

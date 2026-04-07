@@ -83,7 +83,10 @@ export class CallsGateway implements OnGatewayConnection, OnGatewayDisconnect {
   }
 
   // Boshqa operator qo'ng'iroqni oldi — qolganlarning modali yopilishi kerak
-  notifyCallTaken(companyId: string, data: { callId: string; operatorId: string; takenAt: Date }) {
+  notifyCallTaken(
+    companyId: string,
+    data: { callId: string; operatorId: string; takenAt: Date },
+  ) {
     this.server.to(`company:${companyId}`).emit('call:taken', data);
   }
 

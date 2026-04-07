@@ -16,12 +16,12 @@ export class CompaniesService {
   async create(dto: CreateCompanyDto): Promise<Company> {
     const company = this.companyRepository.create(dto);
     const saved = await this.companyRepository.save(company);
-    
+
     // Notify Super Admin
     await this.notificationsService.create({
-      title: 'Yangi korxona qo\'shildi!',
+      title: "Yangi korxona qo'shildi!",
       text: `Tizimda yangi korxona ("${saved.name}") ro'yxatdan o'tdi.`,
-      type: 'system'
+      type: 'system',
     });
 
     return saved;
@@ -56,9 +56,13 @@ export class CompaniesService {
     await this.companyRepository.remove(company);
   }
 
-  async getStats(): Promise<{ total: number; active: number; inactive: number }> {
+  async getStats(): Promise<{
+    total: number;
+    active: number;
+    inactive: number;
+  }> {
     const [companies, total] = await this.companyRepository.findAndCount();
-    const active = companies.filter(c => c.status === 'ACTIVE').length;
+    const active = companies.filter((c) => c.status === 'ACTIVE').length;
     return { total, active, inactive: total - active };
   }
 }

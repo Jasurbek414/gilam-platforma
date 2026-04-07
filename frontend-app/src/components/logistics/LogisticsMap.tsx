@@ -24,7 +24,7 @@ const deliveryIcon = L.icon({
   iconAnchor: [15, 30],
 });
 
-const YANDEX_TILES = "https://vec0{s}.maps.yandex.net/tiles?l=map&v=2.26.0&x={x}&y={y}&z={z}&lang=uz_UZ";
+const GOOGLE_MAPS_TILES = "https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}";
 
 interface LogisticsMapProps {
   drivers: any[];
@@ -40,9 +40,8 @@ export default function LogisticsMap({ drivers, orderPoints }: LogisticsMapProps
         style={{ height: '500px', width: '100%' }}
       >
         <TileLayer
-          attribution='&copy; Yandex'
-          url={YANDEX_TILES}
-          subdomains={['1', '2', '3', '4']}
+          attribution='&copy; Google Maps'
+          url={GOOGLE_MAPS_TILES}
         />
         {drivers.map(driver => (
           <Marker key={driver.id} position={driver.pos} icon={driverIcon}>

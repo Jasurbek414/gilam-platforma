@@ -13,9 +13,8 @@ const icon = L.icon({
   iconAnchor: [12, 41],
 });
 
-// Yandex uses a different projection, so we need a slightly adjusted TileLayer
-// or just use their tile service which works well enough for general use
-const YANDEX_TILES = "https://vec0{s}.maps.yandex.net/tiles?l=map&v=2.26.0&x={x}&y={y}&z={z}&lang=uz_UZ";
+// Google Maps Roadmap Tiles - Extremely stable in Uzbekistan and globally
+const GOOGLE_MAPS_TILES = "https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}";
 
 interface YandexMapPickerProps {
   onLocationSelect: (lat: number, lng: number, address: string) => void;
@@ -74,7 +73,7 @@ export default function YandexMapPicker({ onLocationSelect, initialLocation, sea
             const lng = parseFloat(data[0].lon);
             setCoords([lat, lng]);
             setZoom(17);
-            handleSelect(lat, lng); // Auto select the searched point
+            handleSelect(lat, lng);
           }
         })
         .catch(err => console.error('Geocoding error:', err))
@@ -103,9 +102,8 @@ export default function YandexMapPicker({ onLocationSelect, initialLocation, sea
         style={{ height: '100%', width: '100%' }}
       >
         <TileLayer
-          attribution='&copy; <a href="https://yandex.ru/maps">Yandex</a>'
-          url={YANDEX_TILES}
-          subdomains={['1', '2', '3', '4']}
+          attribution='&copy; Google Maps'
+          url={GOOGLE_MAPS_TILES}
         />
         <LocationMarker onSelect={handleSelect} initialPos={initialPos} />
         {coords && <MapUpdater center={coords} zoom={zoom} />}
@@ -113,12 +111,12 @@ export default function YandexMapPicker({ onLocationSelect, initialLocation, sea
 
       {loading && (
         <div className="absolute inset-0 bg-white/40 backdrop-blur-[1px] z-[1000] flex items-center justify-center">
-          <div className="w-8 h-8 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin"></div>
+          <div className="w-8 h-8 border-4 border-emerald-200 border-t-emerald-600 rounded-full animate-spin"></div>
         </div>
       )}
 
       <div className="absolute bottom-4 left-4 z-[1000] bg-white px-3 py-1.5 rounded-xl shadow-lg border border-slate-100 pointer-events-none">
-        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest text-center italic">Yandex Tiles Engine</p>
+        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest text-center italic">Google Maps Engine</p>
       </div>
     </div>
   );

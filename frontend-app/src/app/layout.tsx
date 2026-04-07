@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { inter } from '@/lib/fonts';
 import './globals.css';
+import 'leaflet/dist/leaflet.css';
 
 export const metadata: Metadata = {
   title: 'Gilam SaaS - Korxonalar Boshqaruvi',

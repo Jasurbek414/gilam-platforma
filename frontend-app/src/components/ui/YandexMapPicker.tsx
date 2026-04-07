@@ -95,20 +95,34 @@ export default function YandexMapPicker({ onLocationSelect, initialLocation, sea
 
   // Handle Search Query Geocoding (Yandex version)
   useEffect(() => {
-    if (!searchQuery || searchQuery.length < 4 || !mapInstance.current) return;
+    if (!searchQuery || searchQuery.length < 3 || !window.ymaps || !mapInstance.current) return;
 
     const delayDebounceFn = setTimeout(() => {
-      window.ymaps.geocode(searchQuery, { results: 1 }).then((res: any) => {
+      // Add "Tashkent, " prefix for better accuracy in local market
+      const fullQuery = searchQuery.toLowerCase().includes('toshkent') || searchQuery.toLowerCase().includes('tashkent') 
+        ? searchQuery 
+        : `Toshkent, ${searchQuery}`;
+
+      window.ymaps.geocode(fullQuery, { results: 1 }).then((res: any) => {
         const firstGeoObject = res.geoObjects.get(0);
-        if (firstGeoObject) {
+        if (firstGeoObject && mapInstance.current && markerRef.current) {
           const coords = firstGeoObject.geometry.getCoordinates();
-          mapInstance.current.setCenter(coords, 17, { duration: 500 });
+          
+          // Smoother transition to the found location
+          mapInstance.current.panTo(coords, {
+            flying: true,
+            duration: 800
+          }).then(() => {
+             mapInstance.current.setZoom(17, { duration: 400 });
+          });
+          
           markerRef.current.geometry.setCoordinates(coords);
-          const address = firstGeoObject.getAddressLine();
-          onLocationSelect(coords[0], coords[1], address);
+          
+          // Note: We DON'T call onLocationSelect here to avoid overwriting the user's manual typing
+          // We only call it when the user clicks or drags to confirm the exact building
         }
       });
-    }, 1200);
+    }, 800); // Faster response
 
     return () => clearTimeout(delayDebounceFn);
   }, [searchQuery]);

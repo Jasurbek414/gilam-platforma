@@ -19,6 +19,7 @@ export default function YandexMapPicker({ onLocationSelect, initialLocation, sea
   const mapInstance = useRef<any>(null);
   const markerRef = useRef<any>(null);
   const [loading, setLoading] = useState(true);
+  const [isReady, setIsReady] = useState(false);
 
   useEffect(() => {
     const loadYandexMaps = () => {
@@ -36,7 +37,6 @@ export default function YandexMapPicker({ onLocationSelect, initialLocation, sea
       } else if (window.ymaps) {
         window.ymaps.ready(initMap);
       } else {
-        // Script is added but window.ymaps is not ready yet
         existingScript.addEventListener('load', () => {
           if (window.ymaps) window.ymaps.ready(initMap);
         });
@@ -44,7 +44,7 @@ export default function YandexMapPicker({ onLocationSelect, initialLocation, sea
     };
 
     const initMap = () => {
-      if (!mapRef.current || !window.ymaps) return;
+      if (!mapRef.current || !window.ymaps || mapInstance.current) return;
 
       mapRef.current.innerHTML = '';
       
@@ -56,7 +56,6 @@ export default function YandexMapPicker({ onLocationSelect, initialLocation, sea
         controls: ['zoomControl', 'fullscreenControl', 'geolocationControl']
       });
 
-      // Create draggable marker
       markerRef.current = new window.ymaps.Placemark(center, {
         hintContent: 'Manzilni belgilang'
       }, {
@@ -66,20 +65,19 @@ export default function YandexMapPicker({ onLocationSelect, initialLocation, sea
 
       mapInstance.current.geoObjects.add(markerRef.current);
 
-      // Listen for click on map
       mapInstance.current.events.add('click', (e: any) => {
         const coords = e.get('coords');
         markerRef.current.geometry.setCoordinates(coords);
         getAddress(coords);
       });
 
-      // Listen for marker drag end
       markerRef.current.events.add('dragend', () => {
         const coords = markerRef.current.geometry.getCoordinates();
         getAddress(coords);
       });
 
       setLoading(false);
+      setIsReady(true);
     };
 
     const getAddress = (coords: [number, number]) => {
@@ -91,14 +89,17 @@ export default function YandexMapPicker({ onLocationSelect, initialLocation, sea
     };
 
     loadYandexMaps();
+    
+    return () => {
+      // Cleanup if needed
+    };
   }, []);
 
-  // Handle Search Query Geocoding (Yandex version)
+  // Handle Search Query Geocoding
   useEffect(() => {
-    if (!searchQuery || searchQuery.length < 3 || !window.ymaps || !mapInstance.current) return;
+    if (!searchQuery || searchQuery.length < 3 || !isReady || !window.ymaps || !mapInstance.current) return;
 
     const delayDebounceFn = setTimeout(() => {
-      // Add "Tashkent, " prefix for better accuracy in local market
       const fullQuery = searchQuery.toLowerCase().includes('toshkent') || searchQuery.toLowerCase().includes('tashkent') 
         ? searchQuery 
         : `Toshkent, ${searchQuery}`;
@@ -108,7 +109,6 @@ export default function YandexMapPicker({ onLocationSelect, initialLocation, sea
         if (firstGeoObject && mapInstance.current && markerRef.current) {
           const coords = firstGeoObject.geometry.getCoordinates();
           
-          // Smoother transition to the found location
           mapInstance.current.panTo(coords, {
             flying: true,
             duration: 800
@@ -117,28 +117,25 @@ export default function YandexMapPicker({ onLocationSelect, initialLocation, sea
           });
           
           markerRef.current.geometry.setCoordinates(coords);
-          
-          // Note: We DON'T call onLocationSelect here to avoid overwriting the user's manual typing
-          // We only call it when the user clicks or drags to confirm the exact building
         }
       });
-    }, 800); // Faster response
+    }, 800);
 
     return () => clearTimeout(delayDebounceFn);
-  }, [searchQuery]);
+  }, [searchQuery, isReady]);
 
   return (
     <div className="w-full h-[350px] rounded-2xl overflow-hidden border-2 border-slate-100 shadow-inner relative">
       <div ref={mapRef} className="w-full h-full" />
       
-      {loading && (
+      {(loading || !isReady) && (
         <div className="absolute inset-0 bg-white/50 backdrop-blur-[2px] z-[1000] flex items-center justify-center">
           <div className="w-8 h-8 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin"></div>
         </div>
       )}
       
       <div className="absolute bottom-4 left-4 z-[1000] bg-white px-3 py-2 rounded-xl shadow-lg border border-slate-100 pointer-events-none">
-        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Yandex Maps • Aniq manzil</p>
+        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Yandex Maps • Aqlli qidiruv</p>
       </div>
     </div>
   );

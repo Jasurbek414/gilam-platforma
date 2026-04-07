@@ -21,6 +21,7 @@ import {
 const companyLinks = [
   { name: 'Asosiy Oyna', href: '/company', icon: MdDashboard, exact: true },
   { name: 'Buyurtmalar', href: '/company/orders', icon: MdShoppingCart },
+  { name: 'Mijozlar', href: '/company/customers', icon: MdPeople },
   { name: 'Xisobotlar', href: '/company/finance', icon: MdAssessment },
   { name: 'Haydovchilar liniyasi', href: '/company/logistics', icon: MdLocalShipping },
   { name: 'Xodimlar', href: '/company/staff', icon: MdPeople },

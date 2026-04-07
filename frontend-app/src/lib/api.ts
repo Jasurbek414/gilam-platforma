@@ -61,12 +61,12 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   }
 
   if (!res.ok) {
-    const errorData = await res.json().catch(() => ({ message: 'Server xatosi' }));
+    const errorData = await res.json().catch(() => ({ message: 'Xatolik yuz berdi' }));
     const errorMessage = Array.isArray(errorData.message) 
       ? errorData.message.join(', ') 
       : (errorData.message || `HTTP ${res.status}`);
     
-    const error: any = new Error(errorMessage);
+    const error = new Error(errorMessage) as Error & { status?: number; response?: { data: any } };
     error.status = res.status;
     error.response = { data: errorData };
     throw error;
@@ -160,8 +160,8 @@ export const notificationsApi = {
 export const campaignsApi = {
   getAll: () => request<any[]>(`/campaigns`),
   getOne: (id: string) => request<any>(`/campaigns/${id}`),
-  create: (data: any) => request<any>('/campaigns', { method: 'POST', body: JSON.stringify(data) }),
-  update: (id: string, data: any) => request<any>(`/campaigns/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+  create: (data: Partial<any>) => request<any>('/campaigns', { method: 'POST', body: JSON.stringify(data) }),
+  update: (id: string, data: Partial<any>) => request<any>(`/campaigns/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
   remove: (id: string) => request<void>(`/campaigns/${id}`, { method: 'DELETE' }),
 };
 

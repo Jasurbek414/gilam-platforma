@@ -8,9 +8,7 @@ import {
   MdShoppingCart, 
   MdPhoneInTalk, 
   MdAdd, 
-  MdPerson, 
   MdLocationOn, 
-  MdAttachMoney,
   MdClose
 } from 'react-icons/md';
 import Modal from '@/components/ui/Modal';
@@ -18,6 +16,12 @@ import { ordersApi, usersApi, getUser, customersApi, servicesApi } from '@/lib/a
 import { User, Order, Service, Customer } from '@/types';
 import { useRouter } from 'next/navigation';
 import toast from 'react-hot-toast';
+import dynamic from 'next/dynamic';
+
+const MapPicker = dynamic(() => import('@/components/ui/MapPicker'), { 
+  ssr: false,
+  loading: () => <div className="h-[300px] bg-slate-50 animate-pulse rounded-2xl flex items-center justify-center text-slate-400 font-bold uppercase text-xs tracking-widest">Xarita yuklanmoqda...</div>
+});
 
 export default function CompanyDashboardPage() {
   const router = useRouter();
@@ -38,8 +42,10 @@ export default function CompanyDashboardPage() {
     phone: '',
     customerName: '',
     items: [{ serviceId: '', quantity: '1' }],
-    address: ''
+    address: '',
+    location: null as { lat: number, lng: number } | null
   });
+  const [isMapOpen, setIsMapOpen] = useState(false);
 
   useEffect(() => {
     const currentUser = getUser();
@@ -88,7 +94,6 @@ export default function CompanyDashboardPage() {
     try {
       let customerId = selectedCustomer?.id;
 
-      // 1. Agar yangi mijoz bo'lsa - yaratish
       if (!customerId) {
         const newCustomer = await customersApi.create({
           fullName: formData.customerName || 'Ismsiz Mijoz',
@@ -100,7 +105,6 @@ export default function CompanyDashboardPage() {
         customerId = newCustomer.id;
       }
 
-      // 2. Buyurtma yaratish
       await ordersApi.create({
         customerId,
         companyId: user.companyId,
@@ -116,7 +120,7 @@ export default function CompanyDashboardPage() {
       toast.success('Buyurtma muvaffaqiyatli yaratildi!');
       setIsModalOpen(false);
       resetFormData();
-      loadData(user.companyId); // Yangilash
+      loadData(user.companyId);
     } catch (err: any) {
       toast.error(err.message || 'Xatolik yuz berdi');
     } finally {
@@ -129,9 +133,11 @@ export default function CompanyDashboardPage() {
        phone: '', 
        customerName: '', 
        items: [{ serviceId: services[0]?.id || '', quantity: '1' }], 
-       address: '' 
+       address: '',
+       location: null
     });
     setSelectedCustomer(null);
+    setIsMapOpen(false);
   };
 
   const addOrderItem = () => {
@@ -259,7 +265,7 @@ export default function CompanyDashboardPage() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {stats.map((stat, i) => (
-          <div key={i} className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 group hover:border-blue-100 hover:shadow-md transition-all">
+          <div key={i} className={`bg-white p-6 rounded-2xl shadow-sm border border-slate-100 group hover:border-${stat.color}-100 hover:shadow-md transition-all`}>
             <div className="flex justify-between items-start">
               <div className={`p-3 rounded-xl bg-${stat.color}-50 text-${stat.color}-600 group-hover:bg-${stat.color}-100 transition-colors`}>
                 <stat.icon className="text-2xl" />
@@ -290,7 +296,7 @@ export default function CompanyDashboardPage() {
                   <th className="px-6 py-4">ID / Mijoz</th>
                   <th className="px-6 py-4">Holati</th>
                   <th className="px-6 py-4">Operator/Haydovchi</th>
-                  <th className="px-6 py-4 text-right">Summa (so'm)</th>
+                  <th className="px-6 py-4 text-right">Summa (so&apos;m)</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
@@ -300,7 +306,7 @@ export default function CompanyDashboardPage() {
                     <tr key={order.id} className="hover:bg-slate-50/50 transition-colors">
                       <td className="px-6 py-4">
                         <p className="text-sm font-bold text-slate-800">#{order.id.split('-')[0].substring(0,6).toUpperCase()}</p>
-                        <p className="text-xs text-slate-500 mt-0.5">{order.customer?.fullName || 'Noma\'lum'}</p>
+                        <p className="text-xs text-slate-500 mt-0.5">{order.customer?.fullName || 'Noma&apos;lum'}</p>
                       </td>
                       <td className="px-6 py-4">
                         <span className={`px-2.5 py-1 text-[10px] font-bold rounded-md uppercase tracking-tighter bg-${color}-100 text-${color}-700 border border-${color}-200`}>
@@ -418,15 +424,35 @@ export default function CompanyDashboardPage() {
                   />
                 </div>
               </div>
-              <div>
+              <div className="space-y-2">
                 <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1.5 ml-1">Manzil</label>
-                <input
-                  type="text"
-                  placeholder="Ko'cha, uy, mo'ljal..."
-                  className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all font-bold text-slate-700 shadow-sm"
-                  value={formData.address}
-                  onChange={(e) => setFormData({...formData, address: e.target.value})}
-                />
+                <div className="relative group">
+                  <input
+                    type="text"
+                    placeholder="Ko&apos;cha, uy, mo&apos;ljal..."
+                    className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all font-bold text-slate-700 shadow-sm pr-12"
+                    value={formData.address}
+                    onChange={(e) => setFormData({...formData, address: e.target.value})}
+                  />
+                  <button 
+                    type="button"
+                    onClick={() => setIsMapOpen(!isMapOpen)}
+                    className={`absolute right-2 top-1.5 p-2 rounded-lg transition-all ${isMapOpen ? 'bg-blue-600 text-white shadow-lg' : 'bg-slate-50 text-slate-400 hover:text-blue-600 hover:bg-blue-50'}`}
+                    title="Xaritadan tanlash"
+                  >
+                    <MdLocationOn className="text-xl" />
+                  </button>
+                </div>
+                
+                {isMapOpen && (
+                  <div className="mt-4 animate-in slide-in-from-top-4 duration-300">
+                    <MapPicker 
+                      onLocationSelect={(lat, lng, addr) => {
+                        setFormData(prev => ({ ...prev, address: addr, location: { lat, lng } }));
+                      }} 
+                    />
+                  </div>
+                )}
               </div>
             </div>
 
@@ -435,7 +461,7 @@ export default function CompanyDashboardPage() {
               <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center gap-2">
                   <div className="w-1.5 h-4 bg-indigo-600 rounded-full"></div>
-                  <h3 className="text-[11px] font-black text-slate-400 uppercase tracking-[0.15em]">Xizmatlar ro'yxati</h3>
+                  <h3 className="text-[11px] font-black text-slate-400 uppercase tracking-[0.15em]">Xizmatlar ro&apos;yxati</h3>
                 </div>
                 <button 
                   type="button"
@@ -484,18 +510,16 @@ export default function CompanyDashboardPage() {
                 ))}
               </div>
 
-              {/* Jami Summa Display */}
               <div className="mt-6 pt-4 border-t border-slate-100 flex justify-between items-center">
                 <span className="text-xs font-black text-slate-400 uppercase tracking-widest">Umumiy Summa</span>
                 <div className="text-xl font-black text-slate-800 tracking-tighter flex items-baseline gap-1">
                   {calculateTotal().toLocaleString()}
-                  <span className="text-[10px] text-slate-400 uppercase">so'm</span>
+                  <span className="text-[10px] text-slate-400 uppercase">so&apos;m</span>
                 </div>
               </div>
             </div>
           </div>
 
-          {/* Action Buttons */}
           <div className="flex gap-3 pt-2">
              <button 
               type="button"
@@ -513,7 +537,7 @@ export default function CompanyDashboardPage() {
               {submitting ? (
                 <div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin"></div>
               ) : (
-                <>SAQLASH VA YOPIY QILISH</>
+                <>SAQLASH VA YOPIQ QILISH</>
               )}
             </button>
           </div>

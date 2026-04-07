@@ -22,16 +22,24 @@ export default function YandexMapPicker({ onLocationSelect, initialLocation, sea
 
   useEffect(() => {
     const loadYandexMaps = () => {
-      if (!window.ymaps) {
+      const existingScript = document.getElementById('yandex-maps-script');
+      
+      if (!existingScript) {
         const script = document.createElement('script');
+        script.id = 'yandex-maps-script';
         script.src = 'https://api-maps.yandex.ru/2.1/?lang=uz_UZ&apikey=f3424d5d-222c-4734-9271-e5d8a0c5c567';
         script.async = true;
         script.onload = () => {
-          window.ymaps.ready(initMap);
+          if (window.ymaps) window.ymaps.ready(initMap);
         };
         document.head.appendChild(script);
-      } else {
+      } else if (window.ymaps) {
         window.ymaps.ready(initMap);
+      } else {
+        // Script is added but window.ymaps is not ready yet
+        existingScript.addEventListener('load', () => {
+          if (window.ymaps) window.ymaps.ready(initMap);
+        });
       }
     };
 

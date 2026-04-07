@@ -100,18 +100,23 @@ export default function LogisticsPage() {
     const loadYandexMaps = () => {
       if (typeof window === 'undefined') return;
 
-      if (!window.ymaps) {
+      const existingScript = document.getElementById('yandex-maps-script');
+      
+      if (!existingScript) {
         const script = document.createElement('script');
-        script.src = 'https://api-maps.yandex.ru/2.1/?lang=uz_UZ&apikey=f3424d5d-222c-4734-9271-e5d8a0c5c567'; // Using public key for demo or no key
+        script.id = 'yandex-maps-script';
+        script.src = 'https://api-maps.yandex.ru/2.1/?lang=uz_UZ&apikey=f3424d5d-222c-4734-9271-e5d8a0c5c567';
         script.async = true;
         script.onload = () => {
-          if (window.ymaps) {
-            window.ymaps.ready(initMap);
-          }
+          if (window.ymaps) window.ymaps.ready(initMap);
         };
         document.head.appendChild(script);
-      } else {
+      } else if (window.ymaps) {
         window.ymaps.ready(initMap);
+      } else {
+        existingScript.addEventListener('load', () => {
+          if (window.ymaps) window.ymaps.ready(initMap);
+        });
       }
     };
 

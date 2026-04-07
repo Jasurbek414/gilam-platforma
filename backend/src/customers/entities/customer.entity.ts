@@ -28,6 +28,9 @@ export class Customer {
   @Column({ type: 'point', nullable: true })
   location: any;
 
+  @Column({ name: 'operator_id', type: 'uuid', nullable: true })
+  operatorId: string;
+
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
 

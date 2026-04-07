@@ -92,7 +92,8 @@ export default function CompanyDashboardPage() {
           fullName: formData.customerName || 'Ismsiz Mijoz',
           phone: formData.phone,
           address: formData.address || 'Kiritilmagan',
-          companyId: user.company.id
+          companyId: user.company.id,
+          operatorId: user.id
         });
         customerId = newCustomer.id;
       }

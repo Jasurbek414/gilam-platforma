@@ -98,7 +98,8 @@ export default function CustomersPage() {
       } else {
         await customersApi.create({
           ...formData,
-          companyId: user.company.id
+          companyId: user.company.id,
+          operatorId: user.id
         });
         toast.success('Yangi mijoz qo\'shildi');
       }

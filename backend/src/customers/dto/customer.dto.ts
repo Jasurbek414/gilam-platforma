@@ -20,6 +20,10 @@ export class CreateCustomerDto {
   @IsOptional()
   @IsString()
   address?: string;
+
+  @IsOptional()
+  @IsUUID()
+  operatorId?: string;
 }
 
 export class UpdateCustomerDto {
@@ -38,4 +42,8 @@ export class UpdateCustomerDto {
   @IsOptional()
   @IsString()
   address?: string;
+
+  @IsOptional()
+  @IsUUID()
+  operatorId?: string;
 }

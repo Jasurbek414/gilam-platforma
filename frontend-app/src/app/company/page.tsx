@@ -322,110 +322,147 @@ export default function CompanyDashboardPage() {
         onClose={() => setIsModalOpen(false)} 
         title="Tezkor Buyurtma Yaratish"
       >
-        <form onSubmit={handleCreateOrder} className="space-y-5 p-1">
-          <div className="space-y-4">
-            {/* Telefon */}
-            <div>
-              <label className="block text-xs font-black text-slate-500 uppercase tracking-wider mb-2">Mijoz Telefoni</label>
-              <input
-                type="text"
-                required
-                placeholder="+998 90 123 45 67"
-                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all font-bold"
-                value={formData.phone}
-                onChange={async (e) => {
-                  const val = e.target.value;
-                  setFormData({...formData, phone: val});
-                  if (val.length >= 7) {
-                    const found = await customersApi.search(user.company.id, val);
-                    if (found && found.length > 0) {
-                      setSelectedCustomer(found[0]);
-                      setFormData(prev => ({...prev, customerName: found[0].fullName, address: found[0].address}));
-                    } else {
-                      setSelectedCustomer(null);
-                    }
-                  }
-                }}
-              />
-              {selectedCustomer && (
-                <p className="mt-2 text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-1 rounded-md inline-block uppercase animate-pulse">
-                  Mijoz topildi: {selectedCustomer.fullName}
-                </p>
-              )}
-            </div>
-
-            {/* Ism */}
-            <div>
-              <label className="block text-xs font-black text-slate-500 uppercase tracking-wider mb-2">Mijoz Ismi</label>
-              <input
-                type="text"
-                placeholder="Mijoz to'liq ismi"
-                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all font-bold"
-                value={formData.customerName}
-                onChange={(e) => setFormData({...formData, customerName: e.target.value})}
-              />
-            </div>
-
-            {/* Xizmat va Miqdor */}
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-xs font-black text-slate-500 uppercase tracking-wider mb-2">Xizmat turi</label>
-                <select
-                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all font-bold appearance-none"
-                  value={formData.serviceId}
-                  onChange={(e) => setFormData({...formData, serviceId: e.target.value})}
-                >
-                  {services.map(s => (
-                    <option key={s.id} value={s.id}>{s.name} ({s.price} so'm)</option>
-                  ))}
-                </select>
+        <form onSubmit={handleCreateOrder} className="space-y-6">
+          <div className="grid grid-cols-1 gap-5">
+            
+            {/* Mijoz Ma'lumotlari Section */}
+            <div className="p-4 bg-slate-50/80 rounded-2xl border border-slate-100 space-y-4">
+              <div className="flex items-center gap-2 mb-1">
+                <div className="w-1.5 h-4 bg-blue-600 rounded-full"></div>
+                <h3 className="text-[11px] font-black text-slate-400 uppercase tracking-[0.15em]">Mijoz ma'lumotlari</h3>
               </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1.5 ml-1">Telefon</label>
+                  <div className="relative">
+                    <input
+                      type="text"
+                      required
+                      placeholder="+998"
+                      className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all font-bold text-slate-700 shadow-sm"
+                      value={formData.phone}
+                      onChange={async (e) => {
+                        const val = e.target.value;
+                        setFormData({...formData, phone: val});
+                        if (val.length >= 7) {
+                          const found = await customersApi.search(user.company.id, val);
+                          if (found && found.length > 0) {
+                            setSelectedCustomer(found[0]);
+                            setFormData(prev => ({...prev, customerName: found[0].fullName, address: found[0].address}));
+                          } else {
+                            setSelectedCustomer(null);
+                          }
+                        }
+                      }}
+                    />
+                    {selectedCustomer && (
+                      <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                        <span className="flex h-2 w-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.6)]"></span>
+                      </div>
+                    )}
+                  </div>
+                  {selectedCustomer && (
+                    <div className="mt-2 flex items-center gap-1.5 px-2 py-1 bg-emerald-50 rounded-lg border border-emerald-100 animate-in fade-in zoom-in duration-300">
+                      <MdPerson className="text-emerald-600 text-sm" />
+                      <span className="text-[10px] font-bold text-emerald-700 truncate max-w-[150px]">
+                        {selectedCustomer.fullName}
+                      </span>
+                    </div>
+                  )}
+                </div>
+
+                <div>
+                  <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1.5 ml-1">F.I.SH (Ism)</label>
+                  <input
+                    type="text"
+                    placeholder="To'liq ism"
+                    className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all font-bold text-slate-700 shadow-sm"
+                    value={formData.customerName}
+                    onChange={(e) => setFormData({...formData, customerName: e.target.value})}
+                  />
+                </div>
+              </div>
+
               <div>
-                <label className="block text-xs font-black text-slate-500 uppercase tracking-wider mb-2">Kvadrat (m²)</label>
-                <input
-                  type="number"
-                  step="0.1"
-                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all font-bold"
-                  value={formData.quantity}
-                  onChange={(e) => setFormData({...formData, quantity: e.target.value})}
-                />
+                <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1.5 ml-1">Manzil</label>
+                <div className="relative">
+                  <MdLocationOn className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
+                  <input
+                    type="text"
+                    placeholder="Ko'cha, uy, mo'ljal..."
+                    className="w-full pl-11 pr-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all font-bold text-slate-700 shadow-sm"
+                    value={formData.address}
+                    onChange={(e) => setFormData({...formData, address: e.target.value})}
+                  />
+                </div>
               </div>
             </div>
 
-            {/* Manzil */}
-            <div>
-              <label className="block text-xs font-black text-slate-500 uppercase tracking-wider mb-2">Manzil (Kollektor uchun)</label>
-              <input
-                type="text"
-                placeholder="Ko'cha, uy raqami..."
-                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all font-bold"
-                value={formData.address}
-                onChange={(e) => setFormData({...formData, address: e.target.value})}
-              />
+            {/* Buyurtma Tafsilotlari Section */}
+            <div className="p-4 bg-blue-50/30 rounded-2xl border border-blue-100 space-y-4">
+              <div className="flex items-center gap-2 mb-1">
+                <div className="w-1.5 h-4 bg-indigo-600 rounded-full"></div>
+                <h3 className="text-[11px] font-black text-indigo-400 uppercase tracking-[0.15em]">Xizmat tafsilotlari</h3>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="relative">
+                  <label className="block text-[10px] font-bold text-indigo-500/70 uppercase mb-1.5 ml-1">Xizmat turi</label>
+                  <select
+                    className="w-full px-4 py-3 bg-white border border-blue-100 rounded-xl focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all font-bold text-slate-700 shadow-sm appearance-none cursor-pointer"
+                    value={formData.serviceId}
+                    onChange={(e) => setFormData({...formData, serviceId: e.target.value})}
+                  >
+                    {services.map(s => (
+                      <option key={s.id} value={s.id}>{s.name} — {Number(s.price).toLocaleString()} so'm</option>
+                    ))}
+                  </select>
+                  <div className="absolute right-4 top-[38px] pointer-events-none text-indigo-400">
+                    <svg className="w-4 h-4 fill-current" viewBox="0 0 20 20"><path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"/></svg>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-[10px] font-bold text-indigo-500/70 uppercase mb-1.5 ml-1">Kvadratura (m²)</label>
+                  <div className="relative">
+                    <input
+                      type="number"
+                      step="0.1"
+                      className="w-full px-4 py-3 bg-white border border-blue-100 rounded-xl focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all font-bold text-slate-700 shadow-sm"
+                      value={formData.quantity}
+                      onChange={(e) => setFormData({...formData, quantity: e.target.value})}
+                    />
+                    <span className="absolute right-4 top-1/2 -translate-y-1/2 text-xs font-black text-indigo-300">M²</span>
+                  </div>
+                </div>
+              </div>
             </div>
+
           </div>
 
-          <div className="pt-4 flex gap-3">
+          {/* Action Buttons */}
+          <div className="flex gap-3 pt-2">
              <button 
               type="button"
               disabled={submitting}
               onClick={() => setIsModalOpen(false)}
-              className="flex-1 py-3.5 text-sm font-black text-slate-500 bg-slate-100 rounded-xl hover:bg-slate-200 transition-colors uppercase tracking-widest"
+              className="px-6 py-4 text-xs font-black text-slate-400 hover:text-slate-600 transition-colors uppercase tracking-widest"
             >
-              Yopish
+              Bekor qilish
             </button>
             <button 
               type="submit"
               disabled={submitting}
-              className={`flex-1 py-3.5 text-sm font-black text-white bg-blue-600 rounded-xl shadow-lg shadow-blue-500/25 hover:shadow-blue-500/40 hover:-translate-y-0.5 transition-all uppercase tracking-widest flex items-center justify-center gap-2 ${submitting ? 'opacity-70 cursor-not-allowed' : ''}`}
+              className={`flex-1 py-4 bg-gradient-to-r from-blue-600 to-indigo-600 text-white text-[11px] font-black rounded-2xl shadow-xl shadow-blue-500/25 hover:shadow-blue-500/40 hover:-translate-y-1 active:scale-95 transition-all uppercase tracking-[0.2em] flex items-center justify-center gap-3 ${submitting ? 'opacity-80' : ''}`}
             >
               {submitting ? (
-                <>
-                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                  Saqlanmoqda...
-                </>
+                <div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin"></div>
               ) : (
-                'Saqlash'
+                <>
+                  <MdAttachMoney className="text-lg" />
+                  Saqlash va Yuborish
+                </>
               )}
             </button>
           </div>

@@ -14,10 +14,11 @@ import * as dgram from 'dgram';
 import * as crypto from 'crypto';
 import { CallsService } from '../calls/calls.service';
 
-@WebSocketGateway(3002, {
+@WebSocketGateway({
   cors: {
     origin: '*',
   },
+  namespace: '/sip',
 })
 export class SipBridgeGateway implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect, OnModuleInit {
   @WebSocketServer() server: Server;
@@ -27,6 +28,16 @@ export class SipBridgeGateway implements OnGatewayInit, OnGatewayConnection, OnG
   private cseq = 100;
   private currentOperatorId: string | null = null;
   private currentCompanyId: string | null = null;
+  
+  // Call session tracking
+  private activeCall: {
+    id: string;
+    target: string;
+    fromTag: string;
+    toTag: string | null;
+    branch: string;
+    status: 'calling' | 'in_call' | 'idle';
+  } | null = null;
   // SIP registration state (reused across retries)
   private regCallId: string = Math.random().toString(36).substring(10) + '@10.100.100.18';
   private regFromTag: string = Math.random().toString(36).substring(7);
@@ -138,9 +149,18 @@ export class SipBridgeGateway implements OnGatewayInit, OnGatewayConnection, OnG
       }
 
       // Handle Hung up / Disconnected
-      if (message.includes('BYE sip:') || message.includes('SIP/2.0 487 Request Terminated')) {
+      if (message.includes('BYE sip:') || message.includes('SIP/2.0 487 Request Terminated') || message.includes('SIP/2.0 603 Declined')) {
         this.server.emit('sip:call_ended');
         this.saveCallLog('COMPLETED');
+        this.activeCall = null;
+      }
+
+      // Capture To-Tag for active call (needed for BYE)
+      if (this.activeCall && (message.includes('SIP/2.0 200 OK') || message.includes('SIP/2.0 180 Ringing'))) {
+        const toTagMatch = message.match(/To:.*tag=([^;\r\n]+)/);
+        if (toTagMatch) {
+          this.activeCall.toTag = toTagMatch[1];
+        }
       }
 
       // Handle Options (Heartbeat)
@@ -217,7 +237,17 @@ export class SipBridgeGateway implements OnGatewayInit, OnGatewayConnection, OnG
     this.cseq++;
     const branch = 'z9hG4bK-' + Math.random().toString(36).substring(7);
     const callId = Math.random().toString(36).substring(10) + '@10.100.100.18';
+    const fromTag = Math.random().toString(36).substring(7);
     
+    this.activeCall = {
+      id: callId,
+      target,
+      fromTag,
+      toTag: null,
+      branch,
+      status: 'calling'
+    };
+
     // SDP for PCMA (G.711a)
     const sdp = [
       'v=0',
@@ -230,13 +260,13 @@ export class SipBridgeGateway implements OnGatewayInit, OnGatewayConnection, OnG
       'a=rtpmap:101 telephone-event/8000',
       'a=fmtp:101 0-16',
       'a=sendrecv',
-      '\r\n'
+      ''
     ].join('\r\n');
 
     const invite = [
       `INVITE sip:${target}@10.100.100.1 SIP/2.0`,
       `Via: SIP/2.0/UDP 10.100.100.18:55060;branch=${branch}`,
-      `From: "Gilam Operator" <sip:101@10.100.100.1>;tag=${Math.random().toString(36).substring(7)}`,
+      `From: "Gilam Operator" <sip:101@10.100.100.1>;tag=${fromTag}`,
       `To: <sip:${target}@10.100.100.1>`,
       `Call-ID: ${callId}`,
       `CSeq: ${this.cseq} INVITE`,
@@ -255,7 +285,33 @@ export class SipBridgeGateway implements OnGatewayInit, OnGatewayConnection, OnG
   @SubscribeMessage('sip:hangup')
   handleHangup() {
     this.logger.log('SIP HANGUP REQUEST');
-    // Simplified BYE logic...
+    if (!this.activeCall) return;
+
+    this.cseq++;
+    const target = this.activeCall.target;
+    const callId = this.activeCall.id;
+    const fromTag = this.activeCall.fromTag;
+    const toTag = this.activeCall.toTag;
+    
+    let method = 'BYE';
+    if (!toTag) method = 'CANCEL'; // If not answered yet, use CANCEL
+
+    const request = [
+      `${method} sip:${target}@10.100.100.1 SIP/2.0`,
+      `Via: SIP/2.0/UDP 10.100.100.18:55060;branch=${this.activeCall.branch}`,
+      `From: "Gilam Operator" <sip:101@10.100.100.1>;tag=${fromTag}`,
+      `To: <sip:${target}@10.100.100.1>${toTag ? `;tag=${toTag}` : ''}`,
+      `Call-ID: ${callId}`,
+      `CSeq: ${this.cseq} ${method}`,
+      `Max-Forwards: 70`,
+      `Content-Length: 0`,
+      '',
+      ''
+    ].join('\r\n');
+
+    this.udpSocket.send(request, 5060, '10.100.100.1');
+    this.activeCall = null;
+    this.server.emit('sip:call_ended');
   }
 
   @SubscribeMessage('client:log')

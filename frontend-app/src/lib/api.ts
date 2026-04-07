@@ -63,6 +63,12 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
     throw error;
   }
 
+  // 204 No Content yoki bo'sh body uchun (DELETE so'rovlari)
+  const contentType = res.headers.get('content-type');
+  if (res.status === 204 || !contentType || !contentType.includes('application/json')) {
+    return null as T;
+  }
+
   return res.json();
 }
 
@@ -165,6 +171,19 @@ export const callsApi = {
 // ===== TELEPHONY API =====
 export const telephonyApi = {
   getConfig: (companyId: string) => request<any>(`/telephony/config/${companyId}`),
-  updateConfig: (data: { companyId?: string, credentials: any }) => 
+  updateConfig: (data: { companyId?: string, credentials: any }) =>
     request<any>('/telephony/config', { method: 'POST', body: JSON.stringify(data) }),
 };
+
+export function toSlug(name: string): string {
+  return (name || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+}
+
+export function getLoginPath(): string {
+  if (typeof window === 'undefined') return '/';
+  return localStorage.getItem('loginPath') || '/';
+}
+
+export function setLoginPath(path: string) {
+  localStorage.setItem('loginPath', path);
+}

@@ -1,15 +1,15 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-import { 
-  MdDashboard, 
-  MdCall, 
-  MdShoppingCart, 
-  MdPeople, 
-  MdLocalShipping, 
-  MdSettings, 
+import { usePathname, useRouter } from 'next/navigation';
+import { getUser, removeToken, getLoginPath } from '@/lib/api';
+import {
+  MdDashboard,
+  MdCall,
+  MdShoppingCart,
+  MdPeople,
+  MdLocalShipping,
   MdExitToApp,
   MdChat,
   MdVerifiedUser
@@ -27,6 +27,21 @@ const operatorLinks = [
 
 export default function OperatorSidebar() {
   const pathname = usePathname();
+  const router = useRouter();
+  const [operatorName, setOperatorName] = useState('Operator');
+  const [companyName, setCompanyName] = useState('');
+
+  useEffect(() => {
+    const user = getUser();
+    if (user?.fullName) setOperatorName(user.fullName);
+    if (user?.company?.name) setCompanyName(user.company.name);
+  }, []);
+
+  const handleLogout = () => {
+    const loginPath = getLoginPath();
+    removeToken();
+    router.push(loginPath);
+  };
 
   return (
     <aside className="w-72 bg-white border-r border-slate-100 flex flex-col h-screen fixed left-0 top-0 z-50">
@@ -71,21 +86,21 @@ export default function OperatorSidebar() {
       <div className="p-4 mt-auto">
         <div className="bg-slate-50 rounded-3xl p-4 border border-slate-100">
           <div className="flex items-center gap-3 mb-4">
-            <div className="w-10 h-10 rounded-full bg-white border-2 border-indigo-100 flex items-center justify-center font-black text-indigo-600">
-              O
+            <div className="w-10 h-10 rounded-full bg-white border-2 border-indigo-100 flex items-center justify-center font-black text-indigo-600 shrink-0">
+              {operatorName[0]?.toUpperCase() || 'O'}
             </div>
-            <div>
-              <p className="text-sm font-bold text-slate-800">Operator #01</p>
-              <p className="text-[10px] font-medium text-emerald-600 uppercase tracking-wider">Liniyada (Online)</p>
+            <div className="min-w-0">
+              <p className="text-sm font-bold text-slate-800 truncate">{operatorName}</p>
+              <p className="text-[10px] font-medium text-slate-400 truncate">{companyName || 'Operator'}</p>
             </div>
           </div>
-          <Link 
-            href="/login" 
+          <button
+            onClick={handleLogout}
             className="flex items-center justify-center gap-2 w-full py-3 bg-white text-slate-400 font-bold rounded-2xl hover:text-rose-600 hover:bg-rose-50 transition-all border border-slate-100"
           >
             <MdExitToApp className="text-lg" />
             <span>Chiqish</span>
-          </Link>
+          </button>
         </div>
       </div>
     </aside>

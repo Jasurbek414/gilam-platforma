@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Param, Patch, ParseUUIDPipe, UseGuards, ForbiddenException } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Patch, ParseUUIDPipe, UseGuards, ForbiddenException, UnauthorizedException } from '@nestjs/common';
 import { NotificationsService } from './notifications.service';
 import { CreateNotificationDto } from './dto/create-notification.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
@@ -19,7 +19,7 @@ export class NotificationsController {
   @Get('superadmin')
   getForSuperAdmin(@CurrentUser() user: User) {
     if (user.role !== UserRole.SUPER_ADMIN) {
-      throw new Error('Ruxsat etilmagan');
+      throw new ForbiddenException('Ruxsat etilmagan');
     }
     return this.notificationsService.getForSuperAdmin();
   }
@@ -55,7 +55,7 @@ export class NotificationsController {
   @Patch('superadmin/read-all')
   markAllAsReadSuperAdmin(@CurrentUser() user: User) {
     if (user.role !== UserRole.SUPER_ADMIN) {
-      throw new Error('Ruxsat etilmagan');
+      throw new ForbiddenException('Ruxsat etilmagan');
     }
     return this.notificationsService.markAllAsReadForSuperAdmin();
   }

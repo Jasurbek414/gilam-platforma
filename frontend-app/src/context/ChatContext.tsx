@@ -33,8 +33,8 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const token = localStorage.getItem('token');
     if (!token) return;
 
-    // Use environment variable for backend URL if available, otherwise default
-    const socketInstance = io(process.env.NEXT_PUBLIC_API_URL?.replace('/api', '') || 'http://localhost:3001/chat', {
+    const WS_BASE = process.env.NEXT_PUBLIC_WS_URL || process.env.NEXT_PUBLIC_API_URL?.replace('/api', '') || 'http://localhost:3000';
+    const socketInstance = io(`${WS_BASE}/chat`, {
         query: { token },
         transports: ['websocket'],
     });

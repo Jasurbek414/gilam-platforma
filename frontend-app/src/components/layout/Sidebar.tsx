@@ -5,6 +5,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
 import Modal from '@/components/ui/Modal';
+import { removeToken } from '@/lib/api';
 import {
   MdDashboard,
   MdBusiness,
@@ -36,8 +37,7 @@ export default function Sidebar() {
   };
 
   const confirmLogout = () => {
-    // In a real app, clear tokens/session here
-    localStorage.removeItem('token');
+    removeToken();
     router.push('/');
   };
 

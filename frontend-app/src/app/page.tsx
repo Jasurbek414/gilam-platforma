@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { MdPhone, MdLock, MdLogin, MdVisibility, MdVisibilityOff } from 'react-icons/md';
-import { authApi, setToken, setUser } from '@/lib/api';
+import { authApi, setToken, setUser, removeToken, toSlug, setLoginPath } from '@/lib/api';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -20,29 +20,19 @@ export default function LoginPage() {
 
     try {
       const result = await authApi.login(phone, password);
-
-      // Token va user ma'lumotlarini saqlash
+      if (result.user.role !== 'SUPER_ADMIN') {
+        const slug = toSlug(result.user.company?.name || '');
+        setError(slug
+          ? `Bu sahifa faqat Super Admin uchun. Korxona portali: /c/${slug}`
+          : 'Bu sahifa faqat Super Admin uchun kirish uchun.'
+        );
+        removeToken();
+        return;
+      }
       setToken(result.access_token);
       setUser(result.user);
-
-      // Rolga qarab yo'naltirish
-      const role = result.user.role;
-      switch (role) {
-        case 'SUPER_ADMIN':
-          router.push('/admin');
-          break;
-        case 'COMPANY_ADMIN':
-          router.push('/company');
-          break;
-        case 'OPERATOR':
-          router.push('/operator');
-          break;
-        case 'DRIVER':
-          router.push('/app-view');
-          break;
-        default:
-          router.push('/company');
-      }
+      setLoginPath('/');
+      router.push('/admin');
     } catch (err: any) {
       setError(err.message || 'Telefon raqam yoki parol xato!');
     } finally {

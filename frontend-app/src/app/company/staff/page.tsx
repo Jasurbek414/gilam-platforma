@@ -97,6 +97,8 @@ export default function StaffPage() {
     'DRIVER': MdLocalShipping,
     'WASHER': MdPeople,
     'FINISHER': MdPerson,
+    'OPERATOR': MdPhone,
+    'COMPANY_ADMIN': MdPeople,
   };
 
   return (
@@ -123,6 +125,7 @@ export default function StaffPage() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {staff
+          .filter(s => !['COMPANY_ADMIN', 'SUPER_ADMIN', 'OPERATOR'].includes(s.role))
           .filter(s => (s.fullName || '').toLowerCase().includes(searchQuery.toLowerCase()))
           .map(member => {
             const Icon = roleIcons[member.role] || MdPerson;
@@ -233,12 +236,11 @@ export default function StaffPage() {
           </div>
           <div className="space-y-1.5">
             <label className="text-xs font-black text-slate-500 uppercase tracking-widest pl-1">Vazifasi (Roli)</label>
-            <select 
+            <select
               className="w-full px-5 py-4 rounded-2xl border border-slate-200 focus:border-indigo-500 outline-none font-bold text-slate-800 bg-white"
               value={formData.role}
               onChange={(e) => setFormData({...formData, role: e.target.value})}
             >
-              <option value="OPERATOR">Operator</option>
               <option value="DRIVER">Haydovchi</option>
               <option value="WASHER">Yuvuvchi</option>
               <option value="FINISHER">Pardozchi (Qadoqlovchi)</option>

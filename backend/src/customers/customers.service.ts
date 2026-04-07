@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Customer } from './entities/customer.entity';
@@ -23,7 +23,7 @@ export class CustomersService {
     if (existing) {
       // If customer exists, we can either return it or throw an error.
       // For a seamless operator experience, let's return the existing one or throw a ConflictException.
-      throw new Error(`Ushbu telefon raqamli mijoz (${dto.phone1}) allaqachon mavjud.`);
+      throw new ConflictException(`Ushbu telefon raqamli mijoz (${dto.phone1}) allaqachon mavjud.`);
     }
 
     const customer = this.customerRepository.create(dto);

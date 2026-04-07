@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { MdPhone, MdLock, MdLogin } from 'react-icons/md';
-import { authApi, setToken, setUser } from '@/lib/api';
+import { authApi, setToken, setUser, toSlug, setLoginPath } from '@/lib/api';
 
 export default function CompanyLoginPage() {
   const router = useRouter();
@@ -25,25 +25,31 @@ export default function CompanyLoginPage() {
 
     try {
       const result = await authApi.login(phone, password);
+      const { role, company } = result.user;
+
+      if (role === 'SUPER_ADMIN') {
+        setToken(result.access_token);
+        setUser(result.user);
+        setLoginPath('/');
+        router.push('/admin');
+        return;
+      }
+
+      const companySlug = toSlug(company?.name || '');
+      if (!company || companySlug !== slug) {
+        const correctPath = companySlug ? `/c/${companySlug}` : '/';
+        setError(`Siz bu portalni foydalana olmaysiz. Sizning portalingiz: ${correctPath}`);
+        return;
+      }
+
       setToken(result.access_token);
       setUser(result.user);
+      setLoginPath(`/c/${slug}`);
 
-      const role = result.user.role;
       switch (role) {
-        case 'SUPER_ADMIN':
-          router.push('/admin');
-          break;
-        case 'COMPANY_ADMIN':
-          router.push('/company');
-          break;
-        case 'OPERATOR':
-          router.push('/operator');
-          break;
-        case 'DRIVER':
-          router.push('/app-view');
-          break;
-        default:
-          router.push('/company');
+        case 'COMPANY_ADMIN': router.push('/company'); break;
+        case 'OPERATOR': router.push('/operator'); break;
+        default: router.push('/app-view');
       }
     } catch (err: any) {
       setError(err.message || 'Telefon raqam yoki parol xato!');

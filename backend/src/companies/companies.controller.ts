@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Put, Delete, Body, Param, ParseUUIDPipe, UseGuards, UnauthorizedException } from '@nestjs/common';
+import { Controller, Get, Post, Put, Delete, Body, Param, ParseUUIDPipe, UseGuards, UnauthorizedException, ForbiddenException } from '@nestjs/common';
 import { CompaniesService } from './companies.service';
 import { CreateCompanyDto, UpdateCompanyDto } from './dto/company.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
@@ -52,7 +52,7 @@ export class CompaniesController {
   findOne(@Param('id', ParseUUIDPipe) id: string, @CurrentUser() user: User) {
     // Only same company or superadmin
     if (user.role !== UserRole.SUPER_ADMIN && user.companyId !== id) {
-       throw new Error('Ruxsat etilmagan');
+       throw new ForbiddenException('Ruxsat etilmagan');
     }
     return this.companiesService.findOne(id);
   }
@@ -65,7 +65,7 @@ export class CompaniesController {
     @CurrentUser() user: User
   ) {
     if (user.role !== UserRole.SUPER_ADMIN && user.companyId !== id) {
-       throw new Error('Ruxsat etilmagan');
+       throw new ForbiddenException('Ruxsat etilmagan');
     }
     return this.companiesService.update(id, dto);
   }

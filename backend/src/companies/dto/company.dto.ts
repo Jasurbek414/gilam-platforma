@@ -12,6 +12,10 @@ export class CreateCompanyDto {
 
   @IsOptional()
   sipCredentials?: any;
+
+  @IsOptional()
+  @IsEnum(CompanyStatus)
+  status?: CompanyStatus;
 }
 
 export class UpdateCompanyDto {

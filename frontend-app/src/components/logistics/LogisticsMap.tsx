@@ -31,36 +31,38 @@ interface LogisticsMapProps {
 
 export default function LogisticsMap({ drivers, orderPoints }: LogisticsMapProps) {
   return (
-    <MapContainer 
-      center={[41.311081, 69.240562]} 
-      zoom={12} 
-      style={{ height: '100%', width: '100%' }}
-    >
-      <TileLayer
-        attribution='&copy; Google Maps'
-        url="https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}"
-      />
-      {drivers.map(driver => (
-        <Marker key={driver.id} position={driver.pos} icon={driverIcon}>
-          <Popup>
-            <div className="p-2">
-              <h4 className="font-bold">{driver.name}</h4>
-              <p className="text-xs text-slate-500">{driver.car}</p>
-              <p className="text-[10px] font-bold text-emerald-500 uppercase mt-1">● {driver.status}</p>
-            </div>
-          </Popup>
-        </Marker>
-      ))}
-      {orderPoints.map(point => (
-        <Marker key={point.id} position={point.pos} icon={point.type === 'pickup' ? pickupIcon : deliveryIcon}>
-          <Popup>
-            <div className="p-1">
-              <p className="font-bold text-xs">{point.name}</p>
-              <p className="text-[10px] uppercase font-bold text-blue-500">{point.type === 'pickup' ? 'Olib ketish' : 'Yetkazib berish'}</p>
-            </div>
-          </Popup>
-        </Marker>
-      ))}
-    </MapContainer>
+    <div className="w-full h-full min-h-[500px] border-4 border-blue-50 bg-slate-50 relative">
+      <MapContainer 
+        center={[41.311081, 69.240562]} 
+        zoom={12} 
+        style={{ height: '500px', width: '100%' }}
+      >
+        <TileLayer
+          attribution='&copy; OpenStreetMap'
+          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+        />
+        {drivers.map(driver => (
+          <Marker key={driver.id} position={driver.pos} icon={driverIcon}>
+            <Popup>
+              <div className="p-2">
+                <h4 className="font-bold">{driver.name}</h4>
+                <p className="text-xs text-slate-500">{driver.car}</p>
+                <p className="text-[10px] font-bold text-emerald-500 uppercase mt-1">● {driver.status}</p>
+              </div>
+            </Popup>
+          </Marker>
+        ))}
+        {orderPoints.map(point => (
+          <Marker key={point.id} position={point.pos} icon={point.type === 'pickup' ? pickupIcon : deliveryIcon}>
+            <Popup>
+              <div className="p-1">
+                <p className="font-bold text-xs">{point.name}</p>
+                <p className="text-[10px] uppercase font-bold text-blue-500">{point.type === 'pickup' ? 'Olib ketish' : 'Yetkazib berish'}</p>
+              </div>
+            </Popup>
+          </Marker>
+        ))}
+      </MapContainer>
+    </div>
   );
 }

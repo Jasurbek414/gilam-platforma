@@ -71,7 +71,7 @@ export default function GoogleMapPicker({ onLocationSelect, initialLocation, sea
             const lat = parseFloat(data[0].lat);
             const lng = parseFloat(data[0].lon);
             setCoords([lat, lng]);
-            setZoom(18); // Zoom in close to see buildings
+            setZoom(18); 
           }
         })
         .catch(err => console.error('Geocoding error:', err))
@@ -82,7 +82,6 @@ export default function GoogleMapPicker({ onLocationSelect, initialLocation, sea
   }, [searchQuery]);
 
   const handleSelect = (lat: number, lng: number) => {
-    // Reverse geocoding to get address string
     fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`)
       .then(res => res.json())
       .then(data => {
@@ -94,29 +93,28 @@ export default function GoogleMapPicker({ onLocationSelect, initialLocation, sea
   const initialPos: [number, number] = initialLocation ? [initialLocation.lat, initialLocation.lng] : [41.2995, 69.2401];
 
   return (
-    <div className="w-full h-[350px] rounded-2xl overflow-hidden border-2 border-slate-100 shadow-inner relative bg-slate-50">
+    <div className="w-full h-[350px] min-h-[350px] rounded-2xl overflow-hidden border-4 border-blue-100 shadow-xl relative bg-slate-100 block">
       <MapContainer 
         center={initialPos} 
         zoom={zoom} 
-        style={{ height: '100%', width: '100%' }}
+        style={{ height: '350px', width: '100%', position: 'relative' }}
       >
-        {/* Google Maps Roadmap Layer (Very detailed for Tashkent) */}
         <TileLayer
-          attribution='&copy; Google Maps'
-          url="https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}"
+          attribution='&copy; OpenStreetMap contributors'
+          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
         <LocationMarker onSelect={handleSelect} initialPos={initialPos} />
         {coords && <MapUpdater center={coords} zoom={zoom} />}
       </MapContainer>
 
       {loading && (
-        <div className="absolute inset-0 bg-white/40 backdrop-blur-[1px] z-[1000] flex items-center justify-center">
+        <div className="absolute inset-0 bg-white/40 backdrop-blur-[1px] z-[2000] flex items-center justify-center">
           <div className="w-8 h-8 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin"></div>
         </div>
       )}
 
-      <div className="absolute bottom-4 left-4 z-[1000] bg-white px-3 py-1.5 rounded-xl shadow-lg border border-slate-100 pointer-events-none">
-        <p className="text-[9px] font-black text-slate-400调节 uppercase tracking-widest text-center">Google Maps • Detailed</p>
+      <div className="absolute bottom-4 left-4 z-[2000] bg-white px-3 py-1.5 rounded-xl shadow-lg border border-slate-100 pointer-events-none">
+        <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest text-center">OpenStreetMap • Standard</p>
       </div>
     </div>
   );

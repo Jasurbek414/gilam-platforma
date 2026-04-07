@@ -18,9 +18,9 @@ import { User, Customer } from '@/types';
 import toast from 'react-hot-toast';
 import dynamic from 'next/dynamic';
 
-const MapPicker = dynamic(() => import('@/components/ui/MapPicker'), { 
+const YandexMapPicker = dynamic(() => import('@/components/ui/YandexMapPicker'), { 
   ssr: false,
-  loading: () => <div className="h-[300px] bg-slate-50 animate-pulse rounded-2xl flex items-center justify-center text-slate-400 font-bold uppercase text-xs tracking-widest">Xarita yuklanmoqda...</div>
+  loading: () => <div className="h-[350px] bg-slate-50 animate-pulse rounded-2xl flex items-center justify-center text-slate-400 font-bold uppercase text-xs tracking-widest">Yandex Xarita yuklanmoqda...</div>
 });
 
 export default function CustomersPage() {
@@ -311,7 +311,7 @@ export default function CustomersPage() {
 
               {isMapOpen && (
                 <div className="mt-4 animate-in slide-in-from-top-4 duration-300">
-                  <MapPicker 
+                  <YandexMapPicker 
                     searchQuery={formData.address}
                     onLocationSelect={(lat, lng, address) => {
                       setFormData(prev => ({ ...prev, address, location: { lat, lng } }));

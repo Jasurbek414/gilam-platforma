@@ -100,24 +100,29 @@ export default function LogisticsPage() {
     const loadYandexMaps = () => {
       if (typeof window === 'undefined') return;
 
-      const existingScript = document.getElementById('yandex-maps-script');
-      
-      if (!existingScript) {
-        const script = document.createElement('script');
-        script.id = 'yandex-maps-script';
-        script.src = 'https://api-maps.yandex.ru/2.1/?lang=uz_UZ&apikey=f3424d5d-222c-4734-9271-e5d8a0c5c567';
-        script.async = true;
-        script.onload = () => {
-          if (window.ymaps) window.ymaps.ready(initMap);
-        };
-        document.head.appendChild(script);
-      } else if (window.ymaps) {
+      if (window.ymaps) {
         window.ymaps.ready(initMap);
-      } else {
-        existingScript.addEventListener('load', () => {
+        return;
+      }
+
+      const id = 'yandex-maps-api-script';
+      if (document.getElementById(id)) {
+        // Script exists but maybe not loaded yet
+        const script = document.getElementById(id);
+        script?.addEventListener('load', () => {
           if (window.ymaps) window.ymaps.ready(initMap);
         });
+        return;
       }
+
+      const script = document.createElement('script');
+      script.id = id;
+      script.src = 'https://api-maps.yandex.ru/2.1/?lang=uz_UZ&apikey=f3424d5d-222c-4734-9271-e5d8a0c5c567';
+      script.async = true;
+      script.onload = () => {
+        if (window.ymaps) window.ymaps.ready(initMap);
+      };
+      document.head.appendChild(script);
     };
 
     const initMap = () => {

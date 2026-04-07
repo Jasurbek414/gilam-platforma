@@ -312,6 +312,7 @@ export default function CustomersPage() {
               {isMapOpen && (
                 <div className="mt-4 animate-in slide-in-from-top-4 duration-300">
                   <MapPicker 
+                    searchQuery={formData.address}
                     onLocationSelect={(lat, lng, address) => {
                       setFormData(prev => ({ ...prev, address, location: { lat, lng } }));
                     }} 

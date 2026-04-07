@@ -17,6 +17,7 @@ L.Marker.prototype.options.icon = DefaultIcon;
 interface MapPickerProps {
   onLocationSelect: (lat: number, lng: number, address: string) => void;
   initialLocation?: { lat: number, lng: number };
+  searchQuery?: string;
 }
 
 function LocationMarker({ onSelect }: { onSelect: (lat: number, lng: number) => void }) {
@@ -34,23 +35,56 @@ function LocationMarker({ onSelect }: { onSelect: (lat: number, lng: number) => 
   );
 }
 
-// Center map to current location if available
-function SetViewOnClick({ animateRef }: { animateRef: boolean }) {
+// Center map to current location or search result
+function MapUpdater({ center, zoom }: { center: [number, number], zoom?: number }) {
   const map = useMap();
   useEffect(() => {
-    if (animateRef) {
-       map.locate().on("locationfound", function (e) {
-          map.flyTo(e.latlng, map.getZoom());
-       });
-    }
-  }, [animateRef, map]);
+    map.flyTo(center, zoom || map.getZoom());
+  }, [center, zoom, map]);
   return null;
 }
 
-export default function MapPicker({ onLocationSelect, initialLocation }: MapPickerProps) {
+function SetViewOnLoad() {
+  const map = useMap();
+  useEffect(() => {
+    map.locate().on("locationfound", function (e) {
+      map.flyTo(e.latlng, map.getZoom());
+    });
+  }, [map]);
+  return null;
+}
+
+export default function MapPicker({ onLocationSelect, initialLocation, searchQuery }: MapPickerProps) {
+  const [coords, setCoords] = useState<[number, number] | null>(
+    initialLocation ? [initialLocation.lat, initialLocation.lng] : null
+  );
   const [loading, setLoading] = useState(false);
 
+  // Handle Search Query Geocoding
+  useEffect(() => {
+    if (!searchQuery || searchQuery.length < 4) return;
+
+    const delayDebounceFn = setTimeout(async () => {
+      try {
+        setLoading(true);
+        const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(searchQuery)}&limit=1`);
+        const data = await res.json();
+        if (data && data.length > 0) {
+          const { lat, lon } = data[0];
+          setCoords([parseFloat(lat), parseFloat(lon)]);
+        }
+      } catch (err) {
+        console.error('Geocoding error:', err);
+      } finally {
+        setLoading(false);
+      }
+    }, 1500);
+
+    return () => clearTimeout(delayDebounceFn);
+  }, [searchQuery]);
+
   const handleSelect = async (lat: number, lng: number) => {
+    setCoords([lat, lng]);
     setLoading(true);
     try {
       // Reverse geocoding using Nominatim (OpenStreetMap)
@@ -68,7 +102,7 @@ export default function MapPicker({ onLocationSelect, initialLocation }: MapPick
   return (
     <div className="w-full h-[300px] rounded-2xl overflow-hidden border-2 border-slate-100 shadow-inner relative">
       <MapContainer 
-        center={[initialLocation?.lat || 41.2995, initialLocation?.lng || 69.2401]} // Tashkent
+        center={coords || [41.2995, 69.2401]} 
         zoom={13} 
         scrollWheelZoom={true}
         style={{ height: '100%', width: '100%' }}
@@ -78,7 +112,11 @@ export default function MapPicker({ onLocationSelect, initialLocation }: MapPick
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
         <LocationMarker onSelect={handleSelect} />
-        <SetViewOnClick animateRef={!initialLocation} />
+        {coords ? (
+          <MapUpdater center={coords} zoom={16} />
+        ) : (
+          <SetViewOnLoad />
+        )}
       </MapContainer>
       
       {loading && (

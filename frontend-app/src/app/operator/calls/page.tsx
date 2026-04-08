@@ -169,14 +169,19 @@ function OperatorCallsContent() {
       <div className="flex items-center justify-between flex-wrap gap-3">
 
         {/* SIP status pill */}
-        <div className="flex items-center gap-2.5 px-4 py-2 bg-white border border-slate-100 rounded-2xl shadow-sm">
+        <div className={`flex items-center gap-2.5 px-4 py-2 border rounded-2xl shadow-sm ${
+          sip.status === 'registered' ? 'bg-emerald-50 border-emerald-200' :
+          sip.status === 'in_call' || sip.status === 'calling' ? 'bg-indigo-50 border-indigo-200' :
+          sip.status === 'error' ? 'bg-amber-50 border-amber-200' :
+          'bg-white border-slate-100'
+        }`}>
           <SipDot status={sip.status} />
           <span className="text-[10px] font-black text-slate-600 uppercase tracking-[0.15em]">
-            {sip.status === 'registered'  ? `SIP • 101 @ 10.100.100.1` :
-             sip.status === 'connecting'  ? 'Ulanmoqda...' :
+            {sip.status === 'registered'  ? `SIP Ulangan ✓` :
+             sip.status === 'connecting'  ? 'SIP ulanmoqda...' :
              sip.status === 'calling'     ? 'Chaqirilmoqda...' :
              sip.status === 'in_call'     ? `Qo'ng'iroqda • ${dur(sip.callDuration)}` :
-             sip.status === 'error'       ? (sip.error || 'SIP xato') :
+             sip.status === 'error'       ? 'SIP ulanmagan (VPN kerak)' :
              'Ulanmagan'}
           </span>
         </div>
@@ -287,19 +292,42 @@ function OperatorCallsContent() {
             {!isActive && (
               <motion.div key="idle"
                 initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-                className="rounded-[36px] border-2 border-dashed border-slate-200 bg-slate-50/50 min-h-[320px] flex items-center justify-center"
+                className={`rounded-[36px] border-2 border-dashed min-h-[320px] flex items-center justify-center ${
+                  sip.status === 'registered' ? 'border-emerald-200 bg-emerald-50/30' :
+                  sip.status === 'error' ? 'border-amber-200 bg-amber-50/30' :
+                  'border-slate-200 bg-slate-50/50'
+                }`}
               >
-                <div className="text-center">
-                  <div className="w-14 h-14 rounded-2xl bg-white border border-slate-200 flex items-center justify-center mx-auto mb-4 shadow-sm">
-                    <MdCall className="text-2xl text-slate-300" />
+                <div className="text-center max-w-xs">
+                  <div className={`w-14 h-14 rounded-2xl border flex items-center justify-center mx-auto mb-4 shadow-sm ${
+                    sip.status === 'registered' ? 'bg-emerald-50 border-emerald-200' :
+                    sip.status === 'error' ? 'bg-amber-50 border-amber-200' :
+                    'bg-white border-slate-200'
+                  }`}>
+                    <MdCall className={`text-2xl ${
+                      sip.status === 'registered' ? 'text-emerald-500' :
+                      sip.status === 'error' ? 'text-amber-400' :
+                      'text-slate-300'
+                    }`} />
                   </div>
-                  <p className="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em]">
-                    {sip.status === 'registered' ? "Qo'ng'iroqqa tayyor" :
-                     sip.status === 'connecting' ? 'SIP ulanyapti...' :
-                     'WireGuard VPN ulangan?'}
-                  </p>
-                  {sip.status === 'error' && sip.error && (
-                    <p className="mt-3 text-[9px] font-bold text-rose-500 max-w-[240px]">{sip.error}</p>
+                  {sip.status === 'registered' ? (
+                    <>
+                      <p className="text-[11px] font-black text-emerald-600 uppercase tracking-[0.2em]">Qo'ng'iroqqa tayyor</p>
+                      <p className="mt-2 text-[9px] font-bold text-slate-400">Raqam terib qo'ng'iroq boshlang</p>
+                    </>
+                  ) : sip.status === 'connecting' ? (
+                    <>
+                      <p className="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em]">SIP ulanyapti...</p>
+                      <div className="mt-3 w-6 h-6 border-2 border-indigo-200 border-t-indigo-500 rounded-full animate-spin mx-auto" />
+                    </>
+                  ) : (
+                    <>
+                      <p className="text-[11px] font-black text-amber-600 uppercase tracking-[0.2em]">SIP ulanmagan</p>
+                      <p className="mt-2 text-[9px] font-bold text-amber-500 leading-relaxed">
+                        Qo'ng'iroq qilish uchun WireGuard VPN ulangan bo'lishi kerak.
+                        Boshqa funksiyalar (Buyurtmalar, Mijozlar) ishlaydi.
+                      </p>
+                    </>
                   )}
                 </div>
               </motion.div>

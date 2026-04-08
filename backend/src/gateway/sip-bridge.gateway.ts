@@ -23,6 +23,8 @@ interface SipSession {
   operatorId: string;
   companyId: string;
   extension: string;
+  callAnswered: boolean;   // 200 OK bir marta emit qilish uchun
+  userHangupAt: number;   // Foydalanuvchi o'zi to'xtatgan vaqt (ms)
   activeCall: {
     id: string;
     target: string;
@@ -226,8 +228,14 @@ export class SipBridgeGateway
     if (message.includes('SIP/2.0 200 OK') && /CSeq:\s*\d+\s+INVITE/i.test(message)) {
       this.captureToTag(message);
       this.sendAck(message);
-      this.server.emit('sip:call_answered');
-      this.saveCallLog();
+      // Faqat bir marta emit qilish — retransmit 200 OK larni bloklash
+      let alreadyAnswered = false;
+      this.sessions.forEach(s => { if (s.callAnswered) alreadyAnswered = true; });
+      if (!alreadyAnswered) {
+        this.sessions.forEach(s => { s.callAnswered = true; });
+        this.server.emit('sip:call_answered');
+        this.saveCallLog();
+      }
       return;
     }
 
@@ -248,15 +256,25 @@ export class SipBridgeGateway
         '503': '503 — Route topilmadi (Asterisk trunksiz)',
       };
       this.logger.warn(`SIP INVITE error: ${code} ${reason}`);
-      this.server.emit('sip:call_failed', { reason: map[code] || `${code} ${reason}`, code });
-      this.sessions.forEach(s => { s.activeCall = null; });
+      // 487 = user o'zi to'xtatdi (CANCEL javob) — xato ko'rsatma
+      const isUserHangup = code === '487';
+      const recentUserHangup = [...this.sessions.values()].some(
+        s => s.userHangupAt && Date.now() - s.userHangupAt < 5000
+      );
+      if (isUserHangup || recentUserHangup) {
+        // Foydalanuvchi o'zi to'xtatdi — xato emas
+        this.server.emit('sip:call_ended');
+      } else {
+        this.server.emit('sip:call_failed', { reason: map[code] || `${code} ${reason}`, code });
+      }
+      this.sessions.forEach(s => { s.activeCall = null; s.callAnswered = false; });
       return;
     }
 
-    // ── BYE / 487 ──
+    // ── BYE / CANCEL / 487 ──
     if (/^BYE sip:/im.test(message) || message.includes('SIP/2.0 487') || message.includes('SIP/2.0 603')) {
       this.server.emit('sip:call_ended');
-      this.sessions.forEach(s => { s.activeCall = null; });
+      this.sessions.forEach(s => { s.activeCall = null; s.callAnswered = false; });
       return;
     }
   }
@@ -486,6 +504,8 @@ export class SipBridgeGateway
       operatorId: userData.id || 'unknown',
       companyId: userData.companyId || 'unknown',
       extension: ext,
+      callAnswered: false,
+      userHangupAt: 0,
       activeCall: null,
     };
     this.sessions.set(client.id, session);
@@ -574,6 +594,8 @@ export class SipBridgeGateway
 
     const { target, id: callId, fromTag, toTag, branch, amiActionId } = session.activeCall;
     session.activeCall = null;
+    session.callAnswered = false;
+    session.userHangupAt = Date.now(); // 487 kelsa xato ko'rsatilmasin
 
     if (amiActionId) {
       // AMI call — use AMI to hang up

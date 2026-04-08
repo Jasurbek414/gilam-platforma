@@ -39,6 +39,7 @@ export function useSip(_credentials?: SipCredentials | null) {
   const socketRef = useRef<Socket | null>(null);
   const activeCallRef = useRef<string | null>(null);
   const statusRef = useRef<SipStatus>('connecting');
+  const userHangupRef = useRef<boolean>(false); // user o'zi tugatdimi?
 
   // Keep statusRef in sync
   useEffect(() => {
@@ -46,6 +47,8 @@ export function useSip(_credentials?: SipCredentials | null) {
   }, [status]);
 
   const startTimer = useCallback(() => {
+    // Agar timer allaqachon ishlayotgan bo'lsa — qayta boshlamaymiz
+    if (timerRef.current) return;
     setCallDuration(0);
     timerRef.current = setInterval(() => setCallDuration((s) => s + 1), 1000);
   }, []);
@@ -153,28 +156,42 @@ export function useSip(_credentials?: SipCredentials | null) {
     // ── Qo'ng'iroq tugatildi ──
     socket.on('sip:call_ended', () => {
       console.log('[useSip] sip:call_ended');
+      // Duplicate guard: agar allaqachon 'registered' bo'lsa qayta ishlatmaymiz
+      if (statusRef.current === 'registered') return;
       stopTimer();
       setStatus('registered');
       activeCallRef.current = null;
       setIncomingCaller(null);
+      setLastFailedReason(null);
+      userHangupRef.current = false;
     });
 
     // ── Qo'ng'iroq muvaffaqiyatsiz ──
     socket.on('sip:call_failed', (data: { reason: string; code?: string }) => {
       console.log('[useSip] sip:call_failed', data);
       stopTimer();
-      setLastFailedReason(data.reason);
       setStatus('registered');
       activeCallRef.current = null;
-      toast.error(`❌ Qo'ng'iroq bajarilmadi: ${data.reason}`, {
-        duration: 6000,
-        style: {
-          background: '#1e1e2e',
-          color: '#f38ba8',
-          border: '1px solid #45475a',
-          fontSize: '13px',
-        },
-      });
+
+      // 487 = CANCEL javob = user yoki server to'xtatdi
+      // userHangupRef = true bo'lsa — user o'zi bosdi, xato ko'rsatmaymiz
+      const isExpectedCancel = data.code === '487' || userHangupRef.current;
+      userHangupRef.current = false;
+
+      if (!isExpectedCancel) {
+        setLastFailedReason(data.reason);
+        toast.error(`❌ Qo'ng'iroq bajarilmadi: ${data.reason}`, {
+          duration: 6000,
+          style: {
+            background: '#1e1e2e',
+            color: '#f38ba8',
+            border: '1px solid #45475a',
+            fontSize: '13px',
+          },
+        });
+      } else {
+        setLastFailedReason(null);
+      }
     });
 
     // ── Xato ──
@@ -260,9 +277,11 @@ export function useSip(_credentials?: SipCredentials | null) {
   // ── Qo'ng'iroqni tugatish ──
   const hangup = useCallback(() => {
     console.log('[useSip] hangup');
+    userHangupRef.current = true; // keyingi 487/call_failed ni bloklash uchun
     socketRef.current?.emit('sip:hangup');
     stopTimer();
     setStatus('registered');
+    setLastFailedReason(null);
     activeCallRef.current = null;
   }, [stopTimer]);
 

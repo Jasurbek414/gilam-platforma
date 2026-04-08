@@ -17,7 +17,7 @@ import {
 
 const operatorLinks = [
   { name: 'Dashboard', href: '/operator', icon: MdDashboard },
-  { name: 'Qo&apos;ng&apos;iroqlar', href: '/operator/calls', icon: MdCall },
+  { name: 'Qo\'ng\'iroqlar', href: '/operator/calls', icon: MdCall },
   { name: 'Yangi Buyurtma', href: '/operator/orders', icon: MdShoppingCart },
   { name: 'Mijozlar', href: '/operator/customers', icon: MdPeople },
   { name: 'Logistika', href: '/operator/logistics', icon: MdLocalShipping },

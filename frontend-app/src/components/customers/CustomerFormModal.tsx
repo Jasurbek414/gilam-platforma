@@ -260,8 +260,12 @@ export default function CustomerFormModal({ isOpen, onClose, onSuccess, initialD
                       initialLocation={formData.location || undefined}
                       initialSearchQuery={formData.address} // Enables smart sync
                       onLocationSelect={(lat, lng, address) => {
-                        // The child map passes the selected coords and text ONLY if explicitly dragged.
-                        setFormData(prev => ({ ...prev, address, location: { lat, lng } }));
+                        // Secretly update coords. Only auto-fill address if the user hasn't typed anything.
+                        setFormData(prev => ({ 
+                          ...prev, 
+                          address: prev.address.trim().length < 2 ? address : prev.address, 
+                          location: { lat, lng } 
+                        }));
                         if (errors.address) setErrors(prev => ({...prev, address: ''}));
                       }} 
                     />

@@ -7,8 +7,8 @@ import 'leaflet/dist/leaflet.css';
 import { MdMyLocation, MdSearch, MdLocationOn } from 'react-icons/md';
 import toast from 'react-hot-toast';
 
-// Google Maps Roadmap Tiles - Universal and stable globally
-const GOOGLE_MAPS_TILES = "https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}";
+// Google Maps Roadmap Tiles - Universal and stable globally (Uzbek Latin enforced)
+const GOOGLE_MAPS_TILES = "https://mt1.google.com/vt/lyrs=m&hl=uz&x={x}&y={y}&z={z}";
 
 // Custom elegant marker
 const customIcon = L.divIcon({
@@ -90,7 +90,7 @@ export default function MapPicker({ onLocationSelect, initialLocation, initialSe
     setLastSearched(query); // Prevent loop
     const q = query.toLowerCase().includes('toshkent') ? query : `Toshkent, ${query}`;
     
-    fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(q)}&limit=1`)
+    fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(q)}&limit=1&accept-language=uz`)
       .then(res => res.json())
       .then(data => {
         if (data && data.length > 0) {
@@ -100,7 +100,7 @@ export default function MapPicker({ onLocationSelect, initialLocation, initialSe
           setZoom(17);
           
           // Re-fetch accurate name for the local overlay ONLY, do NOT overwrite parent's input text
-          fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`)
+          fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&accept-language=uz`)
             .then(res => res.json())
             .then(revData => {
               const addr = revData.display_name || query;
@@ -121,7 +121,7 @@ export default function MapPicker({ onLocationSelect, initialLocation, initialSe
   // Handle Reverse Geocoding when dragging
   const handleSelect = (lat: number, lng: number) => {
     setIsSearching(true);
-    fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`)
+    fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&accept-language=uz`)
       .then(res => res.json())
       .then(data => {
         const addr = data.display_name || `${lat.toFixed(4)}, ${lng.toFixed(4)}`;

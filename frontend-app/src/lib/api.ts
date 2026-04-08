@@ -57,7 +57,15 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
     if (typeof window !== 'undefined') {
       // Operator login sahifasida bo'lsa shu yerga, aks holda asosiy login sahifasiga
       const isOperatorPage = window.location.pathname.startsWith('/operator');
-      window.location.href = isOperatorPage ? '/operator/login' : '/';
+      const isCompanyPage = window.location.pathname.startsWith('/company');
+      
+      if (isOperatorPage) {
+        window.location.href = '/operator/login';
+      } else if (isCompanyPage) {
+        window.location.href = '/company/login';
+      } else {
+        window.location.href = '/';
+      }
     }
     throw new Error('Sessiya muddati tugadi');
   }

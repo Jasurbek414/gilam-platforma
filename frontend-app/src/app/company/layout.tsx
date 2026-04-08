@@ -1,23 +1,34 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import CompanySidebar from '@/components/layout/CompanySidebar';
 import Topbar from '@/components/layout/Topbar';
 import { getUser, getLoginPath } from '@/lib/api';
 
 export default function CompanyLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
+  const pathname = usePathname();
   const [authorized, setAuthorized] = useState(false);
 
+  const isLoginPage = pathname === '/company/login';
+
   useEffect(() => {
+    if (isLoginPage) {
+      setAuthorized(true);
+      return;
+    }
     const user = getUser();
     if (!user || user.role !== 'COMPANY_ADMIN') {
-      router.replace('/');
+      router.replace('/company/login');
     } else {
       setAuthorized(true);
     }
-  }, [router]);
+  }, [router, isLoginPage]);
+
+  if (isLoginPage) {
+    return <>{children}</>;
+  }
 
   if (!authorized) {
     return (

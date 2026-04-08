@@ -22,21 +22,16 @@ export default function LoginPage() {
       const result = await authApi.login(phone, password);
       const { role } = result.user;
 
+      if (role !== 'SUPER_ADMIN') {
+        setError('Bu sahifadan faqat Super Admin kira oladi!');
+        return;
+      }
+
       setToken(result.access_token);
       setUser(result.user);
       setLoginPath('/');
+      router.push('/admin');
 
-      if (role === 'SUPER_ADMIN') {
-        router.push('/admin');
-      } else if (role === 'COMPANY_ADMIN') {
-        router.push('/company');
-      } else if (role === 'OPERATOR') {
-        router.push('/operator');
-      } else {
-         setError('Bu profil uchun tizimga kirish taqiklangan');
-         removeToken();
-         return;
-      }
     } catch (err: any) {
       setError(err.message || 'Telefon raqam yoki parol xato!');
     } finally {

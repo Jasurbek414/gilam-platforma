@@ -29,17 +29,22 @@ export default function OperatorDashboard() {
 
   useEffect(() => {
     const currentUser = getUser();
-    if (!currentUser || !currentUser.company) {
-      router.push('/');
+    if (!currentUser) {
+      router.push('/operator/login');
       return;
     }
     setUser(currentUser);
-    loadData(currentUser.company.id);
+    loadData(currentUser?.company?.id);
   }, [router]);
 
-  async function loadData(companyId: string) {
+  async function loadData(companyId?: string) {
     try {
-      const data = await ordersApi.getByCompany(companyId);
+      let data = [];
+      if (companyId) {
+        data = await ordersApi.getByCompany(companyId);
+      } else {
+        data = await ordersApi.getAll();
+      }
       setOrders(data);
     } catch (err) {
       console.error('Xato:', err);

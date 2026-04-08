@@ -28,6 +28,9 @@ export class CreateCustomerDto {
   address?: string;
 
   @IsOptional()
+  location?: any;
+
+  @IsOptional()
   @IsUUID()
   operatorId?: string;
 }
@@ -48,6 +51,9 @@ export class UpdateCustomerDto {
   @IsOptional()
   @IsString()
   address?: string;
+
+  @IsOptional()
+  location?: any;
 
   @IsOptional()
   @IsUUID()

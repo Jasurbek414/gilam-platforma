@@ -125,9 +125,12 @@ export default function CustomerFormModal({ isOpen, onClose, onSuccess, initialD
 
     setIsSubmitting(true);
     try {
+      // Create a clean payload mapping to the backend DTO precisely to prevent 400 Bad Request
       const payload = {
-        ...formData,
-        phone: formData.phone.replace(/\s+/g, ''), // clean up spaces for backend
+        fullName: formData.fullName,
+        phone1: formData.phone.replace(/[\s\-\(\)]/g, ''), // e.g. +998901234567
+        address: formData.address,
+        location: formData.location ? `${formData.location.lat},${formData.location.lng}` : undefined,
         companyId: currentUser.companyId,
         operatorId: currentUser.id
       };

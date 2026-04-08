@@ -23,8 +23,9 @@ export class CustomersController {
 
   @Post()
   create(@Body() dto: CreateCustomerDto, @CurrentUser() user: User) {
-    // Inject companyId from token for safety
-    dto.companyId = user.companyId;
+    if (user.role !== UserRole.SUPER_ADMIN && user.role !== UserRole.OPERATOR) {
+      dto.companyId = user.companyId;
+    }
     return this.customersService.create(dto);
   }
 
@@ -34,7 +35,7 @@ export class CustomersController {
     @CurrentUser() user: User,
   ) {
     const targetId =
-      user.role === UserRole.SUPER_ADMIN ? companyId : user.companyId;
+      (user.role === UserRole.SUPER_ADMIN || user.role === UserRole.OPERATOR) ? companyId : user.companyId;
     return this.customersService.findAllByCompany(targetId);
   }
 
@@ -45,7 +46,7 @@ export class CustomersController {
     @CurrentUser() user: User,
   ) {
     const targetId =
-      user.role === UserRole.SUPER_ADMIN ? companyId : user.companyId;
+      (user.role === UserRole.SUPER_ADMIN || user.role === UserRole.OPERATOR) ? companyId : user.companyId;
     return this.customersService.search(targetId, query || '');
   }
 

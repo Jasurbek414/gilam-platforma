@@ -22,7 +22,9 @@ export class ServicesController {
 
   @Post()
   create(@Body() dto: CreateServiceDto, @CurrentUser() user: User) {
-    dto.companyId = user.companyId;
+    if (user.role !== UserRole.SUPER_ADMIN && user.role !== UserRole.OPERATOR) {
+      dto.companyId = user.companyId;
+    }
     return this.servicesService.create(dto);
   }
 
@@ -32,7 +34,7 @@ export class ServicesController {
     @CurrentUser() user: User,
   ) {
     const targetId =
-      user.role === UserRole.SUPER_ADMIN ? companyId : user.companyId;
+      (user.role === UserRole.SUPER_ADMIN || user.role === UserRole.OPERATOR) ? companyId : user.companyId;
     return this.servicesService.findAllByCompany(targetId);
   }
 

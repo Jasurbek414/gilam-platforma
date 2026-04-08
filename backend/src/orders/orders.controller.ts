@@ -22,8 +22,9 @@ export class OrdersController {
 
   @Post()
   create(@Body() createOrderDto: CreateOrderDto, @CurrentUser() user: User) {
-    // Force companyId from authenticated user for security
-    createOrderDto.companyId = user.companyId;
+    if (user.role !== UserRole.SUPER_ADMIN && user.role !== UserRole.OPERATOR) {
+      createOrderDto.companyId = user.companyId;
+    }
     return this.ordersService.create(createOrderDto);
   }
 
@@ -39,7 +40,7 @@ export class OrdersController {
   ) {
     // Security: Only allow users to see their own company's orders
     const targetCompanyId =
-      user.role === UserRole.SUPER_ADMIN ? companyId : user.companyId;
+      (user.role === UserRole.SUPER_ADMIN || user.role === UserRole.OPERATOR) ? companyId : user.companyId;
     return this.ordersService.findAllByCompany(targetCompanyId);
   }
 
@@ -49,7 +50,7 @@ export class OrdersController {
     @CurrentUser() user: User,
   ) {
     const targetCompanyId =
-      user.role === UserRole.SUPER_ADMIN ? companyId : user.companyId;
+      (user.role === UserRole.SUPER_ADMIN || user.role === UserRole.OPERATOR) ? companyId : user.companyId;
     return this.ordersService.getCompanyStats(targetCompanyId);
   }
 

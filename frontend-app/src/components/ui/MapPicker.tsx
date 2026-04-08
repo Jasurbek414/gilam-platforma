@@ -5,6 +5,7 @@ import { MapContainer, TileLayer, Marker, useMap, useMapEvents } from 'react-lea
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { MdMyLocation, MdSearch, MdLocationOn } from 'react-icons/md';
+import toast from 'react-hot-toast';
 
 // Google Maps Roadmap Tiles - Universal and stable globally
 const GOOGLE_MAPS_TILES = "https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}";
@@ -150,11 +151,18 @@ export default function MapPicker({ onLocationSelect, initialLocation, initialSe
           setIsSearching(false);
         },
         (err) => {
-          console.error(err);
+          // err is a GeolocationPositionError, do not directly console.error an object causing crash
+          if (err.code === 1) {
+             toast.error("Joylashuvni aniqlashga brauzer ruxsat bermadi");
+          } else {
+             toast.error("Joylashuvni aniqlab bo'lmadi");
+          }
           setIsSearching(false);
         },
-        { enableHighAccuracy: true }
+        { enableHighAccuracy: true, timeout: 5000 }
       );
+    } else {
+      toast.error("Sizning uskunangiz lokatsiyani qo'llab-quvvatlamaydi");
     }
   };
 

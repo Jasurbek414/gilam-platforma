@@ -110,6 +110,7 @@ export default function OperatorLoginPage() {
                 <input
                   required
                   type={showPwd ? 'text' : 'password'}
+                  autoComplete="current-password"
                   placeholder="••••••••"
                   value={password}
                   onChange={e => setPassword(e.target.value)}

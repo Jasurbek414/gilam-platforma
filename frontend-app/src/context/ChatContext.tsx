@@ -36,7 +36,7 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const WS_BASE = process.env.NEXT_PUBLIC_WS_URL || process.env.NEXT_PUBLIC_API_URL?.replace('/api', '') || 'http://localhost:3000';
     const socketInstance = io(`${WS_BASE}/chat`, {
         query: { token },
-        transports: ['websocket'],
+        transports: ['websocket', 'polling'],
     });
 
     socketInstance.on('connect', () => {

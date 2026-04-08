@@ -112,7 +112,7 @@ export default function Topbar() {
                     onClick={markAllAsRead}
                     className="flex items-center gap-1 text-[10px] font-black text-blue-600 uppercase bg-blue-50 px-2 py-1 rounded-lg hover:bg-blue-100 transition-colors"
                   >
-                    <MdDoneAll /> Hammasini o&apos;qish
+                    <MdDoneAll /> Hammasini o{'\''}{`qish`}
                   </button>
                 )}
               </div>
@@ -142,14 +142,14 @@ export default function Topbar() {
                 ) : (
                   <div className="p-10 text-center">
                     <MdNotifications className="text-4xl text-slate-100 mx-auto mb-2" />
-                    <p className="text-slate-400 text-xs font-bold uppercase tracking-widest">Yangi bildirishnomalar yo&apos;q</p>
+                    <p className="text-slate-400 text-xs font-bold uppercase tracking-widest">Yangi bildirishnomalar yo{'\''}{`q`}</p>
                   </div>
                 )}
               </div>
               
               <div className="p-3 border-t border-slate-50 bg-slate-50/30">
                 <button className="w-full py-2 text-center text-xs font-black text-slate-500 hover:text-blue-600 transition-colors uppercase tracking-widest">
-                  Barcha bildirishnomalarni ko&apos;rish
+                  Barcha bildirishnomalarni ko{'\''}{`rish`}
                 </button>
               </div>
             </div>

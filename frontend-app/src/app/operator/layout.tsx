@@ -1,11 +1,41 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import OperatorSidebar from '@/components/layout/OperatorSidebar';
 import Topbar from '@/components/layout/Topbar';
 import { ChatProvider } from '@/context/ChatContext';
 import { getUser } from '@/lib/api';
+import { useCallsSocket } from '@/hooks/useCallsSocket';
+import IncomingCallModal from '@/components/calls/IncomingCallModal';
+
+/**
+ * OperatorLayout — Operator panelining asosiy layout'i.
+ *
+ * Bu layout ikkita muhim vazifani bajaradi:
+ * 1. Auth guard — faqat OPERATOR role'li foydalanuvchilarga ruxsat
+ * 2. WebSocket listener — /calls namespace orqali kiruvchi qo'ng'iroqlarni tinglaydi
+ *    va IncomingCallModal ni ko'rsatadi
+ */
+
+function OperatorLayoutInner({ children }: { children: React.ReactNode }) {
+  const { incomingCall, dismissIncomingCall } = useCallsSocket();
+
+  return (
+    <>
+      {children}
+
+      {/* ── Kiruvchi qo'ng'iroq modali ── */}
+      {incomingCall && (
+        <IncomingCallModal
+          event={incomingCall}
+          onDismiss={dismissIncomingCall}
+          onCompleted={dismissIncomingCall}
+        />
+      )}
+    </>
+  );
+}
 
 export default function OperatorLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
@@ -48,7 +78,11 @@ export default function OperatorLayout({ children }: { children: React.ReactNode
         <div className="flex-1 ml-72 flex flex-col min-h-screen">
           <Topbar />
           <main className="flex-1 p-3 lg:p-4 overflow-auto bg-slate-50/50">
-            <div className="w-full h-full">{children}</div>
+            <div className="w-full h-full">
+              <OperatorLayoutInner>
+                {children}
+              </OperatorLayoutInner>
+            </div>
           </main>
         </div>
       </div>

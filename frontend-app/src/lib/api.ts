@@ -7,7 +7,8 @@ import {
   Service, 
   Order, 
   Notification, 
-  Call 
+  Call,
+  Campaign,
 } from '@/types';
 
 // ===== TOKEN BOSHQARUVI =====
@@ -181,9 +182,23 @@ export const callsApi = {
   getStats: () => request<Record<string, number>>('/calls/stats'),
   getOne: (id: string) => request<Call>(`/calls/${id}`),
   createOutgoing: (data: Partial<Call>) => request<Call>('/calls/outgoing', { method: 'POST', body: JSON.stringify(data) }),
-  answer: (id: string) => request<Call>(`/calls/${id}/answer`, { method: 'PUT' }),
-  complete: (id: string, data: any) => request<Call>(`/calls/${id}/complete`, { method: 'PUT', body: JSON.stringify(data) }),
-  miss: (id: string) => request<Call>(`/calls/${id}/miss`, { method: 'PUT' }),
+  answer: (callId: string) => request<Call>(`/calls/${callId}/answer`, { method: 'PUT' }),
+  complete: (callId: string, data: {
+    notes?: string;
+    customerId?: string;
+    driverId?: string;
+    newCustomer?: { fullName: string; phone?: string; phone2?: string; address?: string };
+  }) => request<Call>(`/calls/${callId}/complete`, { method: 'PUT', body: JSON.stringify(data) }),
+  miss: (callId: string) => request<Call>(`/calls/${callId}/miss`, { method: 'PUT' }),
+};
+
+// ===== CAMPAIGNS API =====
+export const campaignsApi = {
+  getAll: () => request<Campaign[]>('/campaigns'),
+  getOne: (id: string) => request<Campaign>(`/campaigns/${id}`),
+  create: (data: Partial<Campaign>) => request<Campaign>('/campaigns', { method: 'POST', body: JSON.stringify(data) }),
+  update: (id: string, data: Partial<Campaign>) => request<Campaign>(`/campaigns/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+  remove: (id: string) => request<void>(`/campaigns/${id}`, { method: 'DELETE' }),
 };
 
 // ===== TELEPHONY API =====

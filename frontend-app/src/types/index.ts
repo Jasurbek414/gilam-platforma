@@ -1,15 +1,28 @@
-export type UserRole = 'SUPER_ADMIN' | 'COMPANY_ADMIN' | 'OPERATOR' | 'DRIVER' | 'WASHER';
-export type OrderStatus = 'NEW' | 'DRIVER_ASSIGNED' | 'PICKED_UP' | 'AT_FACILITY' | 'WASHING' | 'DRYING' | 'READY_FOR_DELIVERY' | 'OUT_FOR_DELIVERY' | 'DELIVERED' | 'CANCELLED';
+// ─── GILAM SAAS — GLOBAL TYPES ───────────────────────────────────────────────
+// Bu fayl loyihadagi barcha entity'larning yagona va aniq typelari.
+// Backend entity'lar bilan 100% mos.
 
+export type UserRole = 'SUPER_ADMIN' | 'COMPANY_ADMIN' | 'OPERATOR' | 'DRIVER' | 'WASHER' | 'FINISHER' | 'CUSTOMER';
+export type UserStatus = 'ACTIVE' | 'INACTIVE' | 'OFFLINE' | 'DELETED';
+export type CompanyStatus = 'ACTIVE' | 'INACTIVE';
+export type OrderStatus = 'NEW' | 'DRIVER_ASSIGNED' | 'PICKED_UP' | 'AT_FACILITY' | 'WASHING' | 'DRYING' | 'READY_FOR_DELIVERY' | 'OUT_FOR_DELIVERY' | 'DELIVERED' | 'CANCELLED';
+export type CallStatus = 'RINGING' | 'ANSWERED' | 'COMPLETED' | 'MISSED' | 'REJECTED';
+export type CallDirection = 'INCOMING' | 'OUTGOING';
+export type CampaignStatus = 'ACTIVE' | 'INACTIVE';
+
+// ─── COMPANY ─────────────────────────────────────────────────────────────────
 export interface Company {
   id: string;
   name: string;
-  phone?: string;
-  address?: string;
-  logo?: string;
+  phoneNumber?: string;
+  sipCredentials?: Record<string, any>;
+  status: CompanyStatus;
+  subscriptionEndDate?: string;
   createdAt: string;
+  updatedAt?: string;
 }
 
+// ─── USER ────────────────────────────────────────────────────────────────────
 export interface User {
   id: string;
   fullName: string;
@@ -17,25 +30,29 @@ export interface User {
   role: UserRole;
   companyId: string;
   company?: Company;
-  status: 'ACTIVE' | 'INACTIVE';
-  currentLocation?: string | { lat: number, lng: number }; // For drivers
+  status: UserStatus;
+  currentLocation?: any;
   createdAt: string;
+  updatedAt?: string;
 }
 
+// ─── CUSTOMER ────────────────────────────────────────────────────────────────
 export interface Customer {
   id: string;
-  fullName: string;
-  phone: string;
-  phone1?: string;
-  phone2?: string;
-  address: string;
-  location?: string | { lat: number, lng: number } | any;
   companyId: string;
+  company?: Company;
+  fullName: string;
+  phone1: string;
+  phone2?: string;
+  address?: string;
+  location?: any;
   operatorId?: string;
   operator?: User;
   createdAt: string;
+  updatedAt?: string;
 }
 
+// ─── SERVICE ─────────────────────────────────────────────────────────────────
 export interface Service {
   id: string;
   name: string;
@@ -45,6 +62,7 @@ export interface Service {
   createdAt: string;
 }
 
+// ─── ORDER ───────────────────────────────────────────────────────────────────
 export interface OrderItem {
   id: string;
   serviceId: string;
@@ -68,32 +86,106 @@ export interface Order {
   driver?: User;
   status: OrderStatus;
   totalAmount: number;
+  paidAmount?: number;
+  paymentStatus?: string;
   items: OrderItem[];
   notes?: string;
   createdAt: string;
   updatedAt: string;
 }
 
+// ─── CAMPAIGN ────────────────────────────────────────────────────────────────
+export interface Campaign {
+  id: string;
+  companyId: string;
+  company?: Company;
+  name: string;
+  phoneNumber: string;
+  extraNumbers: string[];
+  description?: string;
+  status: CampaignStatus;
+  driverId?: string;
+  driver?: User;
+  operators: User[];
+  createdAt: string;
+  updatedAt?: string;
+}
+
+// ─── CALL ────────────────────────────────────────────────────────────────────
+export interface Call {
+  id: string;
+  companyId: string;
+  company?: Company;
+  campaignId?: string;
+  campaign?: Campaign;
+  operatorId?: string;
+  operator?: User;
+  customerId?: string;
+  customer?: Customer;
+  orderId?: string;
+  order?: Order;
+  callerPhone: string;
+  calledPhone?: string;
+  direction: CallDirection;
+  status: CallStatus;
+  sipCallId?: string;
+  notes?: string;
+  durationSeconds: number;
+  recordingUrl?: string;
+  startedAt?: string;
+  answeredAt?: string;
+  endedAt?: string;
+  createdAt: string;
+  updatedAt?: string;
+}
+
+// ─── NOTIFICATION ────────────────────────────────────────────────────────────
 export interface Notification {
   id: string;
-  title: string;
+  title?: string;
   message: string;
   type: string;
-  companyId: string;
+  companyId?: string;
   userId?: string;
   isRead: boolean;
   createdAt: string;
 }
 
-export interface Call {
-  id: string;
-  from: string;
-  to: string;
-  direction: 'INCOMING' | 'OUTGOING';
-  status: 'ANSWERED' | 'MISSED' | 'BUSY' | 'FAILED';
-  duration: number;
-  recordingUrl?: string;
-  companyId: string;
+// ─── INCOMING CALL EVENT (WebSocket) ─────────────────────────────────────────
+export interface IncomingCallEvent {
+  call: {
+    id: string;
+    callerPhone: string;
+    calledPhone: string;
+    campaignId: string;
+    companyId: string;
+    status: CallStatus;
+    direction: CallDirection;
+    startedAt: string;
+  };
+  customer: {
+    id: string;
+    fullName: string;
+    phone1: string;
+    phone2?: string;
+    address?: string;
+  } | null;
+  campaign: {
+    id: string;
+    name: string;
+    phoneNumber: string;
+    driver?: { id: string; fullName: string } | null;
+  };
+}
+
+// ─── CALL UPDATE EVENT (WebSocket) ───────────────────────────────────────────
+export interface CallUpdateEvent {
+  callId: string;
+  status?: CallStatus;
   operatorId?: string;
-  createdAt: string;
+  driverId?: string;
+  orderId?: string;
+  type?: string;
+  message?: string;
+  customerPhone?: string;
 }

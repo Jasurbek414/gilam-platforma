@@ -3,38 +3,9 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { io, Socket } from 'socket.io-client';
 import { getUser } from '@/lib/api';
+import { IncomingCallEvent, CallUpdateEvent } from '@/types';
 
-export interface IncomingCallEvent {
-  call: {
-    id: string;
-    callerPhone: string;
-    calledPhone: string;
-    campaignId: string;
-    status: string;
-    direction: string;
-    startedAt: string;
-  };
-  customer: {
-    id: string;
-    fullName: string;
-    phone1: string;
-    address: string;
-  } | null;
-  campaign: {
-    id: string;
-    name: string;
-  };
-}
-
-export interface CallUpdateEvent {
-  callId: string;
-  status: string;
-  operatorId?: string;
-  driverId?: string;
-  orderId?: string;
-  type?: string;
-  message?: string;
-}
+export type { IncomingCallEvent, CallUpdateEvent };
 
 const WS_URL = process.env.NEXT_PUBLIC_WS_URL || 'http://localhost:3000';
 

@@ -72,7 +72,7 @@ export class UsersService {
       fullName: dto.fullName,
       phone: dto.phone,
       role: dto.role as UserRole,
-      companyId: dto.role === UserRole.OPERATOR ? null : dto.companyId,
+      companyId: dto.role === UserRole.OPERATOR ? (null as any) : (dto.companyId as any),
       status: UserStatus.ACTIVE,
       passwordHash,
     });
@@ -97,8 +97,10 @@ export class UsersService {
     
     // Operatorlar doimo global (companyId = null)
     if (user.role === UserRole.OPERATOR) {
+      // @ts-ignore
       user.companyId = null;
     } else if (dto.companyId !== undefined) {
+      // @ts-ignore
       user.companyId = dto.companyId;
     }
 

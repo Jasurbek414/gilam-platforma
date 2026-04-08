@@ -10,7 +10,7 @@ import { UserRole, UserStatus } from '../entities/user.entity';
 export class CreateUserDto {
   @IsOptional()
   @IsUUID()
-  companyId?: string;
+  companyId?: string | null;
 
   @IsEnum(UserRole)
   @IsNotEmpty()
@@ -56,5 +56,5 @@ export class UpdateUserDto {
 
   @IsOptional()
   @IsUUID()
-  companyId?: string;
+  companyId?: string | null;
 }

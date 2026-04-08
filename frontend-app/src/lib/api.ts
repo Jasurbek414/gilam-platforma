@@ -55,8 +55,9 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   if (res.status === 401) {
     removeToken();
     if (typeof window !== 'undefined') {
-      const loginPath = localStorage.getItem('loginPath') || '/';
-      window.location.href = loginPath === '/operator/login' ? '/operator/login' : loginPath;
+      // Operator login sahifasida bo'lsa shu yerga, aks holda asosiy login sahifasiga
+      const isOperatorPage = window.location.pathname.startsWith('/operator');
+      window.location.href = isOperatorPage ? '/operator/login' : '/';
     }
     throw new Error('Sessiya muddati tugadi');
   }

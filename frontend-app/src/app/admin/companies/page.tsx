@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { MdAdd, MdPhone, MdBusiness, MdEdit, MdDeleteOutline, MdLock, MdPerson } from 'react-icons/md';
 import Modal from '@/components/ui/Modal';
-import { companiesApi, usersApi, toSlug } from '@/lib/api';
+import { companiesApi, usersApi } from '@/lib/api';
 import toast from 'react-hot-toast';
 
 export default function CompaniesPage() {
@@ -295,17 +295,12 @@ export default function CompaniesPage() {
                   </td>
                   <td className="py-5 px-6">
                     <div className="flex flex-col gap-1">
-                      <a
-                        href={`/c/${toSlug(company.name)}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-sm font-bold text-indigo-600 hover:text-indigo-800 hover:underline font-mono"
-                      >
-                        /c/{toSlug(company.name)}
-                      </a>
+                      <span className="text-sm font-bold text-indigo-600 font-mono">
+                        /company
+                      </span>
                       <button
                         onClick={() => {
-                          const url = `${window.location.origin}/c/${toSlug(company.name)}`;
+                          const url = `${window.location.origin}/company`;
                           navigator.clipboard.writeText(url);
                           toast.success('Link nusxalandi!');
                         }}

@@ -19,12 +19,13 @@ export default function Topbar() {
         data = await notificationsApi.getSuperadmin();
       } else if (currentUser.companyId) {
         data = await notificationsApi.getByCompany(currentUser.companyId);
-      } else {
+      } else if (currentUser.id) {
         data = await notificationsApi.getByUser(currentUser.id);
       }
       setNotifications(data || []);
-    } catch (e) {
-      console.error(e);
+    } catch {
+      // Sessiya tugagan yoki xato — tinch o'tkazib yuboramiz
+      setNotifications([]);
     }
   }, []);
 

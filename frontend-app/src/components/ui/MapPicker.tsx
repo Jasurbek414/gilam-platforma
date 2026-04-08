@@ -32,7 +32,10 @@ interface MapPickerProps {
 function MapUpdater({ center, zoom }: { center: [number, number], zoom: number }) {
   const map = useMap();
   useEffect(() => {
-    map.flyTo(center, zoom, { duration: 1.5 });
+    setTimeout(() => {
+      map.invalidateSize();
+      map.flyTo(center, zoom, { duration: 1.5 });
+    }, 100);
   }, [center, zoom, map]);
   return null;
 }
@@ -76,7 +79,7 @@ export default function MapPicker({ onLocationSelect, initialLocation, initialSe
     if (initialSearchQuery && initialSearchQuery.length >= 3 && initialSearchQuery !== lastSearched) {
       const delayFn = setTimeout(() => {
         handleLiveSearch(initialSearchQuery);
-      }, 800); // 800ms debounce
+      }, 1000);
       return () => clearTimeout(delayFn);
     }
   }, [initialSearchQuery, lastSearched]);
@@ -95,14 +98,14 @@ export default function MapPicker({ onLocationSelect, initialLocation, initialSe
           setPosition([lat, lng]);
           setZoom(17);
           
-          // Re-fetch accurate name or just use position
+          // Re-fetch accurate name for the local overlay ONLY, do NOT overwrite parent's input text
           fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`)
             .then(res => res.json())
             .then(revData => {
               const addr = revData.display_name || query;
               setAddressLine(addr);
-              setLastSearched(addr);
-              onLocationSelect(lat, lng, addr);
+              // Send coords back but keep user's explicit query
+              onLocationSelect(lat, lng, query);
             })
             .catch(() => {
               setAddressLine(query);

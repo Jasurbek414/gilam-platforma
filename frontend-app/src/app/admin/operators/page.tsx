@@ -2,8 +2,8 @@
 
 import React, { useState, useEffect } from 'react';
 import {
-  MdAdd, MdSearch, MdSupportAgent, MdPhone, MdBusiness,
-  MdLock, MdEdit, MdDeleteOutline, MdPerson, MdCheckCircle, MdBlock
+  MdAdd, MdSearch, MdSupportAgent, MdPhone,
+  MdLock, MdEdit, MdDeleteOutline, MdPerson
 } from 'react-icons/md';
 import Modal from '@/components/ui/Modal';
 import { usersApi, companiesApi } from '@/lib/api';

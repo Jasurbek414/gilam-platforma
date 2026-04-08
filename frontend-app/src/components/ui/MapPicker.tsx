@@ -3,7 +3,7 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { MapContainer, TileLayer, Marker, useMap, useMapEvents } from 'react-leaflet';
 import L from 'leaflet';
-import 'leaflet/dist/leaflet.css';
+
 import { MdMyLocation, MdSearch, MdLocationOn } from 'react-icons/md';
 import toast from 'react-hot-toast';
 

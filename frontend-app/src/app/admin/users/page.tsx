@@ -326,21 +326,22 @@ export default function UsersPage() {
                 <option value="WASHER">Yuvuvchi</option>
               </select>
             </div>
-            <div className="space-y-1">
-              <label className="text-sm font-semibold text-slate-700 flex items-center gap-2">
-                <MdBusiness className="text-blue-500" /> Biriktirilgan Korxona
-              </label>
-              <select 
-                className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-blue-500 outline-none bg-white font-bold"
-                value={formData.companyId || ''}
-                onChange={(e) => setFormData({...formData, companyId: e.target.value})}
-              >
-                <option value="">Tizim (Super Admin uchun)</option>
-                {companies.map(c => (
-                  <option key={c.id} value={c.id}>{c.name}</option>
-                ))}
-              </select>
-            </div>
+              <div className="space-y-1">
+                <label className="text-sm font-semibold text-slate-700 flex items-center gap-2">
+                  <MdBusiness className="text-blue-500" /> Biriktirilgan Korxona
+                </label>
+                <select 
+                  className={`w-full px-4 py-3 rounded-xl border border-slate-200 outline-none font-bold ${formData.role === 'OPERATOR' || formData.role === 'SUPER_ADMIN' ? 'bg-slate-100 cursor-not-allowed opacity-60' : 'bg-white focus:border-blue-500'}`}
+                  value={formData.role === 'OPERATOR' || formData.role === 'SUPER_ADMIN' ? '' : (formData.companyId || '')}
+                  onChange={(e) => setFormData({...formData, companyId: e.target.value})}
+                  disabled={formData.role === 'OPERATOR' || formData.role === 'SUPER_ADMIN'}
+                >
+                  <option value="">Umumiy (Faqat Tizim Xodimlari uchun)</option>
+                  {companies.map(c => (
+                    <option key={c.id} value={c.id}>{c.name}</option>
+                  ))}
+                </select>
+              </div>
           </div>
 
           <div className="space-y-1">

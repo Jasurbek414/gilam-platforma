@@ -72,7 +72,7 @@ export class UsersService {
       fullName: dto.fullName,
       phone: dto.phone,
       role: dto.role as UserRole,
-      companyId: dto.companyId,
+      companyId: dto.role === UserRole.OPERATOR ? null : dto.companyId,
       status: UserStatus.ACTIVE,
       passwordHash,
     });
@@ -94,7 +94,13 @@ export class UsersService {
     if (dto.phone) user.phone = dto.phone;
     if (dto.role) user.role = dto.role;
     if (dto.status) user.status = dto.status;
-    if (dto.companyId !== undefined) user.companyId = dto.companyId;
+    
+    // Operatorlar doimo global (companyId = null)
+    if (user.role === UserRole.OPERATOR) {
+      user.companyId = null;
+    } else if (dto.companyId !== undefined) {
+      user.companyId = dto.companyId;
+    }
 
     return this.usersRepository.save(user);
   }

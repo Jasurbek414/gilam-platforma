@@ -297,21 +297,7 @@ export default function OperatorsPage() {
               onChange={e => setFormData({ ...formData, phone: e.target.value })}
             />
           </div>
-          <div className="space-y-1">
-            <label className="text-xs font-black text-slate-500 uppercase tracking-widest flex items-center gap-1">
-              <MdBusiness className="text-indigo-400" /> Korxona
-            </label>
-            <select
-              className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-indigo-500 outline-none font-bold bg-white"
-              value={formData.companyId}
-              onChange={e => setFormData({ ...formData, companyId: e.target.value })}
-            >
-              <option value="">Umumiy tizim (Barcha korxonalar)</option>
-              {companies.map(c => (
-                <option key={c.id} value={c.id}>{c.name}</option>
-              ))}
-            </select>
-          </div>
+
           <div className="space-y-1">
             <label className="text-xs font-black text-slate-500 uppercase tracking-widest flex items-center gap-1">
               <MdLock className="text-indigo-400" /> {editingOp ? "Yangi parol (ixtiyoriy)" : "Kirish paroli"}

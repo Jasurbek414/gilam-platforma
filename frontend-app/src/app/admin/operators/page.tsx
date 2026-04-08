@@ -69,6 +69,7 @@ export default function OperatorsPage() {
       if (editingOp) {
         const updateData: any = { ...formData };
         if (!updateData.password) delete updateData.password;
+        if (!updateData.companyId) updateData.companyId = null;
         await usersApi.update(editingOp.id, updateData);
         toast.success("Operator ma'lumotlari yangilandi ✅");
       } else {

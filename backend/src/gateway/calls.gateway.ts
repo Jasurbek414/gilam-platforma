@@ -80,6 +80,7 @@ export class CallsGateway implements OnGatewayConnection, OnGatewayDisconnect {
   // Qo'ng'iroq holati o'zgarishini yuborish
   notifyCallUpdate(companyId: string, callData: any) {
     this.server.to(`company:${companyId}`).emit('call:updated', callData);
+    this.server.to('all:operators').emit('call:updated', callData);
   }
 
   // Boshqa operator qo'ng'iroqni oldi — qolganlarning modali yopilishi kerak
@@ -88,13 +89,13 @@ export class CallsGateway implements OnGatewayConnection, OnGatewayDisconnect {
     data: { callId: string; operatorId: string; takenAt: Date },
   ) {
     this.server.to(`company:${companyId}`).emit('call:taken', data);
+    this.server.to('all:operators').emit('call:taken', data);
   }
 
   // Operator online/offline holati
   notifyOperatorStatus(companyId: string, operatorId: string, status: string) {
-    this.server
-      .to(`company:${companyId}`)
-      .emit('operator:status', { operatorId, status });
+    this.server.to(`company:${companyId}`).emit('operator:status', { operatorId, status });
+    this.server.to('all:operators').emit('operator:status', { operatorId, status });
   }
 
   // Barcha operatorlarga qo'ng'iroq xabari yuborish (global)

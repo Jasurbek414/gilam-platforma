@@ -429,51 +429,50 @@ function OperatorCallsContent() {
         </div>
 
         {/* ── DIALPAD PANEL ── */}
-        <div className="col-span-12 xl:col-span-4 bg-white/80 backdrop-blur-xl border border-slate-200/60 rounded-[40px] shadow-2xl shadow-indigo-500/5 p-8 flex flex-col gap-6 sticky top-5 h-fit">
+        <div className="col-span-12 xl:col-span-4 bg-white/90 backdrop-blur-2xl border border-slate-200/50 rounded-[48px] shadow-2xl shadow-indigo-500/10 p-6 flex flex-col gap-5 sticky top-5 h-fit max-w-[360px] mx-auto xl:mx-0">
 
           {/* Header & Status */}
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-indigo-600 to-violet-500 flex items-center justify-center shadow-lg shadow-indigo-200">
-                <MdDialpad className="text-white text-xl" />
+          <div className="flex items-center justify-between px-2">
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-indigo-600 to-violet-500 flex items-center justify-center shadow-md">
+                <MdDialpad className="text-white text-base" />
               </div>
-              <h3 className="text-xs font-black text-slate-800 uppercase tracking-[0.2em] leading-none">Raqam Terish</h3>
+              <h3 className="text-[10px] font-black text-slate-800 uppercase tracking-widest leading-none">Terish</h3>
             </div>
             
-            <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full border text-[9px] font-black uppercase tracking-widest ${
+            <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-[8px] font-black uppercase tracking-wider ${
               sip.status === 'registered' ? 'bg-emerald-50 border-emerald-100 text-emerald-600' :
               sip.status === 'connecting' ? 'bg-amber-50 border-amber-100 text-amber-600 animate-pulse' :
               'bg-slate-50 border-slate-100 text-slate-400'
             }`}>
               <SipDot status={sip.status} />
-              {sip.status === 'registered' ? 'Faol' : sip.status === 'connecting' ? 'Kutilmoqda' : 'Ochiqmas'}
+              {sip.status === 'registered' ? 'Online' : sip.status === 'connecting' ? 'Wait' : 'Off'}
             </div>
           </div>
 
-          {/* Display - Glassmorphism style */}
-          <div className="relative group">
-            <div className="absolute -inset-0.5 bg-gradient-to-r from-indigo-500 to-violet-500 rounded-3xl blur opacity-0 group-focus-within:opacity-20 transition-all duration-500" />
-            <div className="relative bg-slate-50/80 rounded-[28px] border border-slate-100 px-6 py-6 flex items-center gap-4 transition-all group-focus-within:bg-white group-focus-within:shadow-inner">
-              <div className="w-1 h-8 bg-indigo-500 rounded-full shadow-[0_0_12px_rgba(99,102,241,0.5)]" />
-              <div className="flex-1 overflow-hidden">
-                <span className={`block text-3xl font-black font-mono tracking-[0.1em] truncate ${dialNum ? 'text-slate-800' : 'text-slate-200'}`}>
-                  {dialNum || 'Raqam...'}
+          {/* Display - Fixed for long numbers (right-aligned) */}
+          <div className="relative">
+            <div className="bg-slate-50 rounded-[32px] border border-slate-100 px-5 py-5 flex items-center gap-3 transition-shadow focus-within:shadow-lg focus-within:bg-white overflow-hidden">
+              <div className="w-1 h-6 bg-indigo-500 rounded-full" />
+              <div className="flex-1 flex flex-row-reverse overflow-x-auto scrollbar-hide">
+                <span className={`text-2xl font-black font-mono tracking-wider tabular-nums whitespace-nowrap ${dialNum ? 'text-slate-800' : 'text-slate-200'}`}>
+                  {dialNum || '000...'}
                 </span>
               </div>
               {dialNum && (
                 <button 
                   onClick={() => setDialNum(p => p.slice(0, -1))}
                   onContextMenu={(e) => { e.preventDefault(); setDialNum(''); }}
-                  className="w-10 h-10 flex items-center justify-center text-slate-400 hover:text-rose-500 hover:bg-rose-50 rounded-2xl transition-all active:scale-90"
+                  className="flex-shrink-0 w-8 h-8 flex items-center justify-center text-slate-300 hover:text-rose-500 hover:bg-rose-50 rounded-full transition-all active:scale-90"
                 >
-                  <MdBackspace className="text-xl" />
+                  <MdBackspace className="text-base" />
                 </button>
               )}
             </div>
           </div>
 
-          {/* Keypad - Bento style gaps */}
-          <div className="grid grid-cols-3 gap-3">
+          {/* Keypad - Circular keys */}
+          <div className="grid grid-cols-3 gap-y-4 gap-x-6 px-4">
             {KEYS.map(({ k, s }) => {
               const is0 = k === '0';
               return (
@@ -481,48 +480,44 @@ function OperatorCallsContent() {
                   onPointerDown={is0 ? handle0Down : undefined}
                   onPointerUp={is0 ? handle0Up : undefined}
                   onClick={is0 ? undefined : () => { if (dialNum.length < 20) setDialNum(p => p + k); }}
-                  className="relative aspect-square flex flex-col items-center justify-center rounded-[24px] bg-slate-50/50 hover:bg-white border border-transparent hover:border-slate-100 hover:shadow-xl hover:shadow-indigo-500/5 active:scale-90 transition-all duration-200 group overflow-hidden"
+                  className="relative aspect-square w-full max-w-[64px] mx-auto flex flex-col items-center justify-center rounded-full bg-slate-50 hover:bg-white border border-slate-100 hover:border-indigo-100 hover:shadow-lg hover:shadow-indigo-500/5 active:scale-90 active:bg-indigo-50 transition-all duration-150 group"
                 >
-                  {/* Subtle hover background sweep */}
-                  <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/0 to-indigo-500/0 group-hover:from-indigo-50 group-hover:to-violet-50 transition-all duration-500 -z-10" />
-                  
-                  <span className="text-2xl font-black text-slate-800 group-hover:text-indigo-600 transition-colors duration-200 leading-none">
+                  <span className="text-xl font-black text-slate-800 group-active:text-indigo-600 transition-colors leading-none">
                     {k}
                   </span>
                   {s && (
-                    <span className="text-[8px] font-black text-slate-400 group-hover:text-indigo-400 tracking-[0.2em] mt-1.5 transition-colors duration-200">
+                    <span className="text-[7px] font-black text-slate-400 group-hover:text-indigo-400 tracking-widest mt-1 transition-colors uppercase">
                       {s}
                     </span>
                   )}
                   {is0 && (
-                    <span className="absolute bottom-2 text-[10px] font-black text-indigo-400 transition-all group-hover:scale-125">+</span>
+                    <span className="absolute bottom-1.5 text-[8px] font-black text-indigo-300 transition-all group-hover:scale-125">+</span>
                   )}
                 </button>
               );
             })}
           </div>
 
-          {/* Action Button */}
-          <div className="pt-2">
+          {/* Action Button - True Phone Style */}
+          <div className="pt-2 px-4">
             {isActive ? (
               <button onClick={handleHangup}
-                className="w-full py-5 bg-gradient-to-r from-rose-600 to-pink-600 hover:from-rose-500 hover:to-pink-500 text-white font-black rounded-[28px] text-[11px] uppercase tracking-[0.25em] flex items-center justify-center gap-3 shadow-xl shadow-rose-200 active:scale-[0.98] transition-all"
+                className="w-full py-4 bg-rose-600 hover:bg-rose-500 text-white font-black rounded-full text-[10px] uppercase tracking-[0.2em] flex items-center justify-center gap-3 shadow-xl shadow-rose-200 active:scale-95 transition-all"
               >
-                <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center animate-pulse">
-                  <MdCallEnd className="text-xl" />
+                <div className="w-7 h-7 rounded-full bg-white/20 flex items-center justify-center">
+                  <MdCallEnd className="text-lg" />
                 </div>
                 Tugatish
               </button>
             ) : (
               <button onClick={() => handleMakeCall(dialNum)}
                 disabled={!dialNum || sip.status !== 'registered'}
-                className="w-full py-5 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 disabled:from-slate-200 disabled:to-slate-200 disabled:text-slate-400 text-white font-black rounded-[28px] text-[11px] uppercase tracking-[0.25em] flex items-center justify-center gap-3 shadow-2xl shadow-indigo-500/20 active:scale-[0.98] transition-all group"
+                className="w-full py-4 bg-emerald-600 hover:bg-emerald-500 disabled:bg-slate-200 disabled:text-slate-400 text-white font-black rounded-full text-[10px] uppercase tracking-[0.2em] flex items-center justify-center gap-3 shadow-xl shadow-emerald-200 active:scale-95 transition-all group"
               >
-                <div className={`w-8 h-8 rounded-full bg-white/20 flex items-center justify-center ${dialNum && sip.status === 'registered' ? 'animate-bounce' : ''}`}>
-                  <MdCall className="text-xl" />
+                <div className={`w-7 h-7 rounded-full bg-white/20 flex items-center justify-center ${dialNum && sip.status === 'registered' ? 'animate-bounce' : ''}`}>
+                  <MdCall className="text-lg" />
                 </div>
-                {sip.status === 'registered' ? "Qo'ng'iroq" :
-                 sip.status === 'connecting' ? 'Bog\'lanish...' : 'Sip Ochiqmas'}
+                {sip.status === 'registered' ? "Qo'ng'iroq" : 'Offline'}
               </button>
             )}
           </div>

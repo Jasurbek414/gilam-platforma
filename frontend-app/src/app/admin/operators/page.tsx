@@ -72,11 +72,12 @@ export default function OperatorsPage() {
         await usersApi.update(editingOp.id, updateData);
         toast.success("Operator ma'lumotlari yangilandi ✅");
       } else {
-        if (!formData.companyId) {
-          toast.error("Korxona tanlang");
-          return;
+        // companyId is now optional for global operators
+        const submitData = { ...formData, role: 'OPERATOR' };
+        if (!submitData.companyId) {
+          delete (submitData as any).companyId; // Let backend make it null
         }
-        await usersApi.create({ ...formData, role: 'OPERATOR' } as any);
+        await usersApi.create(submitData as any);
         toast.success("Yangi operator qo'shildi ✅");
       }
       setIsModalOpen(false);
@@ -219,7 +220,7 @@ export default function OperatorsPage() {
                   <td className="py-4 px-6 text-slate-600 text-sm font-medium">{op.phone}</td>
                   <td className="py-4 px-6">
                     <span className="text-xs font-bold text-slate-600 bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-100">
-                      {op.company?.name || '—'}
+                      {op.company?.name || 'Tizim / Barcha korxonalar'}
                     </span>
                   </td>
                   <td className="py-4 px-6 text-center">
@@ -300,12 +301,11 @@ export default function OperatorsPage() {
               <MdBusiness className="text-indigo-400" /> Korxona
             </label>
             <select
-              required={!editingOp}
               className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-indigo-500 outline-none font-bold bg-white"
               value={formData.companyId}
               onChange={e => setFormData({ ...formData, companyId: e.target.value })}
             >
-              <option value="">— Korxona tanlang —</option>
+              <option value="">Umumiy tizim (Barcha korxonalar)</option>
               {companies.map(c => (
                 <option key={c.id} value={c.id}>{c.name}</option>
               ))}

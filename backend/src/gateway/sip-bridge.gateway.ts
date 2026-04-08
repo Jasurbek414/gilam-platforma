@@ -46,7 +46,7 @@ export class SipBridgeGateway
   } | null = null;
   // SIP registration state (reused across retries)
   private regCallId: string =
-    Math.random().toString(36).substring(10) + '@10.100.100.18';
+    Math.random().toString(36).substring(10) + '@10.100.100.70';
   private regFromTag: string = Math.random().toString(36).substring(7);
   private authRetryCount = 0;
   private readonly MAX_AUTH_RETRIES = 3;
@@ -87,7 +87,7 @@ export class SipBridgeGateway
   private initSip() {
     const SIP_SERVER = '10.100.100.1';
     const SIP_PORT = 5060;
-    const LOCAL_PORT = 0; // Let OS choose free port
+    const LOCAL_PORT = 55060; // Let OS choose free port
     const EXTENSION = '101';
     const PASSWORD = 'a1234567a';
 
@@ -233,12 +233,12 @@ export class SipBridgeGateway
 
     const headers = [
       `REGISTER sip:${DOMAIN} SIP/2.0`,
-      `Via: SIP/2.0/UDP 10.100.100.18:55060;branch=z9hG4bK-${Math.random().toString(36).substring(7)}`,
+      `Via: SIP/2.0/UDP 10.100.100.70:55060;branch=z9hG4bK-${Math.random().toString(36).substring(7)}`,
       `From: <sip:${EXTENSION}@${DOMAIN}>;tag=${this.regFromTag}`,
       `To: <sip:${EXTENSION}@${DOMAIN}>`,
       `Call-ID: ${this.regCallId}`,
       `CSeq: ${this.cseq} REGISTER`,
-      `Contact: <sip:${EXTENSION}@10.100.100.18:55060>`,
+      `Contact: <sip:${EXTENSION}@10.100.100.70:55060>`,
       `Max-Forwards: 70`,
       `Expires: 3600`,
     ];
@@ -288,7 +288,7 @@ export class SipBridgeGateway
 
     this.cseq++;
     const branch = 'z9hG4bK-' + Math.random().toString(36).substring(7);
-    const callId = Math.random().toString(36).substring(10) + '@10.100.100.18';
+    const callId = Math.random().toString(36).substring(10) + '@10.100.100.70';
     const fromTag = Math.random().toString(36).substring(7);
 
     this.activeCall = {
@@ -303,9 +303,9 @@ export class SipBridgeGateway
     // SDP for PCMA (G.711a)
     const sdp = [
       'v=0',
-      'o=GilamOperator 12345 12345 IN IP4 10.100.100.18',
+      'o=GilamOperator 12345 12345 IN IP4 10.100.100.70',
       's=GilamTalk',
-      'c=IN IP4 10.100.100.18',
+      'c=IN IP4 10.100.100.70',
       't=0 0',
       'm=audio 10000 RTP/AVP 8 101',
       'a=rtpmap:8 PCMA/8000',
@@ -317,12 +317,12 @@ export class SipBridgeGateway
 
     const invite = [
       `INVITE sip:${target}@10.100.100.1 SIP/2.0`,
-      `Via: SIP/2.0/UDP 10.100.100.18:55060;branch=${branch}`,
+      `Via: SIP/2.0/UDP 10.100.100.70:55060;branch=${branch}`,
       `From: "Gilam Operator" <sip:101@10.100.100.1>;tag=${fromTag}`,
       `To: <sip:${target}@10.100.100.1>`,
       `Call-ID: ${callId}`,
       `CSeq: ${this.cseq} INVITE`,
-      `Contact: <sip:101@10.100.100.18:55060>`,
+      `Contact: <sip:101@10.100.100.70:55060>`,
       `Content-Type: application/sdp`,
       `Max-Forwards: 70`,
       `Content-Length: ${sdp.length}`,
@@ -350,7 +350,7 @@ export class SipBridgeGateway
 
     const request = [
       `${method} sip:${target}@10.100.100.1 SIP/2.0`,
-      `Via: SIP/2.0/UDP 10.100.100.18:55060;branch=${this.activeCall.branch}`,
+      `Via: SIP/2.0/UDP 10.100.100.70:55060;branch=${this.activeCall.branch}`,
       `From: "Gilam Operator" <sip:101@10.100.100.1>;tag=${fromTag}`,
       `To: <sip:${target}@10.100.100.1>${toTag ? `;tag=${toTag}` : ''}`,
       `Call-ID: ${callId}`,

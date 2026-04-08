@@ -109,6 +109,8 @@ export class UsersService {
 
   async remove(id: string): Promise<void> {
     const user = await this.findOne(id);
-    await this.usersRepository.remove(user);
+    user.status = UserStatus.DELETED;
+    await this.usersRepository.save(user);
+    await this.usersRepository.softRemove(user);
   }
 }

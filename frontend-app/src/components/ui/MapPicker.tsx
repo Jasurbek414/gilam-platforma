@@ -88,16 +88,17 @@ export default function MapPicker({ onLocationSelect, initialLocation, initialSe
   const handleLiveSearch = (query: string) => {
     setIsSearching(true);
     setLastSearched(query); // Prevent loop
-    const q = query.toLowerCase().includes('toshkent') ? query : `Toshkent, ${query}`;
     
-    fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(q)}&limit=1&accept-language=uz`)
+    // Fallback if query is too generic, but enforce Uzbekistan bounds via countrycodes=uz
+    // This allows searches like "Namangan Go'zal" to work perfectly!
+    fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=1&accept-language=uz&countrycodes=uz`)
       .then(res => res.json())
       .then(data => {
         if (data && data.length > 0) {
           const lat = parseFloat(data[0].lat);
           const lng = parseFloat(data[0].lon);
           setPosition([lat, lng]);
-          setZoom(17);
+          setZoom(16); // slightly broader zoom for unknown districts
           
           // Re-fetch accurate name for the local overlay ONLY, do NOT overwrite parent's input text
           fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&accept-language=uz`)

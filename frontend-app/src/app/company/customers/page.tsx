@@ -8,25 +8,13 @@ import {
   MdEdit, 
   MdDelete, 
   MdPhone, 
-  MdLocationOn, 
-  MdClose,
-  MdCheckCircle
+  MdLocationOn
 } from 'react-icons/md';
 import Modal from '@/components/ui/Modal';
 import { customersApi, getUser } from '@/lib/api';
 import { User, Customer } from '@/types';
 import toast from 'react-hot-toast';
-import dynamic from 'next/dynamic';
-
-const MapPicker = dynamic(() => import('@/components/ui/MapPicker'), { 
-  ssr: false,
-  loading: () => (
-    <div className="h-[380px] bg-slate-50 flex flex-col items-center justify-center rounded-2xl border border-slate-100 shadow-inner">
-      <div className="w-8 h-8 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin mb-4"></div>
-      <p className="text-slate-400 font-bold uppercase text-[10px] tracking-widest animate-pulse">Universal xarita yuklanmoqda...</p>
-    </div>
-  )
-});
+import CustomerFormModal from '@/components/customers/CustomerFormModal';
 
 export default function CustomersPage() {
   const [customers, setCustomers] = useState<Customer[]>([]);
@@ -34,14 +22,7 @@ export default function CustomersPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-  const [isMapOpen, setIsMapOpen] = useState(false);
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
-  const [formData, setFormData] = useState({
-    fullName: '',
-    phone: '',
-    address: '',
-    location: null as { lat: number, lng: number } | null
-  });
   const [user, setUser] = useState<User | null>(null);
 
   useEffect(() => {
@@ -83,58 +64,23 @@ export default function CustomersPage() {
   };
 
   const handleOpenModal = (customer?: Customer) => {
-    setIsMapOpen(false);
     if (customer) {
       setSelectedCustomer(customer);
-      setFormData({
-        fullName: customer.fullName,
-        phone: customer.phone,
-        address: customer.address,
-        location: null // Location is optional for editing for now
-      });
     } else {
       setSelectedCustomer(null);
-      setFormData({ fullName: '', phone: '', address: '', location: null });
     }
     setIsModalOpen(true);
-  };
-
-  const handleSave = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!user) return;
-
-    try {
-      if (selectedCustomer) {
-        await customersApi.update(selectedCustomer.id, {
-          ...formData,
-          companyId: user.companyId,
-          operatorId: user.id
-        });
-        toast.success('Mijoz ma&apos;lumotlari yangilandi');
-      } else {
-        await customersApi.create({
-          ...formData,
-          companyId: user.companyId,
-          operatorId: user.id
-        });
-        toast.success('Yangi mijoz qo&apos;shildi');
-      }
-      setIsModalOpen(false);
-      fetchCustomers(user.companyId);
-    } catch (err: any) {
-      toast.error(err.response?.data?.message || 'Xatolik yuz berdi');
-    }
   };
 
   const confirmDelete = async () => {
     if (!selectedCustomer || !user) return;
     try {
       await customersApi.remove(selectedCustomer.id);
-      toast.success('Mijoz o&apos;chirildi');
+      toast.success('Mijoz o\'chirildi');
       setIsDeleteModalOpen(false);
       fetchCustomers(user.companyId);
     } catch (err) {
-      toast.error('Mijozni o&apos;chirishda xatolik yuz berdi');
+      toast.error('Mijozni o\'chirishda xatolik yuz berdi');
     }
   };
 
@@ -168,7 +114,7 @@ export default function CustomersPage() {
             className="flex items-center gap-2 px-6 py-3 bg-indigo-600 text-white font-black rounded-xl shadow-lg shadow-indigo-500/25 hover:shadow-indigo-500/40 hover:-translate-y-0.5 transition-all text-sm uppercase tracking-widest"
           >
             <MdAdd className="text-xl" />
-            Qo&apos;shish
+            Qo'shish
           </button>
         </div>
       </div>
@@ -186,7 +132,7 @@ export default function CustomersPage() {
               <thead>
                 <tr className="bg-slate-50 border-b border-slate-100 text-[10px] font-black text-slate-400 uppercase tracking-widest">
                   <th className="px-6 py-4">Mijoz / Telefon</th>
-                  <th className="px-6 py-4">Mas&apos;ul Operator</th>
+                  <th className="px-6 py-4">Mas'ul Operator</th>
                   <th className="px-6 py-4">Manzil</th>
                   <th className="px-6 py-4 text-right">Amallar</th>
                 </tr>
@@ -214,7 +160,7 @@ export default function CustomersPage() {
                           {c.operator?.fullName?.[0]?.toUpperCase() || '?'}
                         </div>
                         <span className="font-bold text-xs text-slate-600 truncate max-w-[120px]">
-                          {c.operator?.fullName?.split(' ')[0] || 'Noma&apos;lum'}
+                          {c.operator?.fullName?.split(' ')[0] || 'Noma\'lum'}
                         </span>
                       </div>
                     </td>
@@ -236,7 +182,7 @@ export default function CustomersPage() {
                         <button 
                           onClick={() => { setSelectedCustomer(c); setIsDeleteModalOpen(true); }}
                           className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-all"
-                          title="O&apos;chirish"
+                          title="O'chirish"
                         >
                           <MdDelete className="text-xl" />
                         </button>
@@ -259,101 +205,21 @@ export default function CustomersPage() {
         )}
       </div>
 
-      {/* Add/Edit Modal */}
-      <Modal 
-        isOpen={isModalOpen} 
-        onClose={() => setIsModalOpen(false)} 
-        title={selectedCustomer ? "Mijozni Tahrirlash" : "Yangi Mijoz Qo&apos;shish"}
-      >
-        <form onSubmit={handleSave} className="space-y-6 p-1 max-h-[80vh] overflow-y-auto pr-2">
-          <div className="space-y-4">
-            <div>
-              <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2 ml-1">F.I.SH (To&apos;liq ism)</label>
-              <input 
-                type="text" 
-                required
-                className="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-4 focus:ring-indigo-500/5 focus:border-indigo-500 outline-none transition-all font-bold text-slate-700"
-                placeholder="Masalan: Azizbek Sodiqov"
-                value={formData.fullName}
-                onChange={(e) => setFormData({...formData, fullName: e.target.value})}
-              />
-            </div>
-            <div>
-              <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2 ml-1">Telefon raqami</label>
-              <div className="relative">
-                <MdPhone className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400 text-lg" />
-                <input 
-                  type="text" 
-                  required
-                  className="w-full pl-12 pr-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-4 focus:ring-indigo-500/5 focus:border-indigo-500 outline-none transition-all font-bold text-slate-700"
-                  placeholder="+998"
-                  value={formData.phone}
-                  onChange={(e) => setFormData({...formData, phone: e.target.value})}
-                />
-              </div>
-            </div>
-            <div className="space-y-2">
-              <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2 ml-1">Manzil</label>
-              <div className="relative group">
-                <MdLocationOn className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400 text-lg" />
-                <input 
-                  type="text" 
-                  required
-                  className="w-full pl-12 pr-12 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-4 focus:ring-indigo-500/5 focus:border-indigo-500 outline-none transition-all font-bold text-slate-700"
-                  placeholder="Shahar, ko&apos;cha, uy bino..."
-                  value={formData.address}
-                  onChange={(e) => setFormData({...formData, address: e.target.value})}
-                />
-                <button 
-                  type="button"
-                  onClick={() => setIsMapOpen(!isMapOpen)}
-                  className={`absolute right-3 top-2 p-2 rounded-xl transition-all ${isMapOpen ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/30' : 'bg-white text-slate-400 hover:text-indigo-600 hover:bg-slate-50 border border-slate-100'}`}
-                  title="Xaritadan tanlash"
-                >
-                  <MdLocationOn className="text-xl" />
-                </button>
-              </div>
-
-              {isMapOpen && (
-                <div className="mt-4 animate-in slide-in-from-top-4 duration-300">
-                  <MapPicker 
-                    initialLocation={formData.location || undefined}
-                    initialSearchQuery={formData.address}
-                    onLocationSelect={(lat, lng, address) => {
-                      setFormData(prev => ({ ...prev, address, location: { lat, lng } }));
-                    }} 
-                  />
-                </div>
-              )}
-            </div>
-          </div>
-
-          <div className="flex gap-3 pt-4">
-            <button 
-              type="button" 
-              onClick={() => setIsModalOpen(false)}
-              className="flex-1 py-4 bg-slate-100 text-slate-500 font-black rounded-2xl text-[10px] uppercase tracking-widest hover:bg-slate-200 transition-all font-black"
-            >
-              Bekor qilish
-            </button>
-            <button 
-              type="submit"
-              className="flex-1 py-4 bg-indigo-600 text-white font-black rounded-2xl text-[10px] uppercase tracking-widest shadow-xl shadow-indigo-500/20 hover:bg-indigo-700 hover:-translate-y-1 active:scale-95 transition-all font-black"
-            >
-              <div className="flex items-center justify-center gap-2">
-                <MdCheckCircle className="text-lg" />
-                {selectedCustomer ? 'Yangilash' : 'Saqlash'}
-              </div>
-            </button>
-          </div>
-        </form>
-      </Modal>
+      {/* Extracted Isolated Senior Component */}
+      <CustomerFormModal 
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        initialData={selectedCustomer}
+        onSuccess={() => {
+          if (user?.companyId) fetchCustomers(user.companyId);
+        }}
+      />
 
       {/* Delete Confirmation Modal */}
       <Modal 
         isOpen={isDeleteModalOpen} 
         onClose={() => setIsDeleteModalOpen(false)} 
-        title="Mijozni O&apos;chirish"
+        title="Mijozni O'chirish"
       >
         <div className="space-y-6">
           <div className="p-4 bg-rose-50 border border-rose-100 rounded-2xl flex items-start gap-4 font-black">
@@ -361,8 +227,8 @@ export default function CustomersPage() {
               <MdDelete className="text-2xl" />
             </div>
             <div>
-              <p className="text-sm font-black text-slate-800">Mijozni o&apos;chirib tashlamoqchimisiz?</p>
-              <p className="text-xs text-slate-500 mt-1 font-medium">Bu amalni ortga qaytarib bo&apos;lmaydi. Mijozning barcha ma&apos;lumotlari tizimdan o&apos;chiriladi.</p>
+              <p className="text-sm font-black text-slate-800">Mijozni o'chirib tashlamoqchimisiz?</p>
+              <p className="text-xs text-slate-500 mt-1 font-medium">Bu amalni ortga qaytarib bo'lmaydi. Mijozning barcha ma'lumotlari tizimdan o'chiriladi.</p>
             </div>
           </div>
           
@@ -371,13 +237,13 @@ export default function CustomersPage() {
               onClick={() => setIsDeleteModalOpen(false)}
               className="flex-1 py-4 bg-slate-100 text-slate-500 font-black rounded-2xl text-[10px] uppercase tracking-widest hover:bg-slate-200 transition-all font-black"
             >
-              Yo&apos;q, qolsin
+              Yo'q, qolsin
             </button>
             <button 
               onClick={confirmDelete}
               className="flex-1 py-4 bg-rose-600 text-white font-black rounded-2xl text-[10px] uppercase tracking-widest shadow-xl shadow-rose-500/20 hover:bg-rose-700 hover:-translate-y-1 active:scale-95 transition-all font-black"
             >
-              Ha, o&apos;chirilsin
+              Ha, o'chirilsin
             </button>
           </div>
         </div>

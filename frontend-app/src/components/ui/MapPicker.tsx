@@ -67,60 +67,24 @@ export default function MapPicker({ onLocationSelect, initialLocation, initialSe
   const defaultPos: [number, number] = initialLocation ? [initialLocation.lat, initialLocation.lng] : [41.2995, 69.2401]; // Tashkent
   const [position, setPosition] = useState<[number, number]>(defaultPos);
   const [zoom, setZoom] = useState(13);
-  const [searchQuery, setSearchQuery] = useState(initialSearchQuery || '');
   const [isSearching, setIsSearching] = useState(false);
   const [addressLine, setAddressLine] = useState('Xaritadan joyni belgilang');
+  const [lastSearched, setLastSearched] = useState('');
 
-  // Trigger initial search if query exists but no precise location is known
+  // Live Auto-Search as user types in parent form
   useEffect(() => {
-    if (initialSearchQuery && initialSearchQuery.length >= 3 && !initialLocation) {
-      handleInitialSearch(initialSearchQuery);
+    if (initialSearchQuery && initialSearchQuery.length >= 3 && initialSearchQuery !== lastSearched) {
+      const delayFn = setTimeout(() => {
+        handleLiveSearch(initialSearchQuery);
+      }, 800); // 800ms debounce
+      return () => clearTimeout(delayFn);
     }
-  }, []);
+  }, [initialSearchQuery, lastSearched]);
 
-  const handleInitialSearch = (query: string) => {
+  const handleLiveSearch = (query: string) => {
     setIsSearching(true);
+    setLastSearched(query); // Prevent loop
     const q = query.toLowerCase().includes('toshkent') ? query : `Toshkent, ${query}`;
-    fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(q)}&limit=1`)
-      .then(res => res.json())
-      .then(data => {
-        if (data && data.length > 0) {
-          const lat = parseFloat(data[0].lat);
-          const lng = parseFloat(data[0].lon);
-          setPosition([lat, lng]);
-          setZoom(17);
-          handleSelect(lat, lng);
-        }
-      })
-      .catch(err => console.error('Geocoding error:', err))
-      .finally(() => setIsSearching(false));
-  };
-
-  // Handle Reverse Geocoding
-  const handleSelect = (lat: number, lng: number) => {
-    setIsSearching(true);
-    fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`)
-      .then(res => res.json())
-      .then(data => {
-        const addr = data.display_name || `${lat.toFixed(4)}, ${lng.toFixed(4)}`;
-        setAddressLine(addr);
-        onLocationSelect(lat, lng, addr);
-      })
-      .catch(() => {
-        const fallback = `${lat.toFixed(4)}, ${lng.toFixed(4)}`;
-        setAddressLine(fallback);
-        onLocationSelect(lat, lng, fallback);
-      })
-      .finally(() => setIsSearching(false));
-  };
-
-  // Perform Forward Geocoding
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!searchQuery || searchQuery.length < 3) return;
-
-    setIsSearching(true);
-    const q = searchQuery.toLowerCase().includes('toshkent') ? searchQuery : `Toshkent, ${searchQuery}`;
     
     fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(q)}&limit=1`)
       .then(res => res.json())
@@ -130,10 +94,43 @@ export default function MapPicker({ onLocationSelect, initialLocation, initialSe
           const lng = parseFloat(data[0].lon);
           setPosition([lat, lng]);
           setZoom(17);
-          handleSelect(lat, lng); // update address
+          
+          // Re-fetch accurate name or just use position
+          fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`)
+            .then(res => res.json())
+            .then(revData => {
+              const addr = revData.display_name || query;
+              setAddressLine(addr);
+              setLastSearched(addr);
+              onLocationSelect(lat, lng, addr);
+            })
+            .catch(() => {
+              setAddressLine(query);
+              onLocationSelect(lat, lng, query);
+            });
         }
       })
       .catch(err => console.error('Geocoding error:', err))
+      .finally(() => setIsSearching(false));
+  };
+
+  // Handle Reverse Geocoding when dragging
+  const handleSelect = (lat: number, lng: number) => {
+    setIsSearching(true);
+    fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`)
+      .then(res => res.json())
+      .then(data => {
+        const addr = data.display_name || `${lat.toFixed(4)}, ${lng.toFixed(4)}`;
+        setAddressLine(addr);
+        setLastSearched(addr); // prevent loop
+        onLocationSelect(lat, lng, addr);
+      })
+      .catch(() => {
+        const fallback = `${lat.toFixed(4)}, ${lng.toFixed(4)}`;
+        setAddressLine(fallback);
+        setLastSearched(fallback); // prevent loop
+        onLocationSelect(lat, lng, fallback);
+      })
       .finally(() => setIsSearching(false));
   };
 
@@ -160,38 +157,18 @@ export default function MapPicker({ onLocationSelect, initialLocation, initialSe
 
   return (
     <div className="w-full flex flex-col gap-3">
-      {/* Search Bar directly above the map */}
-      <div className="relative z-10 w-full flex gap-2">
-        <div className="relative flex-1">
-          <MdSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-xl" />
-          <input 
-            type="text" 
-            placeholder="Qidirish (Masalan: Yunusobod 4-mavze)"
-            className="w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 focus:bg-white outline-none transition-all font-medium text-sm text-slate-700 shadow-sm"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') {
-                e.preventDefault();
-                handleSearch(e as any);
-              }
-            }}
-          />
-        </div>
-        <button 
-          type="button"
-          onClick={handleSearch}
-          disabled={isSearching}
-          className="px-6 py-3 bg-indigo-600 text-white font-black hover:bg-indigo-700 rounded-xl transition-all shadow-md active:scale-95 text-sm uppercase tracking-widest disabled:opacity-70 flex items-center justify-center gap-2"
-        >
-          {isSearching ? (
-            <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-          ) : 'Izlash'}
-        </button>
-      </div>
-
       {/* Map Container */}
       <div className="w-full h-[380px] rounded-2xl overflow-hidden shadow-lg border border-slate-200 relative group animate-in zoom-in-95 duration-500">
+        
+        {/* Loading Indicator for Live Search */}
+        {isSearching && (
+          <div className="absolute inset-0 bg-white/20 backdrop-blur-[1px] z-[1000] flex items-center justify-center pointer-events-none">
+            <div className="bg-white/90 px-6 py-3 rounded-full shadow-lg flex items-center gap-3">
+              <div className="w-5 h-5 border-2 border-indigo-200 border-t-indigo-600 rounded-full animate-spin"></div>
+              <p className="text-xs font-black text-indigo-700 uppercase tracking-widest">Qidirilmoqda...</p>
+            </div>
+          </div>
+        )}
         
         {/* Floating current address indicator */}
         <div className="absolute top-4 left-1/2 -translate-x-1/2 z-[1000] bg-white/90 backdrop-blur-md px-4 py-2 flex items-center gap-2 rounded-full shadow-lg border border-slate-100 max-w-[90%] pointer-events-none transition-all">

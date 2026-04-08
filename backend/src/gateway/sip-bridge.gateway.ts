@@ -275,8 +275,11 @@ export class SipBridgeGateway
 
   @SubscribeMessage('sip:call')
   handleCall(@ConnectedSocket() client: Socket, @MessageBody() data: any) {
-    const target = data.target;
-    this.logger.log(`SIP CALL REQUEST: to ${target}`);
+    // Sanitize target: remove '+' and non-digits for SIP compatibility
+    const targetRaw = data.target || '';
+    const target = targetRaw.toString().replace(/[^0-9]/g, '');
+    
+    this.logger.log(`SIP CALL REQUEST: to ${target} (original: ${targetRaw})`);
 
     this.currentOperatorId = data.operatorId || 'manual-operator';
     this.currentCompanyId = data.companyId || 'diagnostic-company';

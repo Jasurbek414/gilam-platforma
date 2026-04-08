@@ -55,7 +55,8 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   if (res.status === 401) {
     removeToken();
     if (typeof window !== 'undefined') {
-      window.location.href = '/';
+      const loginPath = localStorage.getItem('loginPath') || '/';
+      window.location.href = loginPath === '/operator/login' ? '/operator/login' : loginPath;
     }
     throw new Error('Sessiya muddati tugadi');
   }

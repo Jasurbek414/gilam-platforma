@@ -24,6 +24,7 @@ export interface SipCredentials {
 // frontend ham shu mashinada bo'lsa localhost, bo'lmasa server IP
 const WS_BASE =
   process.env.NEXT_PUBLIC_WS_URL ||
+  process.env.NEXT_PUBLIC_API_URL?.replace('/api', '') ||
   (typeof window !== 'undefined' ? window.location.origin.replace(/:\d+$/, ':3000') : 'http://localhost:3000');
 
 const SIP_DOMAIN = process.env.NEXT_PUBLIC_SIP_DOMAIN || '10.100.100.1';
@@ -66,10 +67,10 @@ export function useSip(_credentials?: SipCredentials | null) {
     console.log('[useSip] Connecting to:', wsUrl);
 
     const socket = io(wsUrl, {
-      transports: ['websocket'],
+      transports: ['websocket', 'polling'],
       reconnectionAttempts: 10,
       reconnectionDelay: 2000,
-      timeout: 10000,
+      timeout: 20000,
     });
 
     socketRef.current = socket;

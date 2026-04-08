@@ -30,7 +30,7 @@ export default function OperatorDashboard() {
   useEffect(() => {
     const currentUser = getUser();
     if (!currentUser) {
-      router.push('/operator/login');
+      setTimeout(() => router.push('/operator/login'), 0);
       return;
     }
     setUser(currentUser);

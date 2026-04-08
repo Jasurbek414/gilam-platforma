@@ -60,11 +60,11 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
       const isCompanyPage = window.location.pathname.startsWith('/company');
       
       if (isOperatorPage) {
-        window.location.href = '/operator/login';
+        setTimeout(() => window.location.href = '/operator/login', 0);
       } else if (isCompanyPage) {
-        window.location.href = '/company/login';
+        setTimeout(() => window.location.href = '/company/login', 0);
       } else {
-        window.location.href = '/';
+        setTimeout(() => window.location.href = '/', 0);
       }
     }
     throw new Error('Sessiya muddati tugadi');

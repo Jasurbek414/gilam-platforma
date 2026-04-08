@@ -22,7 +22,7 @@ export default function OperatorLayout({ children }: { children: React.ReactNode
     }
     const user = getUser();
     if (!user || user.role !== 'OPERATOR') {
-      router.replace('/operator/login');
+      setTimeout(() => router.replace('/operator/login'), 0);
     } else {
       setAuthorized(true);
     }

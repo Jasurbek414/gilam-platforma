@@ -13,7 +13,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   useEffect(() => {
     const user = getUser();
     if (!user || user.role !== 'SUPER_ADMIN') {
-      router.replace('/');
+      setTimeout(() => router.replace('/'), 0);
     } else {
       setAuthorized(true);
     }

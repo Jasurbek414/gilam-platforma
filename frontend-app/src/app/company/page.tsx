@@ -50,7 +50,7 @@ export default function CompanyDashboardPage() {
   useEffect(() => {
     const currentUser = getUser();
     if (!currentUser || !currentUser.companyId) {
-      router.push('/');
+      setTimeout(() => router.push('/'), 0);
       return;
     }
     setUser(currentUser);

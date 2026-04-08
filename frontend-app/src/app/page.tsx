@@ -20,19 +20,23 @@ export default function LoginPage() {
 
     try {
       const result = await authApi.login(phone, password);
-      if (result.user.role !== 'SUPER_ADMIN') {
-        const slug = toSlug(result.user.company?.name || '');
-        setError(slug
-          ? `Bu sahifa faqat Super Admin uchun. Korxona portali: /c/${slug}`
-          : 'Bu sahifa faqat Super Admin uchun kirish uchun.'
-        );
-        removeToken();
-        return;
-      }
+      const { role } = result.user;
+
       setToken(result.access_token);
       setUser(result.user);
       setLoginPath('/');
-      router.push('/admin');
+
+      if (role === 'SUPER_ADMIN') {
+        router.push('/admin');
+      } else if (role === 'COMPANY_ADMIN') {
+        router.push('/company');
+      } else if (role === 'OPERATOR') {
+        router.push('/operator');
+      } else {
+         setError('Bu profil uchun tizimga kirish taqiklangan');
+         removeToken();
+         return;
+      }
     } catch (err: any) {
       setError(err.message || 'Telefon raqam yoki parol xato!');
     } finally {

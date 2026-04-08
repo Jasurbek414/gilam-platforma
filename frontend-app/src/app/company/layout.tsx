@@ -13,7 +13,7 @@ export default function CompanyLayout({ children }: { children: React.ReactNode 
   useEffect(() => {
     const user = getUser();
     if (!user || user.role !== 'COMPANY_ADMIN') {
-      router.replace(getLoginPath());
+      router.replace('/');
     } else {
       setAuthorized(true);
     }

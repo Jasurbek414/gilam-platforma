@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { getUser, removeToken, getLoginPath } from '@/lib/api';
+import { getUser, removeToken } from '@/lib/api';
 import {
   MdDashboard,
   MdCall,
@@ -42,9 +42,8 @@ export default function OperatorSidebar() {
   }, []);
 
   const handleLogout = () => {
-    const loginPath = getLoginPath();
     removeToken();
-    router.push(loginPath);
+    router.push('/operator/login');
   };
 
   return (

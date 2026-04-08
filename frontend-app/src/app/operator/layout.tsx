@@ -1,24 +1,37 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import OperatorSidebar from '@/components/layout/OperatorSidebar';
 import Topbar from '@/components/layout/Topbar';
 import { ChatProvider } from '@/context/ChatContext';
-import { getUser, getLoginPath } from '@/lib/api';
+import { getUser } from '@/lib/api';
 
 export default function OperatorLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
+  const pathname = usePathname();
   const [authorized, setAuthorized] = useState(false);
 
+  // Login sahifasi: auth tekshirilmaydi — to'g'ridan children ko'rsatiladi
+  const isLoginPage = pathname === '/operator/login';
+
   useEffect(() => {
+    if (isLoginPage) {
+      setAuthorized(true);
+      return;
+    }
     const user = getUser();
     if (!user || user.role !== 'OPERATOR') {
-      router.replace(getLoginPath());
+      router.replace('/operator/login');
     } else {
       setAuthorized(true);
     }
-  }, [router]);
+  }, [router, isLoginPage]);
+
+  // Login sahifasida sidebar/topbar ko'rsatilmaydi
+  if (isLoginPage) {
+    return <>{children}</>;
+  }
 
   if (!authorized) {
     return (

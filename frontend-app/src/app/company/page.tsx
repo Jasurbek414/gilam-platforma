@@ -50,12 +50,13 @@ export default function CompanyDashboardPage() {
   useEffect(() => {
     const currentUser = getUser();
     if (!currentUser || !currentUser.companyId) {
-      setTimeout(() => router.push('/'), 0);
+      setTimeout(() => router.push('/company/login'), 0);
       return;
     }
     setUser(currentUser);
     loadData(currentUser.companyId);
-  }, [router]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   async function loadData(companyId: string) {
     try {

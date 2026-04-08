@@ -7,7 +7,7 @@ import {
   MdAccessTime, MdExpandMore, MdExpandLess
 } from 'react-icons/md';
 import Modal from '@/components/ui/Modal';
-import { ordersApi, customersApi, servicesApi, getUser, getLoginPath } from '@/lib/api';
+import { ordersApi, customersApi, servicesApi, getUser } from '@/lib/api';
 import toast from 'react-hot-toast';
 
 const MEASUREMENT_UNITS = [
@@ -80,12 +80,13 @@ function OrderContent() {
   useEffect(() => {
     const currentUser = getUser();
     if (!currentUser || !currentUser.company) {
-      router.push(getLoginPath());
+      setTimeout(() => router.push('/operator/login'), 0);
       return;
     }
     setUser(currentUser);
     loadData(currentUser.company.id);
-  }, [router]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     if (searchParams && user && !loading) {

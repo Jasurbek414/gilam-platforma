@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { MdAdd, MdSearch, MdFilterList, MdShoppingCart, MdPerson, MdPhone, MdClose, MdExpandMore, MdExpandLess, MdPrint } from 'react-icons/md';
 import Modal from '@/components/ui/Modal';
-import { ordersApi, customersApi, servicesApi, getUser, getLoginPath } from '@/lib/api';
+import { ordersApi, customersApi, servicesApi, getUser } from '@/lib/api';
 import { useRouter } from 'next/navigation';
 import toast from 'react-hot-toast';
 
@@ -49,12 +49,13 @@ export default function CompanyOrdersPage() {
   useEffect(() => {
     const currentUser = getUser();
     if (!currentUser || !currentUser.company) {
-      router.push(getLoginPath());
+      setTimeout(() => router.push('/company/login'), 0);
       return;
     }
     setUser(currentUser);
     loadData(currentUser.company.id);
-  }, [router]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   async function loadData(companyId: string) {
     try {

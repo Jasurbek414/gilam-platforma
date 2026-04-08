@@ -35,15 +35,14 @@ export default function OperatorDashboard() {
     }
     setUser(currentUser);
     loadData(currentUser?.company?.id);
-  }, [router]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   async function loadData(companyId?: string) {
     try {
-      let data = [];
+      let data: any[] = [];
       if (companyId) {
         data = await ordersApi.getByCompany(companyId);
-      } else {
-        data = await ordersApi.getAll();
       }
       setOrders(data);
     } catch (err) {

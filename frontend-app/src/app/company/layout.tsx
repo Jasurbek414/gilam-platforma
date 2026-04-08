@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import CompanySidebar from '@/components/layout/CompanySidebar';
 import Topbar from '@/components/layout/Topbar';
-import { getUser, getLoginPath } from '@/lib/api';
+import { getUser } from '@/lib/api';
 
 export default function CompanyLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();

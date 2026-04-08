@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { MdPhone, MdLock, MdLogin, MdVisibility, MdVisibilityOff } from 'react-icons/md';
-import { authApi, setToken, setUser, removeToken, toSlug, setLoginPath } from '@/lib/api';
+import { authApi, setToken, setUser, setLoginPath } from '@/lib/api';
 
 export default function LoginPage() {
   const router = useRouter();

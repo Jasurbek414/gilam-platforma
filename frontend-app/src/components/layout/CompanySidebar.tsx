@@ -48,9 +48,8 @@ export default function CompanySidebar() {
   };
 
   const confirmLogout = () => {
-    const loginPath = localStorage.getItem('loginPath') || '/';
     removeToken();
-    router.push(loginPath);
+    router.push('/company/login');
   };
 
   return (

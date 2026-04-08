@@ -85,38 +85,55 @@ export default function MapPicker({ onLocationSelect, initialLocation, initialSe
     }
   }, [initialSearchQuery, lastSearched]);
 
-  const handleLiveSearch = (query: string) => {
+  const handleLiveSearch = async (query: string) => {
     setIsSearching(true);
-    setLastSearched(query); // Prevent loop
-    
-    // Fallback if query is too generic, but enforce Uzbekistan bounds via countrycodes=uz
-    // This allows searches like "Namangan Go'zal" to work perfectly!
-    fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=1&accept-language=uz&countrycodes=uz`)
-      .then(res => res.json())
-      .then(data => {
+    setLastSearched(query);
+
+    // Helper function for cascading search
+    const performSearch = async (searchStr: string): Promise<any> => {
+      if (!searchStr || searchStr.trim().length === 0) return null;
+      try {
+        const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(searchStr)}&limit=1&accept-language=uz&countrycodes=uz`);
+        const data = await res.json();
         if (data && data.length > 0) {
-          const lat = parseFloat(data[0].lat);
-          const lng = parseFloat(data[0].lon);
-          setPosition([lat, lng]);
-          setZoom(16); // slightly broader zoom for unknown districts
-          
-          // Re-fetch accurate name for the local overlay ONLY, do NOT overwrite parent's input text
-          fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&accept-language=uz`)
-            .then(res => res.json())
-            .then(revData => {
-              const addr = revData.display_name || query;
-              setAddressLine(addr);
-              // Send coords back but keep user's explicit query
-              onLocationSelect(lat, lng, query);
-            })
-            .catch(() => {
-              setAddressLine(query);
-              onLocationSelect(lat, lng, query);
-            });
+          return data[0];
         }
-      })
-      .catch(err => console.error('Geocoding error:', err))
-      .finally(() => setIsSearching(false));
+        // If not found, remove the last word (e.g., "55-uy") and try again
+        const words = searchStr.trim().split(' ');
+        if (words.length > 1) {
+          words.pop();
+          return await performSearch(words.join(' '));
+        }
+        return null; // completely failed
+      } catch (err) {
+        console.error('Cascading search error:', err);
+        return null;
+      }
+    };
+
+    const result = await performSearch(query);
+
+    if (result) {
+      const lat = parseFloat(result.lat);
+      const lng = parseFloat(result.lon);
+      setPosition([lat, lng]);
+      setZoom(16); // slightly broader zoom for regions or precise if found
+      
+      // Re-fetch accurate name for the local overlay ONLY, do NOT overwrite parent's input text
+      fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&accept-language=uz`)
+        .then(res => res.json())
+        .then(revData => {
+          const addr = revData.display_name || query;
+          setAddressLine(addr);
+          onLocationSelect(lat, lng, query);
+        })
+        .catch(() => {
+          setAddressLine(query);
+          onLocationSelect(lat, lng, query);
+        });
+    }
+    
+    setIsSearching(false);
   };
 
   // Handle Reverse Geocoding when dragging

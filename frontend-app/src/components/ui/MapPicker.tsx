@@ -135,7 +135,7 @@ export default function MapPicker({ onLocationSelect, initialLocation }: MapPick
   return (
     <div className="w-full flex flex-col gap-3">
       {/* Search Bar directly above the map */}
-      <form onSubmit={handleSearch} className="relative z-10 w-full flex gap-2">
+      <div className="relative z-10 w-full flex gap-2">
         <div className="relative flex-1">
           <MdSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-xl" />
           <input 
@@ -144,10 +144,17 @@ export default function MapPicker({ onLocationSelect, initialLocation }: MapPick
             className="w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 focus:bg-white outline-none transition-all font-medium text-sm text-slate-700 shadow-sm"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                e.preventDefault();
+                handleSearch(e as any);
+              }
+            }}
           />
         </div>
         <button 
-          type="submit"
+          type="button"
+          onClick={handleSearch}
           disabled={isSearching}
           className="px-6 py-3 bg-indigo-600 text-white font-black hover:bg-indigo-700 rounded-xl transition-all shadow-md active:scale-95 text-sm uppercase tracking-widest disabled:opacity-70 flex items-center justify-center gap-2"
         >
@@ -155,7 +162,7 @@ export default function MapPicker({ onLocationSelect, initialLocation }: MapPick
             <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
           ) : 'Izlash'}
         </button>
-      </form>
+      </div>
 
       {/* Map Container */}
       <div className="w-full h-[380px] rounded-2xl overflow-hidden shadow-lg border border-slate-200 relative group animate-in zoom-in-95 duration-500">

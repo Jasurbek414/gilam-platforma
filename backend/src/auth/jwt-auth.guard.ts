@@ -24,22 +24,25 @@ export class JwtAuthGuard implements CanActivate {
       throw new UnauthorizedException('Token topilmadi');
     }
 
+    let payload: any;
     try {
-      const payload = await this.jwtService.verifyAsync(token, {
+      payload = await this.jwtService.verifyAsync(token, {
         secret: process.env.JWT_SECRET || 'super-secret-key-1234',
       });
-      // Bazadan haqiqiy foydalanuvchini yuklaymiz (stale token muammosidan himoya)
-      const user = await this.dataSource.getRepository(User).findOne({
-        where: { id: payload.sub },
-        relations: ['company'],
-      });
-      if (!user) {
-        throw new UnauthorizedException('Foydalanuvchi topilmadi');
-      }
-      request['user'] = user;
-    } catch {
+    } catch (e) {
       throw new UnauthorizedException('Token yaroqsiz yoki muddati tugagan');
     }
+
+    // Bazadan haqiqiy foydalanuvchini yuklaymiz (stale token muammosidan himoya)
+    const user = await this.dataSource.getRepository(User).findOne({
+      where: { id: payload.sub },
+      relations: ['company'],
+    });
+
+    if (!user) {
+      throw new UnauthorizedException('Foydalanuvchi topilmadi (Token eskirgan)');
+    }
+    request['user'] = user;
     return true;
   }
 

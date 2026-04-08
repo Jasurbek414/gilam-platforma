@@ -26,6 +26,7 @@ const customIcon = L.divIcon({
 interface MapPickerProps {
   onLocationSelect: (lat: number, lng: number, address: string) => void;
   initialLocation?: { lat: number, lng: number };
+  initialSearchQuery?: string;
 }
 
 function MapUpdater({ center, zoom }: { center: [number, number], zoom: number }) {
@@ -62,13 +63,38 @@ function LocationMarker({ onSelect, position, setPosition }: { onSelect: any, po
   );
 }
 
-export default function MapPicker({ onLocationSelect, initialLocation }: MapPickerProps) {
+export default function MapPicker({ onLocationSelect, initialLocation, initialSearchQuery }: MapPickerProps) {
   const defaultPos: [number, number] = initialLocation ? [initialLocation.lat, initialLocation.lng] : [41.2995, 69.2401]; // Tashkent
   const [position, setPosition] = useState<[number, number]>(defaultPos);
   const [zoom, setZoom] = useState(13);
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState(initialSearchQuery || '');
   const [isSearching, setIsSearching] = useState(false);
   const [addressLine, setAddressLine] = useState('Xaritadan joyni belgilang');
+
+  // Trigger initial search if query exists but no precise location is known
+  useEffect(() => {
+    if (initialSearchQuery && initialSearchQuery.length >= 3 && !initialLocation) {
+      handleInitialSearch(initialSearchQuery);
+    }
+  }, []);
+
+  const handleInitialSearch = (query: string) => {
+    setIsSearching(true);
+    const q = query.toLowerCase().includes('toshkent') ? query : `Toshkent, ${query}`;
+    fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(q)}&limit=1`)
+      .then(res => res.json())
+      .then(data => {
+        if (data && data.length > 0) {
+          const lat = parseFloat(data[0].lat);
+          const lng = parseFloat(data[0].lon);
+          setPosition([lat, lng]);
+          setZoom(17);
+          handleSelect(lat, lng);
+        }
+      })
+      .catch(err => console.error('Geocoding error:', err))
+      .finally(() => setIsSearching(false));
+  };
 
   // Handle Reverse Geocoding
   const handleSelect = (lat: number, lng: number) => {

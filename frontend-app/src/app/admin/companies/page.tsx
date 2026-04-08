@@ -55,10 +55,10 @@ export default function CompaniesPage() {
     setSaving(true);
     try {
       if (editingCompany) {
-        await companiesApi.update(editingCompany.id, formData);
+        await companiesApi.update(editingCompany.id, formData as any);
         toast.success('Korxona yangilandi');
       } else {
-        await companiesApi.create(formData);
+        await companiesApi.create(formData as any);
         toast.success('Yangi korxona qo\'shildi');
       }
       await loadCompanies();
@@ -74,7 +74,7 @@ export default function CompaniesPage() {
   const handleToggleStatus = async (company: any) => {
     const newStatus = company.status === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE';
     try {
-      await companiesApi.update(company.id, { status: newStatus });
+      await companiesApi.update(company.id, { status: newStatus } as any);
       await loadCompanies();
       toast.success('Holati o\'zgartirildi');
     } catch (err: any) {

@@ -76,7 +76,7 @@ export default function OperatorsPage() {
           toast.error("Korxona tanlang");
           return;
         }
-        await usersApi.create({ ...formData, role: 'OPERATOR' });
+        await usersApi.create({ ...formData, role: 'OPERATOR' } as any);
         toast.success("Yangi operator qo'shildi ✅");
       }
       setIsModalOpen(false);

@@ -57,7 +57,7 @@ export default function StaffPage() {
         await usersApi.update(editingMember.id, updateData);
         toast.success('Xodim ma\'lumotlari yangilandi! ✨');
       } else {
-        await usersApi.create({ ...formData, companyId: user.company?.id, status: 'ACTIVE' });
+        await usersApi.create({ ...formData, companyId: user?.company?.id, status: 'ACTIVE' } as any);
         toast.success('Yangi xodim muvaffaqiyatli qo\'shildi! ✅');
       }
       setIsModalOpen(false);

@@ -77,10 +77,10 @@ export default function UsersPage() {
       if (editingUser) {
         const updateData: any = { ...formData };
         if (!updateData.password) delete updateData.password;
-        await usersApi.update(editingUser.id, updateData);
+        await usersApi.update(editingUser.id, updateData as any);
         toast.success('Foydalanuvchi ma\'lumotlari yangilandi! ✅');
       } else {
-        await usersApi.create(formData);
+        await usersApi.create(formData as any);
         toast.success('Yangi foydalanuvchi muvaffaqiyatli qo\'shildi! ✅');
       }
       setIsModalOpen(false);

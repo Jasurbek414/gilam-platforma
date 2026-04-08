@@ -42,8 +42,8 @@ export default function CampaignsPage() {
     setIsLoading(true);
     try {
       const [camps, users] = await Promise.all([
-        campaignsApi.getAll(user.companyId),
-        usersApi.getByCompany(user.companyId),
+        campaignsApi.getAll(),
+        usersApi.getByCompany(user.companyId || user.company?.id || ''),
       ]);
       setCampaigns(camps);
       setOperators((users as any[]).filter((u: any) => u.role === 'OPERATOR'));

@@ -182,7 +182,7 @@ export default function PhoneNumbersPage() {
     try {
       const user = getUser();
       const companyId = user?.companyId || user?.company?.id || '';
-      const camps = await campaignsApi.getAll(companyId);
+      const camps = await campaignsApi.getAll();
       setCampaigns(camps);
       setPhoneList(buildPhoneList(camps));
     } catch (e: any) {

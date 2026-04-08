@@ -7,9 +7,6 @@ import 'leaflet/dist/leaflet.css';
 import { MdMyLocation, MdSearch, MdLocationOn } from 'react-icons/md';
 import toast from 'react-hot-toast';
 
-// Google Maps Roadmap Tiles - Universal and stable globally (Uzbek Latin enforced)
-const GOOGLE_MAPS_TILES = "https://mt1.google.com/vt/lyrs=m&hl=uz&x={x}&y={y}&z={z}";
-
 // Custom elegant marker
 const customIcon = L.divIcon({
   className: 'custom-map-marker',
@@ -74,6 +71,9 @@ export default function MapPicker({ onLocationSelect, initialLocation, initialSe
   const [isSearching, setIsSearching] = useState(false);
   const [addressLine, setAddressLine] = useState('Xaritadan joyni belgilang');
   const [lastSearched, setLastSearched] = useState('');
+  const [mapType, setMapType] = useState<'m' | 'y'>('m'); // 'm' = Roadmap, 'y' = Hybrid/Satellite
+
+  const GOOGLE_MAPS_TILES = `https://mt1.google.com/vt/lyrs=${mapType}&hl=uz&x={x}&y={y}&z={z}`;
 
   // Live Auto-Search as user types in parent form
   useEffect(() => {
@@ -175,8 +175,8 @@ export default function MapPicker({ onLocationSelect, initialLocation, initialSe
         {isSearching && (
           <div className="absolute inset-0 bg-white/20 backdrop-blur-[1px] z-[1000] flex items-center justify-center pointer-events-none">
             <div className="bg-white/90 px-6 py-3 rounded-full shadow-lg flex items-center gap-3">
-              <div className="w-5 h-5 border-2 border-indigo-200 border-t-indigo-600 rounded-full animate-spin"></div>
-              <p className="text-xs font-black text-indigo-700 uppercase tracking-widest">Qidirilmoqda...</p>
+               <div className="w-5 h-5 border-2 border-indigo-200 border-t-indigo-600 rounded-full animate-spin"></div>
+               <p className="text-xs font-black text-indigo-700 uppercase tracking-widest">Qidirilmoqda...</p>
             </div>
           </div>
         )}
@@ -185,6 +185,24 @@ export default function MapPicker({ onLocationSelect, initialLocation, initialSe
         <div className="absolute top-4 left-1/2 -translate-x-1/2 z-[1000] bg-white/90 backdrop-blur-md px-4 py-2 flex items-center gap-2 rounded-full shadow-lg border border-slate-100 max-w-[90%] pointer-events-none transition-all">
           <MdLocationOn className="text-indigo-600 shrink-0 text-lg" />
           <p className="text-xs font-bold text-slate-700 truncate">{addressLine}</p>
+        </div>
+
+        {/* Map Type Toggle */}
+        <div className="absolute left-4 bottom-8 z-[1000] flex bg-white/90 backdrop-blur-sm rounded-xl shadow-[0_4px_12px_rgba(0,0,0,0.15)] border border-slate-100 overflow-hidden text-[10px] uppercase tracking-widest p-1">
+          <button 
+            type="button"
+            onClick={() => setMapType('m')}
+            className={`px-4 py-2.5 rounded-lg transition-all font-black ${mapType === 'm' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-500 hover:bg-slate-100/50 hover:text-slate-800'}`}
+          >
+            Xarita
+          </button>
+          <button 
+            type="button"
+            onClick={() => setMapType('y')}
+            className={`px-4 py-2.5 rounded-lg transition-all font-black ${mapType === 'y' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-500 hover:bg-slate-100/50 hover:text-slate-800'}`}
+          >
+            Sputnik
+          </button>
         </div>
 
         {/* Locate Me button */}
@@ -200,12 +218,14 @@ export default function MapPicker({ onLocationSelect, initialLocation, initialSe
         <MapContainer 
           center={position} 
           zoom={zoom} 
+          maxZoom={20}
           style={{ height: '100%', width: '100%', backgroundColor: '#f8fafc' }}
           zoomControl={false}
         >
           <TileLayer
             attribution='&copy; Google Maps'
             url={GOOGLE_MAPS_TILES}
+            maxZoom={20}
           />
           <LocationMarker onSelect={handleSelect} position={position} setPosition={setPosition} />
           <MapUpdater center={position} zoom={zoom} />

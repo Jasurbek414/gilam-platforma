@@ -428,51 +428,50 @@ function OperatorCallsContent() {
           </div>
         </div>
 
-        {/* ── DIALPAD PANEL ── */}
-        <div className="col-span-12 xl:col-span-4 bg-white/90 backdrop-blur-2xl border border-slate-200/50 rounded-[48px] shadow-2xl shadow-indigo-500/10 p-6 flex flex-col gap-5 sticky top-5 h-fit max-w-[360px] mx-auto xl:mx-0">
+        {/* ── MINI DIALPAD PANEL ── */}
+        <div className="col-span-12 xl:col-span-4 bg-white/95 backdrop-blur-3xl border border-slate-200/50 rounded-[40px] shadow-2xl shadow-indigo-500/5 p-5 flex flex-col gap-4 sticky top-5 h-fit max-w-[310px] mx-auto xl:mx-0">
 
-          {/* Header & Status */}
-          <div className="flex items-center justify-between px-2">
-            <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-indigo-600 to-violet-500 flex items-center justify-center shadow-md">
-                <MdDialpad className="text-white text-base" />
+          {/* Compact Header */}
+          <div className="flex items-center justify-between px-1">
+            <div className="flex items-center gap-2">
+              <div className="w-7 h-7 rounded-lg bg-gradient-to-tr from-indigo-600 to-violet-500 flex items-center justify-center">
+                <MdDialpad className="text-white text-sm" />
               </div>
-              <h3 className="text-[10px] font-black text-slate-800 uppercase tracking-widest leading-none">Terish</h3>
+              <h3 className="text-[9px] font-black text-slate-800 uppercase tracking-widest leading-none">Dialer</h3>
             </div>
             
-            <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-[8px] font-black uppercase tracking-wider ${
+            <div className={`flex items-center gap-1 px-2 py-0.5 rounded-full border text-[7px] font-black uppercase ${
               sip.status === 'registered' ? 'bg-emerald-50 border-emerald-100 text-emerald-600' :
               sip.status === 'connecting' ? 'bg-amber-50 border-amber-100 text-amber-600 animate-pulse' :
               'bg-slate-50 border-slate-100 text-slate-400'
             }`}>
               <SipDot status={sip.status} />
-              {sip.status === 'registered' ? 'Online' : sip.status === 'connecting' ? 'Wait' : 'Off'}
+              {sip.status === 'registered' ? 'On' : 'Off'}
             </div>
           </div>
 
-          {/* Display - Fixed for long numbers (right-aligned) */}
+          {/* Slim Display */}
           <div className="relative">
-            <div className="bg-slate-50 rounded-[32px] border border-slate-100 px-5 py-5 flex items-center gap-3 transition-shadow focus-within:shadow-lg focus-within:bg-white overflow-hidden">
-              <div className="w-1 h-6 bg-indigo-500 rounded-full" />
-              <div className="flex-1 flex flex-row-reverse overflow-x-auto scrollbar-hide">
-                <span className={`text-2xl font-black font-mono tracking-wider tabular-nums whitespace-nowrap ${dialNum ? 'text-slate-800' : 'text-slate-200'}`}>
-                  {dialNum || '000...'}
+            <div className="bg-slate-50/50 rounded-2xl border border-slate-100 px-4 py-3 flex items-center gap-2 transition-all focus-within:bg-white focus-within:shadow-sm overflow-hidden">
+              <div className="flex-1 flex flex-row-reverse overflow-x-auto scrollbar-hide py-0.5">
+                <span className={`text-xl font-black font-mono tracking-tight tabular-nums whitespace-nowrap ${dialNum ? 'text-slate-800' : 'text-slate-200'}`}>
+                  {dialNum || '000'}
                 </span>
               </div>
               {dialNum && (
                 <button 
                   onClick={() => setDialNum(p => p.slice(0, -1))}
                   onContextMenu={(e) => { e.preventDefault(); setDialNum(''); }}
-                  className="flex-shrink-0 w-8 h-8 flex items-center justify-center text-slate-300 hover:text-rose-500 hover:bg-rose-50 rounded-full transition-all active:scale-90"
+                  className="flex-shrink-0 w-6 h-6 flex items-center justify-center text-slate-300 hover:text-rose-500 transition-all active:scale-90"
                 >
-                  <MdBackspace className="text-base" />
+                  <MdBackspace className="text-sm" />
                 </button>
               )}
             </div>
           </div>
 
-          {/* Keypad - Circular keys */}
-          <div className="grid grid-cols-3 gap-y-4 gap-x-6 px-4">
+          {/* Keypad - Ultra Compact */}
+          <div className="grid grid-cols-3 gap-y-3 gap-x-3 px-2">
             {KEYS.map(({ k, s }) => {
               const is0 = k === '0';
               return (
@@ -480,43 +479,39 @@ function OperatorCallsContent() {
                   onPointerDown={is0 ? handle0Down : undefined}
                   onPointerUp={is0 ? handle0Up : undefined}
                   onClick={is0 ? undefined : () => { if (dialNum.length < 20) setDialNum(p => p + k); }}
-                  className="relative aspect-square w-full max-w-[64px] mx-auto flex flex-col items-center justify-center rounded-full bg-slate-50 hover:bg-white border border-slate-100 hover:border-indigo-100 hover:shadow-lg hover:shadow-indigo-500/5 active:scale-90 active:bg-indigo-50 transition-all duration-150 group"
+                  className="relative aspect-square w-full max-w-[48px] mx-auto flex flex-col items-center justify-center rounded-full bg-slate-50 hover:bg-white border border-slate-100 hover:border-indigo-100 active:scale-90 active:bg-indigo-50 transition-all group"
                 >
-                  <span className="text-xl font-black text-slate-800 group-active:text-indigo-600 transition-colors leading-none">
+                  <span className="text-lg font-black text-slate-800 group-active:text-indigo-600 leading-none">
                     {k}
                   </span>
                   {s && (
-                    <span className="text-[7px] font-black text-slate-400 group-hover:text-indigo-400 tracking-widest mt-1 transition-colors uppercase">
+                    <span className="text-[6px] font-black text-slate-400 group-hover:text-indigo-400 tracking-tighter mt-0.5 uppercase">
                       {s}
                     </span>
                   )}
                   {is0 && (
-                    <span className="absolute bottom-1.5 text-[8px] font-black text-indigo-300 transition-all group-hover:scale-125">+</span>
+                    <span className="absolute bottom-1 text-[7px] font-black text-indigo-300 transition-all">+</span>
                   )}
                 </button>
               );
             })}
           </div>
 
-          {/* Action Button - True Phone Style */}
-          <div className="pt-2 px-4">
+          {/* Action Button - Space Saving */}
+          <div className="pt-1 px-2">
             {isActive ? (
               <button onClick={handleHangup}
-                className="w-full py-4 bg-rose-600 hover:bg-rose-500 text-white font-black rounded-full text-[10px] uppercase tracking-[0.2em] flex items-center justify-center gap-3 shadow-xl shadow-rose-200 active:scale-95 transition-all"
+                className="w-full py-3 bg-rose-600 hover:bg-rose-500 text-white font-black rounded-2xl text-[9px] uppercase tracking-widest flex items-center justify-center gap-2 shadow-lg shadow-rose-100 active:scale-95 transition-all"
               >
-                <div className="w-7 h-7 rounded-full bg-white/20 flex items-center justify-center">
-                  <MdCallEnd className="text-lg" />
-                </div>
+                <MdCallEnd className="text-base" />
                 Tugatish
               </button>
             ) : (
               <button onClick={() => handleMakeCall(dialNum)}
                 disabled={!dialNum || sip.status !== 'registered'}
-                className="w-full py-4 bg-emerald-600 hover:bg-emerald-500 disabled:bg-slate-200 disabled:text-slate-400 text-white font-black rounded-full text-[10px] uppercase tracking-[0.2em] flex items-center justify-center gap-3 shadow-xl shadow-emerald-200 active:scale-95 transition-all group"
+                className="w-full py-3 bg-emerald-600 hover:bg-emerald-500 disabled:bg-slate-100 disabled:text-slate-300 text-white font-black rounded-2xl text-[9px] uppercase tracking-widest flex items-center justify-center gap-2 shadow-lg shadow-emerald-100 active:scale-95 transition-all group"
               >
-                <div className={`w-7 h-7 rounded-full bg-white/20 flex items-center justify-center ${dialNum && sip.status === 'registered' ? 'animate-bounce' : ''}`}>
-                  <MdCall className="text-lg" />
-                </div>
+                <MdCall className={`text-base ${dialNum && sip.status === 'registered' ? 'animate-bounce' : ''}`} />
                 {sip.status === 'registered' ? "Qo'ng'iroq" : 'Offline'}
               </button>
             )}

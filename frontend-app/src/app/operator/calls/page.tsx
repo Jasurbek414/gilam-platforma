@@ -429,85 +429,103 @@ function OperatorCallsContent() {
         </div>
 
         {/* ── DIALPAD PANEL ── */}
-        <div className="col-span-12 xl:col-span-4 bg-white border border-slate-100 rounded-[32px] shadow-sm p-7 flex flex-col gap-5 sticky top-5">
+        <div className="col-span-12 xl:col-span-4 bg-white/80 backdrop-blur-xl border border-slate-200/60 rounded-[40px] shadow-2xl shadow-indigo-500/5 p-8 flex flex-col gap-6 sticky top-5 h-fit">
 
-          {/* Header */}
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-indigo-600 flex items-center justify-center shadow-md shadow-indigo-200">
-              <MdDialpad className="text-white text-lg" />
+          {/* Header & Status */}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-indigo-600 to-violet-500 flex items-center justify-center shadow-lg shadow-indigo-200">
+                <MdDialpad className="text-white text-xl" />
+              </div>
+              <h3 className="text-xs font-black text-slate-800 uppercase tracking-[0.2em] leading-none">Raqam Terish</h3>
             </div>
-            <div>
-              <p className="text-[10px] font-black text-slate-800 uppercase tracking-widest leading-none">Raqam terish</p>
-              <div className="flex items-center gap-1.5 mt-1">
-                <SipDot status={sip.status} />
-                <span className="text-[8px] font-bold text-slate-400 uppercase tracking-wider">
-                  {sip.status === 'registered' ? 'Tayyor' : sip.status === 'connecting' ? 'Ulanyapti...' : 'Ulanmagan'}
+            
+            <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full border text-[9px] font-black uppercase tracking-widest ${
+              sip.status === 'registered' ? 'bg-emerald-50 border-emerald-100 text-emerald-600' :
+              sip.status === 'connecting' ? 'bg-amber-50 border-amber-100 text-amber-600 animate-pulse' :
+              'bg-slate-50 border-slate-100 text-slate-400'
+            }`}>
+              <SipDot status={sip.status} />
+              {sip.status === 'registered' ? 'Faol' : sip.status === 'connecting' ? 'Kutilmoqda' : 'Ochiqmas'}
+            </div>
+          </div>
+
+          {/* Display - Glassmorphism style */}
+          <div className="relative group">
+            <div className="absolute -inset-0.5 bg-gradient-to-r from-indigo-500 to-violet-500 rounded-3xl blur opacity-0 group-focus-within:opacity-20 transition-all duration-500" />
+            <div className="relative bg-slate-50/80 rounded-[28px] border border-slate-100 px-6 py-6 flex items-center gap-4 transition-all group-focus-within:bg-white group-focus-within:shadow-inner">
+              <div className="w-1 h-8 bg-indigo-500 rounded-full shadow-[0_0_12px_rgba(99,102,241,0.5)]" />
+              <div className="flex-1 overflow-hidden">
+                <span className={`block text-3xl font-black font-mono tracking-[0.1em] truncate ${dialNum ? 'text-slate-800' : 'text-slate-200'}`}>
+                  {dialNum || 'Raqam...'}
                 </span>
               </div>
+              {dialNum && (
+                <button 
+                  onClick={() => setDialNum(p => p.slice(0, -1))}
+                  onContextMenu={(e) => { e.preventDefault(); setDialNum(''); }}
+                  className="w-10 h-10 flex items-center justify-center text-slate-400 hover:text-rose-500 hover:bg-rose-50 rounded-2xl transition-all active:scale-90"
+                >
+                  <MdBackspace className="text-xl" />
+                </button>
+              )}
             </div>
           </div>
 
-          {/* Display */}
-          <div className="relative bg-slate-50 rounded-2xl border border-slate-100 px-5 py-4 flex items-center focus-within:border-indigo-300 focus-within:bg-white transition-all">
-            <div className="w-0.5 h-6 bg-indigo-500 rounded-full mr-3 flex-shrink-0" />
-            <span className={`flex-1 text-2xl font-black font-mono tracking-widest ${dialNum ? 'text-slate-800' : 'text-slate-300'}`}>
-              {dialNum || '...'}
-            </span>
-            {dialNum && (
-              <button onClick={() => setDialNum(p => p.slice(0, -1))}
-                onContextMenu={e => { e.preventDefault(); setDialNum(''); }}
-                className="w-9 h-9 flex items-center justify-center text-slate-400 hover:text-rose-500 hover:bg-rose-50 rounded-xl transition-all"
-              >
-                <MdBackspace className="text-lg" />
-              </button>
-            )}
-          </div>
-
-          {/* Keypad */}
-          <div className="grid grid-cols-3 gap-2">
+          {/* Keypad - Bento style gaps */}
+          <div className="grid grid-cols-3 gap-3">
             {KEYS.map(({ k, s }) => {
               const is0 = k === '0';
               return (
                 <button key={k}
                   onPointerDown={is0 ? handle0Down : undefined}
                   onPointerUp={is0 ? handle0Up : undefined}
-                  onClick={is0 ? undefined : () => { if (dialNum.length < 15) setDialNum(p => p + k); }}
-                  className="relative aspect-square bg-slate-50 hover:bg-indigo-600 border border-slate-100 hover:border-indigo-600 rounded-2xl flex flex-col items-center justify-center transition-all active:scale-95 group"
+                  onClick={is0 ? undefined : () => { if (dialNum.length < 20) setDialNum(p => p + k); }}
+                  className="relative aspect-square flex flex-col items-center justify-center rounded-[24px] bg-slate-50/50 hover:bg-white border border-transparent hover:border-slate-100 hover:shadow-xl hover:shadow-indigo-500/5 active:scale-90 transition-all duration-200 group overflow-hidden"
                 >
-                  <span className="text-xl font-black text-slate-700 group-hover:text-white transition-colors leading-none">
+                  {/* Subtle hover background sweep */}
+                  <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/0 to-indigo-500/0 group-hover:from-indigo-50 group-hover:to-violet-50 transition-all duration-500 -z-10" />
+                  
+                  <span className="text-2xl font-black text-slate-800 group-hover:text-indigo-600 transition-colors duration-200 leading-none">
                     {k}
                   </span>
                   {s && (
-                    <span className="text-[7px] font-black text-slate-400 group-hover:text-white/60 tracking-widest mt-0.5 transition-colors">
+                    <span className="text-[8px] font-black text-slate-400 group-hover:text-indigo-400 tracking-[0.2em] mt-1.5 transition-colors duration-200">
                       {s}
                     </span>
                   )}
                   {is0 && (
-                    <span className="absolute bottom-1.5 text-[8px] font-black text-slate-300 group-hover:text-white/40">+</span>
+                    <span className="absolute bottom-2 text-[10px] font-black text-indigo-400 transition-all group-hover:scale-125">+</span>
                   )}
                 </button>
               );
             })}
           </div>
 
-          {/* Call / Hangup button */}
-          {isActive ? (
-            <button onClick={handleHangup}
-              className="w-full py-4 bg-rose-600 hover:bg-rose-500 text-white font-black rounded-2xl text-[10px] uppercase tracking-[0.2em] flex items-center justify-center gap-2 shadow-xl shadow-rose-200 active:scale-95 transition-all"
-            >
-              <MdCallEnd className="text-xl" />
-              Tugatish
-            </button>
-          ) : (
-            <button onClick={() => handleMakeCall(dialNum)}
-              disabled={!dialNum || sip.status !== 'registered'}
-              className="w-full py-4 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-30 disabled:cursor-not-allowed text-white font-black rounded-2xl text-[10px] uppercase tracking-[0.2em] flex items-center justify-center gap-2 shadow-xl shadow-indigo-200 active:scale-95 transition-all"
-            >
-              <MdCall className="text-xl" />
-              {sip.status === 'registered' ? "Qo'ng'iroq" :
-               sip.status === 'connecting' ? 'Ulanyapti...' : 'SIP ulanmagan'}
-            </button>
-          )}
+          {/* Action Button */}
+          <div className="pt-2">
+            {isActive ? (
+              <button onClick={handleHangup}
+                className="w-full py-5 bg-gradient-to-r from-rose-600 to-pink-600 hover:from-rose-500 hover:to-pink-500 text-white font-black rounded-[28px] text-[11px] uppercase tracking-[0.25em] flex items-center justify-center gap-3 shadow-xl shadow-rose-200 active:scale-[0.98] transition-all"
+              >
+                <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center animate-pulse">
+                  <MdCallEnd className="text-xl" />
+                </div>
+                Tugatish
+              </button>
+            ) : (
+              <button onClick={() => handleMakeCall(dialNum)}
+                disabled={!dialNum || sip.status !== 'registered'}
+                className="w-full py-5 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 disabled:from-slate-200 disabled:to-slate-200 disabled:text-slate-400 text-white font-black rounded-[28px] text-[11px] uppercase tracking-[0.25em] flex items-center justify-center gap-3 shadow-2xl shadow-indigo-500/20 active:scale-[0.98] transition-all group"
+              >
+                <div className={`w-8 h-8 rounded-full bg-white/20 flex items-center justify-center ${dialNum && sip.status === 'registered' ? 'animate-bounce' : ''}`}>
+                  <MdCall className="text-xl" />
+                </div>
+                {sip.status === 'registered' ? "Qo'ng'iroq" :
+                 sip.status === 'connecting' ? 'Bog\'lanish...' : 'Sip Ochiqmas'}
+              </button>
+            )}
+          </div>
 
           {/* Last failed reason */}
           {sip.lastFailedReason && !isActive && (

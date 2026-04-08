@@ -1,703 +1,540 @@
 'use client';
 
-import React, {
-  useState,
-  useEffect,
-  useMemo,
-  useRef,
-  useCallback,
-  Suspense,
-} from 'react';
-import {
-  MdCall,
-  MdCallEnd,
-  MdPerson,
-  MdPhone,
-  MdSearch,
-  MdHistory,
-  MdMic,
-  MdMicOff,
-  MdBackspace,
-  MdNotificationsActive,
-  MdArrowForward,
-  MdFiberManualRecord,
-  MdDialpad,
-  MdRefresh,
-  MdWarning,
-  MdCheckCircle,
-  MdInfo,
-  MdVolumeOff,
-} from 'react-icons/md';
+import React, { useState, useEffect, useRef, useCallback, useMemo, Suspense } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
+import {
+  MdCall, MdCallEnd, MdMic, MdMicOff, MdBackspace,
+  MdHistory, MdSearch, MdRefresh, MdDialpad,
+  MdPerson, MdArrowUpward, MdArrowDownward,
+  MdSignalCellularAlt, MdWifi, MdWifiOff,
+  MdVolumeOff, MdVolumeUp, MdPhone,
+} from 'react-icons/md';
 import { callsApi } from '@/lib/api';
 import { useSip } from '@/hooks/useSip';
+import toast from 'react-hot-toast';
 
-// ─── TYPES ──────────────────────────────────────────────────────────────────
-type CallStatus =
-  | 'COMPLETED'
-  | 'MISSED'
-  | 'BUSY'
-  | 'IN_PROGRESS'
-  | 'CONNECTED'
-  | 'RINGING'
-  | 'ANSWERED'
-  | 'REJECTED';
-
+// ─── TYPES ───────────────────────────────────────────────────────────────────
 interface CallRecord {
   id: string;
   callerPhone: string;
   calledPhone?: string;
   customer?: { fullName: string };
-  campaign?: { name: string };
-  status: CallStatus;
+  status: string;
   direction?: string;
   durationSeconds: number;
   startedAt: string;
 }
 
-// ─── STATUS STYLES ───────────────────────────────────────────────────────────
-const STATUS_STYLES: Record<string, string> = {
-  COMPLETED: 'bg-emerald-50 text-emerald-600 border-emerald-100',
-  MISSED: 'bg-rose-50 text-rose-600 border-rose-100',
-  BUSY: 'bg-amber-50 text-amber-600 border-amber-100',
-  IN_PROGRESS: 'bg-indigo-50 text-indigo-600 border-indigo-100',
-  CONNECTED: 'bg-indigo-600 text-white border-indigo-500',
-  ANSWERED: 'bg-blue-50 text-blue-600 border-blue-100',
-  RINGING: 'bg-yellow-50 text-yellow-600 border-yellow-100',
-  REJECTED: 'bg-slate-50 text-slate-500 border-slate-100',
-};
-
-const STATUS_LABELS: Record<string, string> = {
-  COMPLETED: 'Yakunlandi',
-  MISSED: 'Javobsiz',
-  ANSWERED: 'Javob berildi',
-  RINGING: 'Jiringlaydi',
-  REJECTED: 'Rad etildi',
-  BUSY: 'Band',
-  CONNECTED: 'Ulandi',
-  IN_PROGRESS: 'Davom etmoqda',
-};
-
-function formatDuration(s: number) {
-  const m = Math.floor(s / 60)
-    .toString()
-    .padStart(2, '0');
-  const sec = (s % 60).toString().padStart(2, '0');
-  return `${m}:${sec}`;
+function dur(s: number) {
+  return `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`;
 }
 
-// ─── SIP STATUS BADGE ────────────────────────────────────────────────────────
-function SipStatusBadge({
-  status,
-  error,
-  lastFailedReason,
-}: {
-  status: string;
-  error: string | null;
-  lastFailedReason: string | null;
-}) {
+function timeAgo(iso: string) {
+  if (!iso) return '—';
+  const d = new Date(iso);
+  const now = new Date();
+  const diff = Math.floor((now.getTime() - d.getTime()) / 1000);
+  if (diff < 60) return 'Hozir';
+  if (diff < 3600) return `${Math.floor(diff / 60)}m oldin`;
+  if (diff < 86400) return `${Math.floor(diff / 3600)}s oldin`;
+  return d.toLocaleDateString('uz-UZ', { day: '2-digit', month: '2-digit' });
+}
+
+const STATUS_META: Record<string, { label: string; color: string }> = {
+  COMPLETED:  { label: 'Yakunlandi', color: 'text-emerald-600 bg-emerald-50' },
+  MISSED:     { label: 'Javobsiz',   color: 'text-rose-600 bg-rose-50' },
+  BUSY:       { label: 'Band',       color: 'text-amber-600 bg-amber-50' },
+  IN_PROGRESS:{ label: 'Davomida',   color: 'text-indigo-600 bg-indigo-50' },
+  CONNECTED:  { label: 'Ulandi',     color: 'text-indigo-600 bg-indigo-100' },
+  ANSWERED:   { label: 'Javob berildi', color: 'text-blue-600 bg-blue-50' },
+  RINGING:    { label: 'Jiringlaydi', color: 'text-yellow-600 bg-yellow-50' },
+  REJECTED:   { label: 'Rad etildi', color: 'text-slate-500 bg-slate-50' },
+};
+
+// ─── SIP STATUS DOT ──────────────────────────────────────────────────────────
+function SipDot({ status }: { status: string }) {
   const cfg = {
-    idle: { color: 'bg-slate-400', label: 'Ulanmagan', icon: MdFiberManualRecord },
-    connecting: { color: 'bg-yellow-400 animate-pulse', label: 'Ulanmoqda...', icon: MdFiberManualRecord },
-    registered: { color: 'bg-emerald-400', label: "SIP ulandi • 101 @ 10.100.100.1", icon: MdCheckCircle },
-    error: { color: 'bg-rose-500 animate-pulse', label: error || 'SIP xato', icon: MdWarning },
-    calling: { color: 'bg-yellow-400 animate-pulse', label: 'Chaqirilmoqda...', icon: MdPhone },
-    in_call: { color: 'bg-indigo-400 animate-pulse', label: "Qo'ng'iroqda", icon: MdCall },
-  }[status] || { color: 'bg-slate-400', label: status, icon: MdInfo };
-
-  const Icon = cfg.icon;
-
-  return (
-    <div className="flex flex-col gap-1.5">
-      <div className="flex items-center gap-3 bg-white/50 backdrop-blur-xl border border-white/40 px-4 py-2.5 rounded-2xl shadow-sm">
-        <div className={`w-2 h-2 rounded-full ${cfg.color} flex-shrink-0`} />
-        <Icon className="text-slate-400 text-sm flex-shrink-0" />
-        <span className="text-[9px] font-black text-slate-700 uppercase tracking-[0.15em] truncate">
-          {cfg.label}
-        </span>
-      </div>
-      {lastFailedReason && (
-        <div className="flex items-start gap-2 bg-rose-50 border border-rose-100 px-4 py-2 rounded-xl">
-          <MdWarning className="text-rose-500 text-sm flex-shrink-0 mt-0.5" />
-          <p className="text-[9px] font-bold text-rose-600 leading-relaxed">
-            ❌ {lastFailedReason}
-          </p>
-        </div>
-      )}
-    </div>
-  );
+    registered: 'bg-emerald-400',
+    connecting: 'bg-yellow-400 animate-pulse',
+    calling:    'bg-indigo-400 animate-pulse',
+    in_call:    'bg-indigo-500 animate-pulse',
+    error:      'bg-rose-500',
+    idle:       'bg-slate-300',
+  }[status] || 'bg-slate-300';
+  return <span className={`inline-block w-2 h-2 rounded-full ${cfg} flex-shrink-0`} />;
 }
 
-// ─── MAIN CONTENT ────────────────────────────────────────────────────────────
-function OperatorCallsContent() {
-  const [isMuted, setIsMuted] = useState(false);
-  const [dialNum, setDialNum] = useState('');
-  const [listFilter, setListFilter] = useState('');
-  const [callLog, setCallLog] = useState<CallRecord[]>([]);
-  const [callsLoading, setCallsLoading] = useState(true);
-  const [callsError, setCallsError] = useState<string | null>(null);
+// ─── DIALPAD KEY ─────────────────────────────────────────────────────────────
+const KEYS = [
+  { k: '1', s: '' }, { k: '2', s: 'ABC' }, { k: '3', s: 'DEF' },
+  { k: '4', s: 'GHI' }, { k: '5', s: 'JKL' }, { k: '6', s: 'MNO' },
+  { k: '7', s: 'PQRS' }, { k: '8', s: 'TUV' }, { k: '9', s: 'WXYZ' },
+  { k: '*', s: '' }, { k: '0', s: '+' }, { k: '#', s: '' },
+];
 
-  const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const router = useRouter();
+// ─── MAIN ────────────────────────────────────────────────────────────────────
+function OperatorCallsContent() {
+  const [dialNum, setDialNum] = useState('');
+  const [muted, setMuted] = useState(false);
+  const [filter, setFilter] = useState('');
+  const [calls, setCalls] = useState<CallRecord[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [tab, setTab] = useState<'all' | 'missed' | 'outgoing'>('all');
+  const longPress = useRef<ReturnType<typeof setTimeout> | null>(null);
   const searchParams = useSearchParams();
   const sip = useSip();
 
-  // ── Load call history ──
-  const fetchCalls = useCallback(async () => {
+  // ── Load history ──
+  const loadCalls = useCallback(async () => {
+    setLoading(true);
     try {
-      setCallsLoading(true);
-      setCallsError(null);
       const data = await callsApi.getAll();
-      const list = Array.isArray(data) ? data : (data as any)?.data || [];
-      setCallLog(list);
-    } catch (e: any) {
-      setCallsError(e?.message || "Ma'lumot yuklanmadi");
-      setCallLog([]);
+      setCalls(Array.isArray(data) ? data : (data as any)?.data || []);
+    } catch {
+      setCalls([]);
     } finally {
-      setCallsLoading(false);
+      setLoading(false);
     }
   }, []);
 
-  useEffect(() => {
-    fetchCalls();
-  }, [fetchCalls]);
+  useEffect(() => { loadCalls(); }, [loadCalls]);
 
-  // ── Keyboard support ──
+  // ── URL phone prefill ──
   useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      const tag = (e.target as HTMLElement).tagName;
-      if (tag === 'INPUT' || tag === 'TEXTAREA') return;
-
-      if (/^[0-9+*#]$/.test(e.key)) {
-        if (dialNum.length < 15) setDialNum((p) => p + e.key);
-      } else if (e.key === 'Backspace') {
-        setDialNum((p) => p.slice(0, -1));
-      } else if (e.key === 'Enter' && dialNum) {
-        handleMakeCall(dialNum);
-      } else if (e.key === 'Escape') {
-        sip.hangup();
-      }
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [dialNum, sip]);
-
-  // ── Auto-fill from URL params ──
-  useEffect(() => {
-    const phone = searchParams.get('phone');
-    if (phone) setDialNum(phone);
+    const p = searchParams.get('phone');
+    if (p) setDialNum(p.replace(/[^0-9+*#]/g, ''));
   }, [searchParams]);
 
-  const handleDial = useCallback(
-    (num: string) => {
-      if (dialNum.length < 15) setDialNum((p) => p + num);
-    },
-    [dialNum],
-  );
+  // ── Keyboard ──
+  useEffect(() => {
+    const h = (e: KeyboardEvent) => {
+      if ((e.target as HTMLElement).tagName === 'INPUT') return;
+      if (/^[0-9+*#]$/.test(e.key) && dialNum.length < 15) setDialNum(p => p + e.key);
+      else if (e.key === 'Backspace') setDialNum(p => p.slice(0, -1));
+      else if (e.key === 'Enter' && dialNum) handleMakeCall(dialNum);
+      else if (e.key === 'Escape') sip.hangup();
+    };
+    window.addEventListener('keydown', h);
+    return () => window.removeEventListener('keydown', h);
+  }, [dialNum, sip]);
 
-  const handleMakeCall = useCallback(
-    (num: string) => {
-      if (!num) return;
-      sip.makeCall(num);
-    },
-    [sip],
-  );
+  const handleMakeCall = useCallback((num: string) => {
+    if (!num.trim()) return;
+    if (sip.status !== 'registered') {
+      toast.error(sip.status === 'error'
+        ? `SIP ulanmagan: ${sip.error || 'xato'}`
+        : 'SIP hali tayyor emas...');
+      return;
+    }
+    sip.makeCall(num);
+  }, [sip]);
 
   const handleHangup = useCallback(() => {
     sip.hangup();
-    setIsMuted(false);
+    setMuted(false);
   }, [sip]);
 
-  const handleMute = useCallback(() => {
-    sip.toggleMute(!isMuted);
-    setIsMuted((v) => !v);
-  }, [sip, isMuted]);
-
-  // Long press 0 → +
-  const handle0PointerDown = useCallback(() => {
-    longPressTimer.current = setTimeout(() => {
-      handleDial('+');
-      longPressTimer.current = null;
+  const handle0Down = useCallback(() => {
+    longPress.current = setTimeout(() => {
+      setDialNum(p => p + '+');
+      longPress.current = null;
     }, 600);
-  }, [handleDial]);
+  }, []);
 
-  const handle0PointerUp = useCallback(() => {
-    if (longPressTimer.current) {
-      clearTimeout(longPressTimer.current);
-      handleDial('0');
-      longPressTimer.current = null;
+  const handle0Up = useCallback(() => {
+    if (longPress.current) {
+      clearTimeout(longPress.current);
+      setDialNum(p => (p.length < 15 ? p + '0' : p));
+      longPress.current = null;
     }
-  }, [handleDial]);
+  }, []);
 
-  // Smart autocomplete
-  const matches = useMemo(() => {
-    if (!dialNum || dialNum.length < 3) return [];
-    const clean = dialNum.replace(/\s/g, '');
-    return callLog
-      .filter((c) => (c.callerPhone || '').replace(/\s/g, '').includes(clean))
-      .slice(0, 4);
-  }, [dialNum, callLog]);
+  const isActive = sip.status === 'in_call' || sip.status === 'calling';
 
-  const isInCall = sip.status === 'in_call' || sip.status === 'calling';
-  const filteredLog = useMemo(
-    () => callLog.filter((c) => (c.callerPhone || '').includes(listFilter)),
-    [callLog, listFilter],
-  );
+  // ── Filtered call list ──
+  const filteredCalls = useMemo(() => {
+    let list = calls;
+    if (tab === 'missed') list = list.filter(c => c.status === 'MISSED');
+    else if (tab === 'outgoing') list = list.filter(c => c.direction === 'OUTGOING');
+    if (filter) list = list.filter(c => (c.callerPhone || '').includes(filter));
+    return list;
+  }, [calls, tab, filter]);
 
+  // ─── RENDER ────────────────────────────────────────────────────────────────
   return (
-    <div className="relative min-h-[calc(100vh-140px)] w-full flex flex-col gap-5 pb-12 font-sans overflow-hidden">
+    <div className="flex flex-col gap-6 min-h-screen pb-10 font-sans">
 
-      {/* ── STATUS BAR ── */}
-      <div className="flex items-start justify-between px-1 gap-3 flex-wrap">
-        <div className="flex-1 min-w-0">
-          <SipStatusBadge
-            status={sip.status}
-            error={sip.error}
-            lastFailedReason={sip.lastFailedReason}
-          />
+      {/* ── TOP STATUS BAR ── */}
+      <div className="flex items-center justify-between flex-wrap gap-3">
+
+        {/* SIP status pill */}
+        <div className="flex items-center gap-2.5 px-4 py-2 bg-white border border-slate-100 rounded-2xl shadow-sm">
+          <SipDot status={sip.status} />
+          <span className="text-[10px] font-black text-slate-600 uppercase tracking-[0.15em]">
+            {sip.status === 'registered'  ? `SIP • 101 @ 10.100.100.1` :
+             sip.status === 'connecting'  ? 'Ulanmoqda...' :
+             sip.status === 'calling'     ? 'Chaqirilmoqda...' :
+             sip.status === 'in_call'     ? `Qo'ng'iroqda • ${dur(sip.callDuration)}` :
+             sip.status === 'error'       ? (sip.error || 'SIP xato') :
+             'Ulanmagan'}
+          </span>
         </div>
+
+        {/* Error banner */}
+        {sip.lastFailedReason && sip.status === 'registered' && (
+          <motion.div
+            initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }}
+            className="flex items-center gap-2 px-4 py-2 bg-rose-50 border border-rose-200 rounded-2xl max-w-md"
+          >
+            <span className="text-rose-500 text-sm">⚠️</span>
+            <span className="text-[10px] font-bold text-rose-600 leading-snug">{sip.lastFailedReason}</span>
+          </motion.div>
+        )}
+
         <button
-          onClick={fetchCalls}
-          className="flex items-center gap-2 px-4 py-2.5 bg-indigo-600 text-white rounded-2xl text-[9px] font-black uppercase tracking-widest hover:bg-indigo-700 transition-all shadow-lg active:scale-95 flex-shrink-0"
+          onClick={loadCalls}
+          className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-indigo-700 active:scale-95 transition-all shadow-md"
         >
-          <MdRefresh className="text-base" />
+          <MdRefresh className="text-sm" />
           Yangilash
         </button>
       </div>
 
-      {/* ── MAIN PANEL ── */}
-      <div className="grid grid-cols-12 gap-5 items-stretch">
+      {/* ── MAIN GRID ── */}
+      <div className="grid grid-cols-12 gap-6 items-start">
 
-        {/* ── CALL AREA ── */}
-        <div className="col-span-12 lg:col-span-7 xl:col-span-8 flex flex-col">
+        {/* ── CALL STATE PANEL ── */}
+        <div className="col-span-12 xl:col-span-8 flex flex-col gap-4">
+
           <AnimatePresence mode="wait">
-
-            {/* In-call */}
+            {/* IN CALL */}
             {sip.status === 'in_call' && (
-              <motion.div
-                key="in_call"
-                initial={{ opacity: 0, scale: 0.97 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0 }}
-                className="flex-1 min-h-[420px] bg-slate-950 rounded-[40px] p-10 lg:p-14 flex flex-col items-center justify-center relative overflow-hidden shadow-2xl border border-white/5"
+              <motion.div key="in_call"
+                initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
+                className="relative overflow-hidden rounded-[36px] bg-gradient-to-br from-slate-950 via-indigo-950 to-slate-900 p-10 flex flex-col items-center text-center shadow-2xl border border-white/5 min-h-[320px] justify-center"
               >
-                <div className="relative z-10 flex flex-col items-center text-center">
-                  <div className="w-20 h-20 bg-white/5 rounded-[32px] border border-white/5 flex items-center justify-center mb-8 relative">
-                    <MdPerson className="text-4xl text-white/20" />
-                    <div className="absolute inset-0 rounded-[32px] border border-indigo-500/30 animate-ping" />
+                <div className="absolute top-0 right-0 w-40 h-40 bg-indigo-500/10 blur-[80px]" />
+                <div className="absolute bottom-0 left-0 w-32 h-32 bg-purple-500/10 blur-[60px]" />
+
+                <div className="relative z-10 flex flex-col items-center gap-6">
+                  <div className="relative">
+                    <div className="w-20 h-20 rounded-[28px] bg-white/5 border border-white/10 flex items-center justify-center">
+                      <MdPerson className="text-4xl text-white/30" />
+                    </div>
+                    <span className="absolute -bottom-1 -right-1 w-5 h-5 bg-emerald-400 rounded-full border-2 border-slate-900 flex items-center justify-center">
+                      <MdCall className="text-[10px] text-white" />
+                    </span>
                   </div>
-                  <h2 className="text-4xl font-black text-white tracking-widest font-mono mb-3">
-                    {formatDuration(sip.callDuration)}
-                  </h2>
-                  <p className="text-indigo-400 text-[10px] font-black uppercase tracking-[0.3em] px-5 py-2 bg-white/5 rounded-full mb-10">
-                    Qo'ng'iroqda
-                  </p>
-                  <div className="flex gap-5">
-                    <button
-                      onClick={handleMute}
-                      title={isMuted ? 'Unmute' : 'Mute'}
-                      className={`w-14 h-14 rounded-2xl flex items-center justify-center transition-all ${
-                        isMuted
-                          ? 'bg-amber-500 text-white shadow-lg shadow-amber-500/30 scale-110'
-                          : 'bg-white/5 text-white/30 hover:bg-white/10'
-                      }`}
-                    >
-                      {isMuted ? <MdMicOff size={22} /> : <MdMic size={22} />}
-                    </button>
-                    <button
-                      onClick={handleHangup}
-                      className="w-20 h-20 bg-rose-600 text-white rounded-[36px] flex items-center justify-center shadow-xl shadow-rose-900/40 hover:scale-105 active:scale-95 transition-all"
-                    >
-                      <MdCallEnd className="text-4xl" />
-                    </button>
-                    <button
-                      className="w-14 h-14 rounded-2xl flex items-center justify-center bg-white/5 text-white/20 hover:bg-white/10 transition-all"
-                      title="Mute audio (coming soon)"
-                    >
-                      <MdVolumeOff size={22} />
-                    </button>
-                  </div>
-                </div>
-                <div className="absolute inset-0 bg-gradient-to-tr from-indigo-500/10 via-transparent to-transparent" />
-                <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-500/5 blur-[100px]" />
-              </motion.div>
-            )}
 
-            {/* Incoming call */}
-            {sip.hasIncomingCall && sip.status === 'calling' && (
-              <motion.div
-                key="incoming"
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                className="flex-1 min-h-[420px] bg-white border-2 border-indigo-400/50 rounded-[40px] p-10 flex flex-col items-center justify-center relative overflow-hidden shadow-2xl"
-              >
-                <div className="w-16 h-16 bg-indigo-600 rounded-[28px] flex items-center justify-center text-white text-3xl animate-bounce mb-6">
-                  <MdNotificationsActive />
-                </div>
-                <h3 className="text-3xl font-black text-slate-800 tracking-tight mb-3">
-                  {sip.incomingCaller || "Kiruvchi qo'ng'iroq"}
-                </h3>
-                <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-10">
-                  SIP • 101
-                </p>
-                <div className="flex gap-4 w-full max-w-xs">
-                  <button
-                    onClick={sip.rejectCall}
-                    className="flex-1 py-4 bg-slate-50 text-slate-500 font-black rounded-2xl text-[9px] uppercase tracking-widest border border-slate-100 hover:bg-rose-50 hover:text-rose-600 transition-all"
-                  >
-                    Rad etish
-                  </button>
-                  <button
-                    onClick={sip.acceptCall}
-                    className="flex-1 py-4 bg-emerald-500 text-white font-black rounded-2xl text-[9px] uppercase tracking-widest shadow-xl shadow-emerald-100"
-                  >
-                    Qabul qilish
-                  </button>
-                </div>
-                <div className="absolute inset-x-0 bottom-0 h-1.5 bg-indigo-500/40 rounded-b-[40px]" />
-              </motion.div>
-            )}
-
-            {/* Outgoing calling */}
-            {sip.status === 'calling' && !sip.hasIncomingCall && (
-              <motion.div
-                key="calling"
-                initial={{ opacity: 0, scale: 0.97 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0 }}
-                className="flex-1 min-h-[420px] bg-slate-950 rounded-[40px] p-10 flex flex-col items-center justify-center relative overflow-hidden shadow-2xl border border-white/5"
-              >
-                <div className="relative z-10 flex flex-col items-center text-center">
-                  <div className="w-20 h-20 bg-white/5 rounded-[32px] border border-indigo-500/20 flex items-center justify-center mb-8 relative">
-                    <MdPhone className="text-4xl text-indigo-400/50" />
-                    <div className="absolute inset-0 rounded-[32px] border border-indigo-500/40 animate-ping" />
-                  </div>
-                  <p className="text-indigo-400 text-[10px] font-black uppercase tracking-[0.3em] px-5 py-2 bg-white/5 rounded-full mb-8">
-                    Chaqirilmoqda...
-                  </p>
-                  <button
-                    onClick={handleHangup}
-                    className="w-16 h-16 bg-rose-600 text-white rounded-[28px] flex items-center justify-center shadow-xl"
-                  >
-                    <MdCallEnd className="text-3xl" />
-                  </button>
-                </div>
-                <div className="absolute inset-0 bg-gradient-to-tr from-indigo-500/10 via-transparent to-transparent" />
-              </motion.div>
-            )}
-
-            {/* Idle */}
-            {!isInCall && !sip.hasIncomingCall && (
-              <motion.div
-                key="idle"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                className="flex-1 min-h-[420px] bg-slate-50/40 backdrop-blur-3xl border border-white/50 rounded-[40px] p-12 flex flex-col items-center justify-center text-center shadow-inner relative group"
-              >
-                <div className="w-16 h-16 bg-white border border-white rounded-[24px] flex items-center justify-center mb-8 rotate-12 opacity-20 shadow-sm group-hover:rotate-0 group-hover:opacity-40 transition-all duration-500">
-                  <MdCall className="text-3xl text-slate-400" />
-                </div>
-                <h3 className="text-sm font-black text-slate-700 tracking-tight opacity-40 uppercase tracking-[0.1em]">
-                  VoIP Terminal
-                </h3>
-                <p className="text-[9px] font-bold text-slate-400 mt-4 uppercase tracking-[0.2em] leading-relaxed max-w-[220px] opacity-50">
-                  {sip.status === 'registered'
-                    ? "Qo'ng'iroqqa tayyor • Raqam kiriting"
-                    : sip.status === 'connecting'
-                    ? 'Ulanyapti...'
-                    : sip.status === 'error'
-                    ? 'WireGuard VPN ulangan? Backend ishlamoqdami?'
-                    : 'WireGuard VPN ulanganligini tekshiring'}
-                </p>
-
-                {/* Quick diagnostic info */}
-                {sip.status === 'error' && sip.error && (
-                  <div className="mt-6 px-5 py-3 bg-rose-50 border border-rose-100 rounded-2xl max-w-xs">
-                    <p className="text-[9px] font-bold text-rose-500 text-left leading-relaxed">
-                      {sip.error}
+                  <div>
+                    <p className="text-4xl font-black text-white tracking-[0.15em] font-mono tabular-nums">
+                      {dur(sip.callDuration)}
+                    </p>
+                    <p className="mt-2 text-[10px] font-black text-indigo-400 uppercase tracking-[0.3em]">
+                      Qo'ng'iroqda
                     </p>
                   </div>
-                )}
+
+                  <div className="flex items-center gap-4">
+                    <button onClick={() => { sip.toggleMute(!muted); setMuted(v => !v); }}
+                      className={`w-14 h-14 rounded-2xl flex items-center justify-center transition-all ${muted ? 'bg-amber-500 shadow-lg shadow-amber-500/30' : 'bg-white/5 hover:bg-white/10'}`}
+                    >
+                      {muted ? <MdMicOff className="text-white text-xl" /> : <MdMic className="text-white/40 text-xl" />}
+                    </button>
+
+                    <button onClick={handleHangup}
+                      className="w-20 h-20 bg-rose-600 hover:bg-rose-500 rounded-[30px] flex items-center justify-center shadow-xl shadow-rose-900/40 active:scale-95 transition-all"
+                    >
+                      <MdCallEnd className="text-4xl text-white" />
+                    </button>
+
+                    <button className="w-14 h-14 rounded-2xl flex items-center justify-center bg-white/5 hover:bg-white/10 transition-all">
+                      <MdVolumeUp className="text-white/40 text-xl" />
+                    </button>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+
+            {/* CALLING / RINGING */}
+            {sip.status === 'calling' && (
+              <motion.div key="calling"
+                initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
+                className="relative overflow-hidden rounded-[36px] bg-gradient-to-br from-slate-950 to-indigo-950 p-10 flex flex-col items-center text-center shadow-2xl border border-white/5 min-h-[320px] justify-center"
+              >
+                <div className="relative z-10 flex flex-col items-center gap-6">
+                  <div className="relative">
+                    <div className="w-20 h-20 rounded-[28px] bg-white/5 border border-indigo-500/20 flex items-center justify-center">
+                      <MdPhone className="text-4xl text-indigo-400/60" />
+                    </div>
+                    {[0, 1, 2].map(i => (
+                      <span key={i} className="absolute inset-0 rounded-[28px] border border-indigo-400/20 animate-ping"
+                        style={{ animationDelay: `${i * 0.4}s`, animationDuration: '1.8s' }} />
+                    ))}
+                  </div>
+                  <p className="text-[10px] font-black text-indigo-400 uppercase tracking-[0.3em]">Chaqirilmoqda...</p>
+                  <button onClick={handleHangup}
+                    className="w-16 h-16 bg-rose-600 rounded-[24px] flex items-center justify-center shadow-lg active:scale-95 transition-all"
+                  >
+                    <MdCallEnd className="text-3xl text-white" />
+                  </button>
+                </div>
+              </motion.div>
+            )}
+
+            {/* IDLE */}
+            {!isActive && (
+              <motion.div key="idle"
+                initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+                className="rounded-[36px] border-2 border-dashed border-slate-200 bg-slate-50/50 min-h-[320px] flex items-center justify-center"
+              >
+                <div className="text-center">
+                  <div className="w-14 h-14 rounded-2xl bg-white border border-slate-200 flex items-center justify-center mx-auto mb-4 shadow-sm">
+                    <MdCall className="text-2xl text-slate-300" />
+                  </div>
+                  <p className="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em]">
+                    {sip.status === 'registered' ? "Qo'ng'iroqqa tayyor" :
+                     sip.status === 'connecting' ? 'SIP ulanyapti...' :
+                     'WireGuard VPN ulangan?'}
+                  </p>
+                  {sip.status === 'error' && sip.error && (
+                    <p className="mt-3 text-[9px] font-bold text-rose-500 max-w-[240px]">{sip.error}</p>
+                  )}
+                </div>
               </motion.div>
             )}
           </AnimatePresence>
+
+          {/* ── CALL LOG ── */}
+          <div className="bg-white border border-slate-100 rounded-[32px] shadow-sm overflow-hidden">
+
+            {/* Log header */}
+            <div className="px-7 py-4 border-b border-slate-50 flex items-center justify-between flex-wrap gap-3">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-center">
+                  <MdHistory className="text-slate-400 text-lg" />
+                </div>
+                <div>
+                  <p className="text-[10px] font-black text-slate-800 uppercase tracking-widest leading-none">Tarix</p>
+                  <p className="text-[8px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">{calls.length} qo'ng'iroq</p>
+                </div>
+              </div>
+
+              {/* Tabs */}
+              <div className="flex items-center gap-1 bg-slate-50 rounded-xl p-1">
+                {([['all','Barchasi'],['missed','Javobsiz'],['outgoing','Chiquvchi']] as const).map(([t, l]) => (
+                  <button key={t} onClick={() => setTab(t)}
+                    className={`px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all ${tab === t ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
+                  >{l}</button>
+                ))}
+              </div>
+
+              {/* Search */}
+              <div className="relative">
+                <MdSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-300 text-sm" />
+                <input value={filter} onChange={e => setFilter(e.target.value)}
+                  placeholder="Raqam..."
+                  className="pl-9 pr-4 py-2 bg-slate-50 border border-slate-100 rounded-xl text-[10px] font-bold text-slate-600 outline-none focus:border-indigo-300 focus:bg-white transition-all w-40"
+                />
+              </div>
+            </div>
+
+            {/* Log body */}
+            <div className="max-h-[400px] overflow-y-auto">
+              {loading ? (
+                <div className="flex items-center justify-center py-12">
+                  <div className="w-7 h-7 border-[3px] border-slate-200 border-t-indigo-500 rounded-full animate-spin" />
+                </div>
+              ) : filteredCalls.length === 0 ? (
+                <div className="text-center py-12 text-[11px] font-bold text-slate-300 uppercase tracking-widest">
+                  {filter ? 'Natija topilmadi' : "Tarix yo'q"}
+                </div>
+              ) : (
+                <div className="divide-y divide-slate-50">
+                  {filteredCalls.map(call => {
+                    const meta = STATUS_META[call.status] || { label: call.status, color: 'text-slate-400 bg-slate-50' };
+                    const isOut = call.direction === 'OUTGOING';
+                    return (
+                      <div key={call.id}
+                        onClick={() => setDialNum(call.callerPhone)}
+                        className="flex items-center gap-4 px-7 py-4 hover:bg-indigo-50/40 cursor-pointer transition-all group"
+                      >
+                        {/* Direction icon */}
+                        <div className={`w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 ${isOut ? 'bg-indigo-50 text-indigo-500' : 'bg-slate-50 text-slate-400'} group-hover:scale-110 transition-all`}>
+                          {isOut ? <MdArrowUpward className="text-sm" /> : <MdArrowDownward className="text-sm" />}
+                        </div>
+
+                        {/* Info */}
+                        <div className="flex-1 min-w-0">
+                          <p className="text-[13px] font-black text-slate-800 leading-none mb-1 truncate">
+                            {call.callerPhone}
+                          </p>
+                          <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider truncate">
+                            {call.customer?.fullName || 'Yangi raqam'} · {timeAgo(call.startedAt)}
+                          </p>
+                        </div>
+
+                        {/* Status */}
+                        <span className={`px-2.5 py-1 rounded-lg text-[8px] font-black uppercase tracking-wider flex-shrink-0 ${meta.color}`}>
+                          {meta.label}
+                        </span>
+
+                        {/* Duration */}
+                        <div className="text-right flex-shrink-0">
+                          <p className="text-[12px] font-black text-slate-700 font-mono">{dur(call.durationSeconds || 0)}</p>
+                        </div>
+
+                        {/* Quick call */}
+                        <button onClick={e => { e.stopPropagation(); handleMakeCall(call.callerPhone); }}
+                          className="w-8 h-8 bg-indigo-600 text-white rounded-xl flex items-center justify-center opacity-0 group-hover:opacity-100 active:scale-95 transition-all shadow-md"
+                        >
+                          <MdCall className="text-sm" />
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          </div>
         </div>
 
-        {/* ── DIALPAD ── */}
-        <div className="col-span-12 lg:col-span-12 xl:col-span-4 min-h-[420px] bg-white/80 backdrop-blur-3xl rounded-[40px] border border-white/60 shadow-2xl p-7 lg:p-9 flex flex-col gap-4 relative overflow-hidden">
-          
+        {/* ── DIALPAD PANEL ── */}
+        <div className="col-span-12 xl:col-span-4 bg-white border border-slate-100 rounded-[32px] shadow-sm p-7 flex flex-col gap-5 sticky top-5">
+
           {/* Header */}
-          <div className="flex items-center gap-3 mb-1">
-            <div className="w-9 h-9 bg-slate-50 rounded-xl flex items-center justify-center text-slate-400 border border-slate-100">
-              <MdDialpad className="text-lg" />
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl bg-indigo-600 flex items-center justify-center shadow-md shadow-indigo-200">
+              <MdDialpad className="text-white text-lg" />
             </div>
             <div>
-              <h2 className="text-[10px] font-black text-slate-800 uppercase tracking-widest leading-none">
-                Dispatch Pad
-              </h2>
-              <p className="text-[7px] font-bold text-slate-400 uppercase tracking-widest mt-1">
-                SIP Bridge • {sip.status === 'registered' ? '✓ Ulandi' : '○ Ulangani yo\'q'}
-              </p>
+              <p className="text-[10px] font-black text-slate-800 uppercase tracking-widest leading-none">Raqam terish</p>
+              <div className="flex items-center gap-1.5 mt-1">
+                <SipDot status={sip.status} />
+                <span className="text-[8px] font-bold text-slate-400 uppercase tracking-wider">
+                  {sip.status === 'registered' ? 'Tayyor' : sip.status === 'connecting' ? 'Ulanyapti...' : 'Ulanmagan'}
+                </span>
+              </div>
             </div>
           </div>
 
           {/* Display */}
-          <div className="relative">
-            <div className="bg-slate-50 border border-slate-100 rounded-[22px] h-16 flex items-center px-5 relative overflow-hidden focus-within:border-indigo-300 transition-all shadow-inner">
-              <div className="absolute left-0 top-0 w-1.5 h-full bg-indigo-600 rounded-r-full" />
-              <p className="flex-1 text-2xl font-black text-slate-800 tracking-widest font-mono truncate ml-2 leading-none">
-                {dialNum || '...'}
-              </p>
-              {dialNum && (
-                <button
-                  onClick={() => setDialNum((p) => p.slice(0, -1))}
-                  className="w-10 h-10 hover:bg-rose-50 rounded-xl flex items-center justify-center text-slate-300 hover:text-rose-500 transition-all"
-                >
-                  <MdBackspace size={18} />
-                </button>
-              )}
-            </div>
-
-            {/* Autocomplete */}
-            <AnimatePresence>
-              {matches.length > 0 && (
-                <motion.div
-                  initial={{ opacity: 0, y: -6 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0 }}
-                  className="absolute z-50 left-0 right-0 top-[68px] bg-white border border-slate-100 rounded-[22px] shadow-2xl p-2 space-y-1"
-                >
-                  {matches.map((m) => (
-                    <div
-                      key={m.id}
-                      onClick={() => {
-                        setDialNum(m.callerPhone);
-                      }}
-                      className="p-3 bg-slate-50 hover:bg-indigo-600 rounded-xl flex items-center justify-between cursor-pointer group transition-all"
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-lg bg-white flex items-center justify-center text-slate-400 group-hover:text-indigo-600 transition-all shadow-sm">
-                          <MdPerson size={14} />
-                        </div>
-                        <div>
-                          <p className="text-[11px] font-black text-slate-800 group-hover:text-white leading-none mb-0.5">
-                            {m.callerPhone}
-                          </p>
-                          <p className="text-[7px] font-bold text-slate-400 group-hover:text-white/60 uppercase tracking-widest">
-                            {m.customer?.fullName || 'Yangi raqam'}
-                          </p>
-                        </div>
-                      </div>
-                      <MdArrowForward
-                        size={14}
-                        className="text-slate-200 group-hover:text-white opacity-0 group-hover:opacity-100 transition-all"
-                      />
-                    </div>
-                  ))}
-                </motion.div>
-              )}
-            </AnimatePresence>
+          <div className="relative bg-slate-50 rounded-2xl border border-slate-100 px-5 py-4 flex items-center focus-within:border-indigo-300 focus-within:bg-white transition-all">
+            <div className="w-0.5 h-6 bg-indigo-500 rounded-full mr-3 flex-shrink-0" />
+            <span className={`flex-1 text-2xl font-black font-mono tracking-widest ${dialNum ? 'text-slate-800' : 'text-slate-300'}`}>
+              {dialNum || '...'}
+            </span>
+            {dialNum && (
+              <button onClick={() => setDialNum(p => p.slice(0, -1))}
+                onContextMenu={e => { e.preventDefault(); setDialNum(''); }}
+                className="w-9 h-9 flex items-center justify-center text-slate-400 hover:text-rose-500 hover:bg-rose-50 rounded-xl transition-all"
+              >
+                <MdBackspace className="text-lg" />
+              </button>
+            )}
           </div>
 
           {/* Keypad */}
-          <div className="flex-1 flex flex-col justify-center">
-            <div className="grid grid-cols-3 gap-2.5 w-full max-w-[300px] mx-auto">
-              {['1', '2', '3', '4', '5', '6', '7', '8', '9', '*', '0', '#'].map(
-                (num) => {
-                  const is0 = num === '0';
-                  return (
-                    <button
-                      key={num}
-                      onPointerDown={is0 ? handle0PointerDown : undefined}
-                      onPointerUp={is0 ? handle0PointerUp : undefined}
-                      onClick={is0 ? undefined : () => handleDial(num)}
-                      className="aspect-[1.1/1] bg-white border border-slate-100 rounded-[22px] flex flex-col items-center justify-center font-black text-slate-700 hover:bg-indigo-600 hover:text-white hover:border-indigo-600 transition-all active:scale-95 shadow-sm relative group"
-                    >
-                      <span className="text-xl">{num}</span>
-                      {is0 && (
-                        <span className="absolute bottom-2 text-[8px] font-black text-slate-300 group-hover:text-white/50">
-                          +
-                        </span>
-                      )}
-                    </button>
-                  );
-                },
+          <div className="grid grid-cols-3 gap-2">
+            {KEYS.map(({ k, s }) => {
+              const is0 = k === '0';
+              return (
+                <button key={k}
+                  onPointerDown={is0 ? handle0Down : undefined}
+                  onPointerUp={is0 ? handle0Up : undefined}
+                  onClick={is0 ? undefined : () => { if (dialNum.length < 15) setDialNum(p => p + k); }}
+                  className="relative aspect-square bg-slate-50 hover:bg-indigo-600 border border-slate-100 hover:border-indigo-600 rounded-2xl flex flex-col items-center justify-center transition-all active:scale-95 group"
+                >
+                  <span className="text-xl font-black text-slate-700 group-hover:text-white transition-colors leading-none">
+                    {k}
+                  </span>
+                  {s && (
+                    <span className="text-[7px] font-black text-slate-400 group-hover:text-white/60 tracking-widest mt-0.5 transition-colors">
+                      {s}
+                    </span>
+                  )}
+                  {is0 && (
+                    <span className="absolute bottom-1.5 text-[8px] font-black text-slate-300 group-hover:text-white/40">+</span>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Call / Hangup button */}
+          {isActive ? (
+            <button onClick={handleHangup}
+              className="w-full py-4 bg-rose-600 hover:bg-rose-500 text-white font-black rounded-2xl text-[10px] uppercase tracking-[0.2em] flex items-center justify-center gap-2 shadow-xl shadow-rose-200 active:scale-95 transition-all"
+            >
+              <MdCallEnd className="text-xl" />
+              Tugatish
+            </button>
+          ) : (
+            <button onClick={() => handleMakeCall(dialNum)}
+              disabled={!dialNum || sip.status !== 'registered'}
+              className="w-full py-4 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-30 disabled:cursor-not-allowed text-white font-black rounded-2xl text-[10px] uppercase tracking-[0.2em] flex items-center justify-center gap-2 shadow-xl shadow-indigo-200 active:scale-95 transition-all"
+            >
+              <MdCall className="text-xl" />
+              {sip.status === 'registered' ? "Qo'ng'iroq" :
+               sip.status === 'connecting' ? 'Ulanyapti...' : 'SIP ulanmagan'}
+            </button>
+          )}
+
+          {/* Last failed reason */}
+          {sip.lastFailedReason && !isActive && (
+            <div className="px-4 py-3 bg-rose-50 border border-rose-100 rounded-xl">
+              <p className="text-[9px] font-black text-rose-600 uppercase tracking-widest mb-1">Oxirgi xato</p>
+              <p className="text-[9px] font-bold text-rose-500 leading-relaxed">{sip.lastFailedReason}</p>
+
+              {/* Dial format hint */}
+              {sip.lastFailedReason.includes('503') && (
+                <div className="mt-2 pt-2 border-t border-rose-100">
+                  <p className="text-[8px] font-bold text-rose-400 leading-relaxed">
+                    💡 Asterisk dial plan da bu raqam formatiga route yo'q.<br/>
+                    Boshqa format sinab ko'ring yoki admin dan so'rang.
+                  </p>
+                </div>
               )}
             </div>
-          </div>
+          )}
 
-          {/* Call button */}
-          <button
-            onClick={() => handleMakeCall(dialNum)}
-            disabled={!dialNum || sip.status !== 'registered'}
-            className="w-full py-4 bg-indigo-600 text-white font-black rounded-2xl text-[10px] uppercase tracking-[0.2em] shadow-xl shadow-indigo-200/40 hover:bg-indigo-700 active:scale-95 transition-all flex items-center justify-center gap-3 disabled:opacity-30 disabled:cursor-not-allowed"
-          >
-            <MdCall size={20} />
-            {sip.status === 'registered'
-              ? "Qo'ng'iroq qilish"
-              : sip.status === 'connecting'
-              ? 'Ulanyapti...'
-              : sip.status === 'error'
-              ? 'SIP ulanmagan'
-              : "Qo'ng'iroq qilish"}
-          </button>
-        </div>
-      </div>
-
-      {/* ── CALL LOG ── */}
-      <section className="flex-1 bg-white/50 backdrop-blur-2xl border border-white/50 rounded-[40px] shadow-sm flex flex-col overflow-hidden">
-        <div className="px-7 lg:px-10 py-5 border-b border-white/40 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-4">
-            <div className="w-9 h-9 bg-white/60 border border-white rounded-xl flex items-center justify-center text-slate-400 shadow-sm">
-              <MdHistory className="text-xl" />
-            </div>
+          {/* Quick dial from recent calls */}
+          {!dialNum && calls.length > 0 && (
             <div>
-              <h2 className="text-[10px] font-black text-slate-800 uppercase tracking-tight leading-none">
-                Muloqotlar Tarixi
-              </h2>
-              <p className="text-[7px] font-black text-slate-400 uppercase tracking-widest mt-1">
-                {callLog.length} ta qo'ng'iroq
-              </p>
+              <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-2">Oxirgi raqamlar</p>
+              <div className="flex flex-col gap-1">
+                {calls.slice(0, 3).map(c => (
+                  <button key={c.id}
+                    onClick={() => setDialNum(c.callerPhone)}
+                    className="flex items-center gap-3 px-3 py-2 bg-slate-50 hover:bg-indigo-50 border border-slate-100 hover:border-indigo-200 rounded-xl transition-all group text-left"
+                  >
+                    <div className="w-7 h-7 bg-white border border-slate-100 rounded-lg flex items-center justify-center group-hover:bg-indigo-600 group-hover:border-indigo-600 transition-all shadow-sm">
+                      <MdPerson className="text-slate-400 group-hover:text-white text-xs transition-colors" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-[11px] font-black text-slate-700 truncate">{c.callerPhone}</p>
+                      <p className="text-[8px] font-bold text-slate-400 uppercase tracking-wider">{timeAgo(c.startedAt)}</p>
+                    </div>
+                    <MdCall className="text-slate-300 group-hover:text-indigo-500 text-sm transition-colors" />
+                  </button>
+                ))}
+              </div>
             </div>
-          </div>
-          <div className="relative w-full sm:w-64 group">
-            <MdSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 text-base group-focus-within:text-indigo-600 transition-colors" />
-            <input
-              value={listFilter}
-              onChange={(e) => setListFilter(e.target.value)}
-              placeholder="Telefon raqamiga filtrlash..."
-              className="w-full pl-10 py-3 bg-white/60 border border-white rounded-[18px] text-[10px] font-bold text-slate-600 outline-none focus:bg-white focus:border-indigo-200 transition-all shadow-inner placeholder:text-slate-300"
-            />
-          </div>
-        </div>
-
-        <div className="flex-1 overflow-y-auto custom-scrollbar">
-          {callsLoading ? (
-            <div className="flex items-center justify-center py-16">
-              <div className="w-8 h-8 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin" />
-            </div>
-          ) : callsError ? (
-            <div className="flex flex-col items-center justify-center py-12 gap-3">
-              <MdWarning className="text-3xl text-rose-400" />
-              <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest">
-                {callsError}
-              </p>
-              <button
-                onClick={fetchCalls}
-                className="mt-2 px-5 py-2 bg-indigo-600 text-white rounded-xl text-[9px] font-black uppercase tracking-widest"
-              >
-                Qayta urinish
-              </button>
-            </div>
-          ) : (
-            <table className="w-full text-left">
-              <thead className="sticky top-0 bg-white/80 backdrop-blur-xl z-10 border-b border-slate-50">
-                <tr className="text-[8px] font-black text-slate-400 uppercase tracking-widest">
-                  <th className="px-7 lg:px-10 py-4 w-2/5">Telefon / Mijoz</th>
-                  <th className="px-4 py-4">Kampaniya</th>
-                  <th className="px-4 py-4 text-center">Holat</th>
-                  <th className="px-7 lg:px-10 py-4 text-right">Vaqt</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-50">
-                {filteredLog.map((call) => {
-                  const customerName = call.customer?.fullName || 'Yangi raqam';
-                  const dur = formatDuration(call.durationSeconds || 0);
-                  const callTime = call.startedAt
-                    ? new Date(call.startedAt).toLocaleString('uz-UZ', {
-                        hour: '2-digit',
-                        minute: '2-digit',
-                        day: '2-digit',
-                        month: '2-digit',
-                      })
-                    : '—';
-                  const dirIcon = call.direction === 'OUTGOING' ? '↑' : '↓';
-
-                  return (
-                    <tr
-                      key={call.id}
-                      onClick={() => setDialNum(call.callerPhone)}
-                      className="hover:bg-indigo-50/30 transition-all cursor-pointer group"
-                    >
-                      <td className="px-7 lg:px-10 py-5">
-                        <div className="flex items-center gap-3">
-                          <div className="w-9 h-9 bg-white border border-slate-100 rounded-xl flex items-center justify-center font-black text-[11px] text-slate-400 group-hover:bg-indigo-600 group-hover:text-white group-hover:border-indigo-600 transition-all shadow-sm">
-                            {customerName[0]?.toUpperCase()}
-                          </div>
-                          <div className="min-w-0">
-                            <p className="text-[13px] font-black text-slate-800 leading-none mb-1 flex items-center gap-1.5">
-                              <span className="text-[10px] text-slate-400">{dirIcon}</span>
-                              {call.callerPhone}
-                            </p>
-                            <p className="text-[8px] font-bold text-slate-400 uppercase tracking-widest truncate">
-                              {customerName}
-                            </p>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="px-4 py-5">
-                        <p className="text-[9px] font-bold text-slate-500 truncate max-w-[120px]">
-                          {call.campaign?.name || '—'}
-                        </p>
-                      </td>
-                      <td className="px-4 py-5 text-center">
-                        <span
-                          className={`px-3 py-1.5 rounded-full text-[8px] font-black uppercase tracking-widest border transition-all ${
-                            STATUS_STYLES[call.status] ||
-                            'bg-slate-50 text-slate-400 border-slate-100'
-                          }`}
-                        >
-                          {STATUS_LABELS[call.status] || call.status}
-                        </span>
-                      </td>
-                      <td className="px-7 lg:px-10 py-5 text-right">
-                        <div className="flex flex-col items-end">
-                          <p className="text-[12px] font-black text-slate-800 font-mono tracking-tight leading-none mb-1">
-                            {dur}
-                          </p>
-                          <p className="text-[8px] font-bold text-slate-300 uppercase tracking-tighter">
-                            {callTime}
-                          </p>
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })}
-                {filteredLog.length === 0 && (
-                  <tr>
-                    <td
-                      colSpan={4}
-                      className="text-center py-14 text-[11px] font-bold text-slate-300 uppercase tracking-widest"
-                    >
-                      {listFilter ? 'Natija topilmadi' : "Qo'ng'iroqlar tarixi yo'q"}
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
           )}
         </div>
-      </section>
-
-      <style jsx global>{`
-        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
-        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.07); border-radius: 10px; }
-      `}</style>
+      </div>
     </div>
   );
 }
 
 export default function OperatorCallsPage() {
   return (
-    <Suspense
-      fallback={
-        <div className="flex items-center justify-center min-h-[400px]">
-          <div className="w-10 h-10 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin" />
-        </div>
-      }
-    >
+    <Suspense fallback={
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="w-10 h-10 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin" />
+      </div>
+    }>
       <OperatorCallsContent />
     </Suspense>
   );

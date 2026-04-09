@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, useCallback } from 'react';
 import { io, Socket } from 'socket.io-client';
 import toast from 'react-hot-toast';
 
+// ─── TYPES ─────────────────────────────────────────────────────────────────────
 export type SipStatus =
   | 'idle'
   | 'connecting'
@@ -20,8 +21,7 @@ export interface SipCredentials {
   displayName: string;
 }
 
-// WS URL: env dan olinadi. Backend localhost:3000 da ishlaydi —
-// frontend ham shu mashinada bo'lsa localhost, bo'lmasa server IP
+// ─── CONSTANTS ─────────────────────────────────────────────────────────────────
 const WS_BASE =
   process.env.NEXT_PUBLIC_WS_URL ||
   process.env.NEXT_PUBLIC_API_URL?.replace('/api', '') ||
@@ -29,8 +29,9 @@ const WS_BASE =
 
 const SIP_DOMAIN = process.env.NEXT_PUBLIC_SIP_DOMAIN || '10.100.100.1';
 
+// ─── HOOK ──────────────────────────────────────────────────────────────────────
 export function useSip(_credentials?: SipCredentials | null) {
-  const [status, setStatus] = useState<SipStatus>('connecting');
+  const [status, setStatus] = useState<SipStatus>('registered');
   const [error, setError] = useState<string | null>(null);
   const [callDuration, setCallDuration] = useState(0);
   const [incomingCaller, setIncomingCaller] = useState<string | null>(null);
@@ -39,8 +40,8 @@ export function useSip(_credentials?: SipCredentials | null) {
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const socketRef = useRef<Socket | null>(null);
   const activeCallRef = useRef<string | null>(null);
-  const statusRef = useRef<SipStatus>('connecting');
-  const userHangupRef = useRef<boolean>(false); // user o'zi tugatdimi?
+  const statusRef = useRef<SipStatus>('registered');
+  const userHangupRef = useRef<boolean>(false);
 
   // Keep statusRef in sync
   useEffect(() => {
@@ -48,7 +49,6 @@ export function useSip(_credentials?: SipCredentials | null) {
   }, [status]);
 
   const startTimer = useCallback(() => {
-    // Agar timer allaqachon ishlayotgan bo'lsa — qayta boshlamaymiz
     if (timerRef.current) return;
     setCallDuration(0);
     timerRef.current = setInterval(() => setCallDuration((s) => s + 1), 1000);
@@ -62,9 +62,10 @@ export function useSip(_credentials?: SipCredentials | null) {
     setCallDuration(0);
   }, []);
 
+  // ─── WebSocket ulanishi (kiruvchi qo'ng'iroq bildirish uchun) ────────────────
   useEffect(() => {
     const wsUrl = `${WS_BASE}/sip`;
-    console.log('[useSip] Connecting to:', wsUrl);
+    console.log('[useSip] Connecting to WS:', wsUrl);
 
     const socket = io(wsUrl, {
       transports: ['websocket', 'polling'],
@@ -78,37 +79,26 @@ export function useSip(_credentials?: SipCredentials | null) {
     socket.on('connect', () => {
       console.log('[useSip] WS connected:', socket.id);
       setError(null);
-      // Request current SIP status
-      socket.emit('sip:ping');
-    });
-
-    socket.on('connect_error', (err) => {
-      console.error('[useSip] Connection error:', err.message);
-      setStatus('error');
-      setError(`Backend bilan ulanib bo'lmadi (${WS_BASE})`);
-    });
-
-    socket.on('disconnect', (reason) => {
-      console.log('[useSip] Disconnected:', reason);
+      // X-Lite rejimida — doim "registered" ko'rsatamiz
       setStatus((prev) =>
-        prev === 'in_call' || prev === 'calling' ? prev : 'idle',
+        prev === 'in_call' || prev === 'calling' ? prev : 'registered',
       );
     });
 
-    // ── SIP holati (backend dan keladi) ──
+    socket.on('connect_error', (err) => {
+      console.error('[useSip] WS connection error:', err.message);
+      // Backend bilan aloqa yo'qligi SIP ga bog'liq emas — X-Lite mustaqil ishlaydi
+      // Faqat log qilamiz, error ko'rsatmaymiz
+    });
+
+    socket.on('disconnect', (reason) => {
+      console.log('[useSip] WS disconnected:', reason);
+    });
+
+    // ── Backend SIP holati (agar qayta yoqilsa) ──
     socket.on('sip:status', (data: { registered: boolean }) => {
       console.log('[useSip] sip:status', data);
-      if (data.registered) {
-        setStatus((prev) =>
-          prev === 'in_call' || prev === 'calling' ? prev : 'registered',
-        );
-        setError(null);
-      } else {
-        setStatus((prev) =>
-          prev === 'in_call' || prev === 'calling' ? prev : 'error',
-        );
-        setError('SIP serverga ulanilmagan (WireGuard faolmi?)');
-      }
+      // X-Lite rejimida buni e'tiborsiz qoldiramiz
     });
 
     // ── Diagnostik pong ──
@@ -121,43 +111,26 @@ export function useSip(_credentials?: SipCredentials | null) {
         extension: string;
       }) => {
         console.log('[useSip] sip:pong', data);
-        if (data.registered) {
-          setStatus((prev) =>
-            prev === 'in_call' || prev === 'calling' ? prev : 'registered',
-          );
-          setError(null);
-        } else {
-          setStatus('error');
-          setError(
-            `SIP ro'yxatdan o'tilmagan | Server: ${data.sipServer} | Local: ${data.localIp} | Ext: ${data.extension}`,
-          );
-        }
       },
     );
 
-    // ── Chaqirilmoqda (180 Ringing) ──
-    socket.on('sip:ringing', () => {
-      console.log('[useSip] sip:ringing');
+    // ── Kiruvchi qo'ng'iroq (Asterisk webhook → backend → WS) ──
+    socket.on('sip:incoming', (data: { caller: string }) => {
+      console.log('[useSip] sip:incoming', data);
+      setIncomingCaller(data.caller);
       setStatus('calling');
     });
 
-    // ── Qo'ng'iroq qabul qilindi (200 OK) ──
+    // ── Qo'ng'iroq qabul qilindi ──
     socket.on('sip:call_answered', () => {
       console.log('[useSip] sip:call_answered');
       setStatus('in_call');
       startTimer();
     });
 
-    // ── Chiquvchi qo'ng'iroq boshlandi ──
-    socket.on('sip:calling', (data: { target?: string }) => {
-      console.log('[useSip] sip:calling', data);
-      setStatus('calling');
-    });
-
     // ── Qo'ng'iroq tugatildi ──
     socket.on('sip:call_ended', () => {
       console.log('[useSip] sip:call_ended');
-      // Duplicate guard: agar allaqachon 'registered' bo'lsa qayta ishlatmaymiz
       if (statusRef.current === 'registered') return;
       stopTimer();
       setStatus('registered');
@@ -174,8 +147,6 @@ export function useSip(_credentials?: SipCredentials | null) {
       setStatus('registered');
       activeCallRef.current = null;
 
-      // 487 = CANCEL javob = user yoki server to'xtatdi
-      // userHangupRef = true bo'lsa — user o'zi bosdi, xato ko'rsatmaymiz
       const isExpectedCancel = data.code === '487' || userHangupRef.current;
       userHangupRef.current = false;
 
@@ -198,8 +169,6 @@ export function useSip(_credentials?: SipCredentials | null) {
     // ── Xato ──
     socket.on('sip:error', (data: { message: string }) => {
       console.log('[useSip] sip:error', data);
-      setStatus('error');
-      setError(data.message);
       toast.error(data.message);
     });
 
@@ -209,7 +178,7 @@ export function useSip(_credentials?: SipCredentials | null) {
     };
   }, [startTimer, stopTimer]);
 
-  // ── Qo'ng'iroq qilish ──
+  // ─── Qo'ng'iroq qilish (X-Lite orqali) ──────────────────────────────────────
   const makeCall = useCallback(
     (target: string) => {
       if (!target?.trim()) {
@@ -223,62 +192,46 @@ export function useSip(_credentials?: SipCredentials | null) {
         return;
       }
 
-      // X-Lite bilan ishlash uchun native protocol handler
-      const sipUri = `sip:${num}`;
-      console.log('[useSip] using native dialer →', sipUri);
-      window.location.href = sipUri;
+      // X-Lite / MicroSIP ga raqamni sip: URI orqali yuboramiz
+      const sipUri = `sip:${num}@${SIP_DOMAIN}`;
+      console.log('[useSip] X-Lite call →', sipUri);
+
+      // Vaqtinchalik iframe orqali ochish (sahifa navigatsiya qilib ketmasligi uchun)
+      const frame = document.createElement('iframe');
+      frame.style.display = 'none';
+      frame.src = sipUri;
+      document.body.appendChild(frame);
+      setTimeout(() => document.body.removeChild(frame), 3000);
+
       setStatus('calling');
       activeCallRef.current = num;
-      toast.success(`Softphone chaqirilmoqda: ${num}`);
-      
-      // We skip backend SIP bridging temporarily
-      /*
-      const socket = socketRef.current;
-      */
+      setLastFailedReason(null);
 
-      if (socket?.connected) {
-        let userData: { id?: string; companyId?: string } = {};
-        try {
-          userData = JSON.parse(localStorage.getItem('user') || '{}');
-        } catch {}
+      toast(`📞 X-Lite: ${num}`, {
+        duration: 3000,
+        icon: '📡',
+        style: {
+          background: '#1e1e2e',
+          color: '#cdd6f4',
+          border: '1px solid #45475a',
+        },
+      });
 
-        console.log('[useSip] makeCall →', num);
-        socket.emit('sip:call', {
-          target: num,
-          operatorId: userData.id || null,
-          companyId: userData.companyId || null,
-        });
-
-        setStatus('calling');
-        activeCallRef.current = num;
-        setLastFailedReason(null);
-
-        toast(`📞 Qo'ng'iroq: ${num}`, {
-          duration: 3000,
-          icon: '📡',
-          style: {
-            background: '#1e1e2e',
-            color: '#cdd6f4',
-            border: '1px solid #45475a',
-          },
-        });
-      } else {
-        // Fallback: MicroSIP sip: URI scheme
-        const sipUri = `sip:${num}@${SIP_DOMAIN}`;
-        console.log('[useSip] fallback MicroSIP →', sipUri);
-        window.location.href = sipUri;
-        setStatus('calling');
-        activeCallRef.current = num;
-        toast.success(`MicroSIP: ${num}`);
-      }
+      // 30 soniyadan keyin agar hali ham "calling" bo'lsa, "registered" ga qaytaramiz
+      setTimeout(() => {
+        if (statusRef.current === 'calling') {
+          setStatus('registered');
+          activeCallRef.current = null;
+        }
+      }, 30000);
     },
     [],
   );
 
-  // ── Qo'ng'iroqni tugatish ──
+  // ─── Qo'ng'iroqni tugatish ───────────────────────────────────────────────────
   const hangup = useCallback(() => {
     console.log('[useSip] hangup');
-    userHangupRef.current = true; // keyingi 487/call_failed ni bloklash uchun
+    userHangupRef.current = true;
     socketRef.current?.emit('sip:hangup');
     stopTimer();
     setStatus('registered');
@@ -297,8 +250,7 @@ export function useSip(_credentials?: SipCredentials | null) {
   }, []);
 
   const toggleMute = useCallback((_mute: boolean) => {
-    // Backend SIP bridge orqali mute hozircha frontend tomonida
-    // MicroSIP ga mute signali yuborilmayapti — keyinchalik RTP level da amalga oshiriladi
+    // X-Lite dagi mute funksiyasi — foydalanuvchi X-Lite interfeysidan boshqaradi
   }, []);
 
   return {

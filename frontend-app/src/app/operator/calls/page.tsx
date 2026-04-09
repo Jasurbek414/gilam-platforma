@@ -177,11 +177,11 @@ function OperatorCallsContent() {
         }`}>
           <SipDot status={sip.status} />
           <span className="text-[10px] font-black text-slate-600 uppercase tracking-[0.15em]">
-            {sip.status === 'registered'  ? `SIP Ulangan ✓` :
-             sip.status === 'connecting'  ? 'SIP ulanmoqda...' :
+            {sip.status === 'registered'  ? `X-Lite Tayyor ✓` :
+             sip.status === 'connecting'  ? 'Ulanmoqda...' :
              sip.status === 'calling'     ? 'Chaqirilmoqda...' :
              sip.status === 'in_call'     ? `Qo'ng'iroqda • ${dur(sip.callDuration)}` :
-             sip.status === 'error'       ? 'SIP ulanmagan (VPN kerak)' :
+             sip.status === 'error'       ? 'Softphone ulanmagan' :
              'Ulanmagan'}
           </span>
         </div>
@@ -312,19 +312,19 @@ function OperatorCallsContent() {
                   </div>
                   {sip.status === 'registered' ? (
                     <>
-                      <p className="text-[11px] font-black text-emerald-600 uppercase tracking-[0.2em]">Qo'ng'iroqqa tayyor</p>
-                      <p className="mt-2 text-[9px] font-bold text-slate-400">Raqam terib qo'ng'iroq boshlang</p>
+                      <p className="text-[11px] font-black text-emerald-600 uppercase tracking-[0.2em]">X-Lite tayyor</p>
+                      <p className="mt-2 text-[9px] font-bold text-slate-400">Raqam terib qo'ng'iroq boshlang — X-Lite ochiladi</p>
                     </>
                   ) : sip.status === 'connecting' ? (
                     <>
-                      <p className="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em]">SIP ulanyapti...</p>
+                      <p className="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em]">Ulanyapti...</p>
                       <div className="mt-3 w-6 h-6 border-2 border-indigo-200 border-t-indigo-500 rounded-full animate-spin mx-auto" />
                     </>
                   ) : (
                     <>
-                      <p className="text-[11px] font-black text-amber-600 uppercase tracking-[0.2em]">SIP ulanmagan</p>
+                      <p className="text-[11px] font-black text-amber-600 uppercase tracking-[0.2em]">Softphone ulanmagan</p>
                       <p className="mt-2 text-[9px] font-bold text-amber-500 leading-relaxed">
-                        Qo'ng'iroq qilish uchun WireGuard VPN ulangan bo'lishi kerak.
+                        X-Lite dasturini ishga tushiring va 10.100.100.1 ga ulaning.
                         Boshqa funksiyalar (Buyurtmalar, Mijozlar) ishlaydi.
                       </p>
                     </>

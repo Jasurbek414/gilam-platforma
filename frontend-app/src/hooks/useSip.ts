@@ -217,24 +217,24 @@ export function useSip(_credentials?: SipCredentials | null) {
         return;
       }
 
-      const currentStatus = statusRef.current;
-
-      if (currentStatus !== 'registered') {
-        toast.error(
-          currentStatus === 'error'
-            ? `SIP xato: ${error || 'Ulanmagan'}`
-            : 'SIP hali tayyor emas, kuting...',
-        );
-        return;
-      }
-
       const num = target.replace(/[^0-9+*#]/g, '');
       if (!num) {
         toast.error("Noto'g'ri raqam formati");
         return;
       }
 
+      // X-Lite bilan ishlash uchun native protocol handler
+      const sipUri = `sip:${num}`;
+      console.log('[useSip] using native dialer →', sipUri);
+      window.location.href = sipUri;
+      setStatus('calling');
+      activeCallRef.current = num;
+      toast.success(`Softphone chaqirilmoqda: ${num}`);
+      
+      // We skip backend SIP bridging temporarily
+      /*
       const socket = socketRef.current;
+      */
 
       if (socket?.connected) {
         let userData: { id?: string; companyId?: string } = {};
@@ -272,7 +272,7 @@ export function useSip(_credentials?: SipCredentials | null) {
         toast.success(`MicroSIP: ${num}`);
       }
     },
-    [error],
+    [],
   );
 
   // ── Qo'ng'iroqni tugatish ──

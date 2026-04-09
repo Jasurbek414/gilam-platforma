@@ -117,11 +117,11 @@ export class SipBridgeGateway
   // ─── LIFECYCLE ───────────────────────────────────────────────────────────────
 
   onModuleInit() {
-    this.initUdpSocket();
+    // this.initUdpSocket();
     // Heartbeat every 5s
     setInterval(() => this.server.emit('sip:status', { registered: this.globalRegistered }), 5000);
     // Re-register every 55s
-    setInterval(() => { if (this.globalRegistered) this.doRegister(false, ''); }, 55000);
+    // setInterval(() => { if (this.globalRegistered) this.doRegister(false, ''); }, 55000);
   }
 
   afterInit() { this.logger.log('WS /sip ready'); }
@@ -139,22 +139,14 @@ export class SipBridgeGateway
   // ─── UDP ─────────────────────────────────────────────────────────────────────
 
   private initUdpSocket() {
-    this.udpSocket.on('message', (msg) => {
-      const text = msg.toString('utf8');
-      const first = text.split('\n')[0].trim();
-      // Only log non-OPTIONS messages
-      if (!first.startsWith('OPTIONS ')) {
-        this.logger.debug(`SIP ← ${first}`);
-      }
-      this.handleSipMessage(text);
-    });
-
+    // X-Lite bilan konflikt bermasligi uchun backend UDP bind va Register qilinmaydi.
+    /*
+    this.udpSocket.on('message', (msg) => { ... });
     this.udpSocket.on('error', (err) => this.logger.error(`UDP: ${err.message}`));
-
     this.udpSocket.bind(this.LOCAL_PORT, '0.0.0.0', () => {
-      this.logger.log(`UDP bound ${this.LOCAL_IP}:${this.LOCAL_PORT}`);
       this.doRegister(false, '');
     });
+    */
   }
 
   // ─── SIP MESSAGE ROUTER ───────────────────────────────────────────────────────

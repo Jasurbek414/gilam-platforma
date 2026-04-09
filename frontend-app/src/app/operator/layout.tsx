@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
-import OperatorSidebar from '@/components/layout/OperatorSidebar';
+import OperatorSidebar, { MobileMenuButton } from '@/components/layout/OperatorSidebar';
 import Topbar from '@/components/layout/Topbar';
 import { ChatProvider } from '@/context/ChatContext';
 import { getUser } from '@/lib/api';
@@ -10,12 +10,12 @@ import { useCallsSocket } from '@/hooks/useCallsSocket';
 import IncomingCallModal from '@/components/calls/IncomingCallModal';
 
 /**
- * OperatorLayout — Operator panelining asosiy layout'i.
+ * OperatorLayout — Responsive operator panel layout.
  *
- * Bu layout ikkita muhim vazifani bajaradi:
+ * Vazifalar:
  * 1. Auth guard — faqat OPERATOR role'li foydalanuvchilarga ruxsat
- * 2. WebSocket listener — /calls namespace orqali kiruvchi qo'ng'iroqlarni tinglaydi
- *    va IncomingCallModal ni ko'rsatadi
+ * 2. Responsive sidebar — mobilda drawer, desktopda fixed
+ * 3. WebSocket listener — kiruvchi qo'ng'iroq modali
  */
 
 function OperatorLayoutInner({ children }: { children: React.ReactNode }) {
@@ -24,8 +24,6 @@ function OperatorLayoutInner({ children }: { children: React.ReactNode }) {
   return (
     <>
       {children}
-
-      {/* ── Kiruvchi qo'ng'iroq modali ── */}
       {incomingCall && (
         <IncomingCallModal
           event={incomingCall}
@@ -41,8 +39,8 @@ export default function OperatorLayout({ children }: { children: React.ReactNode
   const router = useRouter();
   const pathname = usePathname();
   const [authorized, setAuthorized] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
-  // Login sahifasi: auth tekshirilmaydi — to'g'ridan children ko'rsatiladi
   const isLoginPage = pathname === '/operator/login';
 
   useEffect(() => {
@@ -58,10 +56,7 @@ export default function OperatorLayout({ children }: { children: React.ReactNode
     }
   }, [router, isLoginPage]);
 
-  // Login sahifasida sidebar/topbar ko'rsatilmaydi
-  if (isLoginPage) {
-    return <>{children}</>;
-  }
+  if (isLoginPage) return <>{children}</>;
 
   if (!authorized) {
     return (
@@ -74,11 +69,25 @@ export default function OperatorLayout({ children }: { children: React.ReactNode
   return (
     <ChatProvider>
       <div className="flex bg-slate-50 min-h-screen">
-        <OperatorSidebar />
-        <div className="flex-1 ml-72 flex flex-col min-h-screen">
-          <Topbar />
-          <main className="flex-1 p-3 lg:p-4 overflow-auto bg-slate-50/50">
-            <div className="w-full h-full">
+        {/* Responsive sidebar */}
+        <OperatorSidebar
+          mobileOpen={sidebarOpen}
+          onClose={() => setSidebarOpen(false)}
+        />
+
+        {/* Main content area — ml-0 on mobile, ml-64/72 on desktop */}
+        <div className="flex-1 lg:ml-64 xl:ml-72 flex flex-col min-h-screen w-full">
+
+          {/* Topbar with mobile menu button */}
+          <header className="h-14 lg:h-16 bg-white/80 backdrop-blur-md border-b border-slate-200 flex items-center gap-3 px-4 lg:px-8 sticky top-0 z-40">
+            <MobileMenuButton onClick={() => setSidebarOpen(true)} />
+            <div className="flex-1">
+              <Topbar />
+            </div>
+          </header>
+
+          <main className="flex-1 p-3 sm:p-4 lg:p-6 overflow-auto bg-slate-50/50">
+            <div className="w-full h-full max-w-[1600px] mx-auto">
               <OperatorLayoutInner>
                 {children}
               </OperatorLayoutInner>

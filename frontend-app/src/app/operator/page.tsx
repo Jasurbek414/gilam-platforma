@@ -98,26 +98,26 @@ export default function OperatorDashboard() {
 
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white p-8 rounded-[40px] border border-slate-100 shadow-sm relative overflow-hidden">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-5 sm:p-8 rounded-3xl sm:rounded-[40px] border border-slate-100 shadow-sm relative overflow-hidden">
         <div className="relative z-10">
-          <h1 className="text-3xl font-black text-slate-800 tracking-tight">Xayrli kun, {user.fullName.split(' ')[0]}! 👋</h1>
-          <p className="text-slate-500 font-medium mt-1">Ko'rsatkichlar va jonli holatlar paneli</p>
+          <h1 className="text-xl sm:text-3xl font-black text-slate-800 tracking-tight">Xayrli kun, {user.fullName.split(' ')[0]}! 👋</h1>
+          <p className="text-slate-500 font-medium mt-1 text-sm">Ko'rsatkichlar va jonli holatlar paneli</p>
         </div>
         <div className="text-right relative z-10">
-          <p className="text-4xl font-black text-indigo-600 tracking-tighter">{currentTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
-          <p className="text-xs font-black text-slate-400 uppercase tracking-widest mt-1">{currentTime.toLocaleDateString('uz-UZ', { weekday: 'long', day: 'numeric', month: 'long' })}</p>
+          <p className="text-2xl sm:text-4xl font-black text-indigo-600 tracking-tighter">{currentTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
+          <p className="text-[10px] sm:text-xs font-black text-slate-400 uppercase tracking-widest mt-1">{currentTime.toLocaleDateString('uz-UZ', { weekday: 'long', day: 'numeric', month: 'long' })}</p>
         </div>
-        <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-50 rounded-full -mr-32 -mt-32 opacity-50"></div>
+        <div className="absolute top-0 right-0 w-40 sm:w-64 h-40 sm:h-64 bg-indigo-50 rounded-full -mr-20 sm:-mr-32 -mt-20 sm:-mt-32 opacity-50"></div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
         {stats.map((stat, i) => (
           <motion.div 
             key={i}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: i * 0.1 }}
-            className="bg-white p-6 rounded-[32px] border border-slate-100 shadow-sm hover:shadow-xl hover:shadow-indigo-500/5 transition-all group"
+            className="bg-white p-4 sm:p-6 rounded-2xl sm:rounded-[32px] border border-slate-100 shadow-sm hover:shadow-xl hover:shadow-indigo-500/5 transition-all group"
           >
             <div className={`w-12 h-12 ${stat.color} rounded-2xl flex items-center justify-center text-2xl mb-4 group-hover:scale-110 transition-transform`}>
               {stat.icon}
@@ -133,7 +133,7 @@ export default function OperatorDashboard() {
         ))}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-8">
         <div className="lg:col-span-2 bg-white rounded-[40px] border border-slate-100 shadow-sm overflow-hidden flex flex-col">
           <div className="px-8 py-6 border-b border-slate-50 flex items-center justify-between flex-wrap gap-4">
             <h2 className="text-lg font-black text-slate-800 tracking-tight flex items-center gap-3">

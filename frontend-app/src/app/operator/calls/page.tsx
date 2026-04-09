@@ -163,7 +163,7 @@ function OperatorCallsContent() {
 
   // ─── RENDER ────────────────────────────────────────────────────────────────
   return (
-    <div className="flex flex-col gap-6 min-h-screen pb-10 font-sans">
+    <div className="flex flex-col gap-4 sm:gap-6 min-h-screen pb-10 font-sans">
 
       {/* ── TOP STATUS BAR ── */}
       <div className="flex items-center justify-between flex-wrap gap-3">
@@ -207,7 +207,7 @@ function OperatorCallsContent() {
       </div>
 
       {/* ── MAIN GRID ── */}
-      <div className="grid grid-cols-12 gap-6 items-start">
+      <div className="grid grid-cols-1 xl:grid-cols-12 gap-4 sm:gap-6 items-start">
 
         {/* ── CALL STATE PANEL ── */}
         <div className="col-span-12 xl:col-span-8 flex flex-col gap-4">
@@ -292,7 +292,7 @@ function OperatorCallsContent() {
             {!isActive && (
               <motion.div key="idle"
                 initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-                className={`rounded-[36px] border-2 border-dashed min-h-[320px] flex items-center justify-center ${
+                className={`rounded-2xl sm:rounded-[36px] border-2 border-dashed min-h-[200px] sm:min-h-[320px] flex items-center justify-center ${
                   sip.status === 'registered' ? 'border-emerald-200 bg-emerald-50/30' :
                   sip.status === 'error' ? 'border-amber-200 bg-amber-50/30' :
                   'border-slate-200 bg-slate-50/50'
@@ -429,7 +429,7 @@ function OperatorCallsContent() {
         </div>
 
         {/* ── ULTRA MINI DIALPAD ── */}
-        <div className="col-span-12 xl:col-span-4 bg-white/95 backdrop-blur-3xl border border-slate-200/50 rounded-[40px] shadow-2xl shadow-indigo-500/10 p-4 flex flex-col gap-3 sticky top-5 h-fit max-w-[280px] mx-auto xl:mx-0">
+        <div className="xl:col-span-4 bg-white/95 backdrop-blur-3xl border border-slate-200/50 rounded-3xl sm:rounded-[40px] shadow-2xl shadow-indigo-500/10 p-4 flex flex-col gap-3 sticky top-5 h-fit max-w-[300px] sm:max-w-[280px] mx-auto xl:mx-0 order-first xl:order-last">
 
           {/* Ultra Compact Header */}
           <div className="flex items-center justify-between px-1">

@@ -167,14 +167,6 @@ export const notificationsApi = {
   markAllAsReadSuperAdmin: () => request<void>('/notifications/superadmin/read-all', { method: 'PATCH' }),
 };
 
-// ===== CAMPAIGNS API =====
-export const campaignsApi = {
-  getAll: () => request<any[]>(`/campaigns`),
-  getOne: (id: string) => request<any>(`/campaigns/${id}`),
-  create: (data: Partial<any>) => request<any>('/campaigns', { method: 'POST', body: JSON.stringify(data) }),
-  update: (id: string, data: Partial<any>) => request<any>(`/campaigns/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
-  remove: (id: string) => request<void>(`/campaigns/${id}`, { method: 'DELETE' }),
-};
 
 // ===== CALLS API =====
 export const callsApi = {

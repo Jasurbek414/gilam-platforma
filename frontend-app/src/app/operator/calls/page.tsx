@@ -312,8 +312,8 @@ function OperatorCallsContent() {
                   </div>
                   {sip.status === 'registered' ? (
                     <>
-                      <p className="text-[11px] font-black text-emerald-600 uppercase tracking-[0.2em]">SIP ulangan — tayyor</p>
-                      <p className="mt-2 text-[9px] font-bold text-slate-400">Raqam terib yashil tugmani bosing</p>
+                      <p className="text-[11px] font-black text-emerald-600 uppercase tracking-[0.2em]">Qo'ng'iroqqa tayyor</p>
+                      <p className="mt-2 text-[9px] font-bold text-slate-400">Raqam tering — MicroSIP orqali qo'ng'iroq ketadi</p>
                     </>
                   ) : sip.status === 'connecting' ? (
                     <>
@@ -324,7 +324,7 @@ function OperatorCallsContent() {
                     <>
                       <p className="text-[11px] font-black text-amber-600 uppercase tracking-[0.2em]">SIP ulanmagan</p>
                       <p className="mt-2 text-[9px] font-bold text-amber-500 leading-relaxed">
-                        WireGuard VPN ulangan va Asterisk serverga kirish mumkin ekanligini tekshiring.
+                        WireGuard VPN va MicroSIP dasturini tekshiring.
                       </p>
                     </>
                   )}

@@ -392,10 +392,23 @@ export class SipBridgeGateway
     session.userHangupAt = 0;
     this.sessions.set(client.id, session);
 
-    this.logger.log(`CALL: "${display}" → dial="${dialNum}" via AMI Originate`);
+    this.logger.log(`CALL: "${display}" → dial="${dialNum}" via Softphone`);
 
-    // AMI Originate — Asterisk o'zi qo'ng'iroqni amalga oshiradi
-    this.amiOriginate(dialNum, ext, session, client);
+    // Frontend ga raqamni qaytaramiz — brauzer sip: URI orqali MicroSIP/X-Lite ni chaqiradi
+    session.activeCall = {
+      id: crypto.randomBytes(8).toString('hex'),
+      target: dialNum,
+      fromTag: '',
+      toTag: null,
+      branch: '',
+      amiActionId: null,
+    };
+
+    client.emit('sip:dial_external', { target: dialNum, sipDomain: this.DOMAIN });
+    client.emit('sip:calling', { target: dialNum, display, method: 'Softphone' });
+
+    // Call log saqlash
+    this.saveCallLog();
   }
 
   // ─── AMI ORIGINATE ──────────────────────────────────────────────────────────

@@ -192,6 +192,34 @@ export function useSip(_credentials?: SipCredentials | null) {
       }
     });
 
+    // ── Backend raqamni qayta ishlab MicroSIP/X-Lite ga yuborish buyrug'i ──
+    socket.on('sip:dial_external', (data: { target: string; sipDomain: string }) => {
+      console.log('[useSip] sip:dial_external →', data);
+      const sipUri = `sip:${data.target}@${data.sipDomain}`;
+      // Yashirin iframe orqali ochish — sahifa navigatsiya qilib ketmasligi uchun
+      const frame = document.createElement('iframe');
+      frame.style.display = 'none';
+      frame.src = sipUri;
+      document.body.appendChild(frame);
+      setTimeout(() => document.body.removeChild(frame), 3000);
+
+      setStatus('calling');
+      activeCallRef.current = data.target;
+      toast(`📞 MicroSIP: ${data.target}`, {
+        duration: 3000,
+        icon: '📡',
+        style: { background: '#1e1e2e', color: '#cdd6f4', border: '1px solid #45475a' },
+      });
+
+      // 60 soniyadan keyin agar hali "calling" bo'lsa qaytaramiz
+      setTimeout(() => {
+        if (statusRef.current === 'calling') {
+          setStatus('registered');
+          activeCallRef.current = null;
+        }
+      }, 60000);
+    });
+
     // ── Xato ──
     socket.on('sip:error', (data: { message: string }) => {
       console.log('[useSip] sip:error', data);

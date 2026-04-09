@@ -70,7 +70,7 @@ export default function CustomerFormModal({ isOpen, onClose, onSuccess, initialD
       if (initialData) {
         setFormData({
           fullName: initialData.fullName || '',
-          phone: initialData.phone || '+998',
+          phone: initialData.phone1 || '+998',
           address: initialData.address || '',
           location: null // We don't fetch exact lat/lng from backend list usually, but can be scaled later
         });

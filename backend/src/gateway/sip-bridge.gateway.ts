@@ -325,48 +325,11 @@ export class SipBridgeGateway
     this.logger.debug(`SIP → REGISTER ext=${ext}`);
   }
 
-  // ─── INVITE WITH AUTH (re-INVITE after 401) ───────────────────────────────────
+  // ─── INVITE WITH AUTH (eski SIP INVITE uchun — AMI rejimida ishlatilmaydi) ──
 
-  private handleInviteAuth(challengeMsg: string) {
-    // Find active session and re-send INVITE with auth
-    for (const session of this.sessions.values()) {
-      if (session.activeCall && !session.activeCall.amiActionId) {
-        const { target, fromTag, branch } = session.activeCall;
-        const realm = challengeMsg.match(/realm="([^"]+)"/)?.[1] || this.DOMAIN;
-        const nonce = challengeMsg.match(/nonce="([^"]+)"/)?.[1] || '';
-        const uri = `sip:${target}@${this.SIP_SERVER}`;
-        const ext = session.extension;
-
-        const ha1 = md5(`${ext}:${realm}:${this.DEFAULT_PASSWORD}`);
-        const ha2 = md5(`INVITE:${uri}`);
-        const resp = md5(`${ha1}:${nonce}:${ha2}`);
-        const authHeader = `Authorization: Digest username="${ext}", realm="${realm}", nonce="${nonce}", uri="${uri}", response="${resp}", algorithm=MD5`;
-
-        this.globalCseq++;
-        const sdp = this.buildSdp();
-        const invite = [
-          `INVITE ${uri} SIP/2.0`,
-          `Via: SIP/2.0/UDP ${this.LOCAL_IP}:${this.LOCAL_PORT};branch=${branch};rport`,
-          `From: "${ext}" <sip:${ext}@${this.DOMAIN}>;tag=${fromTag}`,
-          `To: <sip:${target}@${this.DOMAIN}>`,
-          `Call-ID: ${session.activeCall.id}`,
-          `CSeq: ${this.globalCseq} INVITE`,
-          `Contact: <sip:${ext}@${this.LOCAL_IP}:${this.LOCAL_PORT}>`,
-          'Max-Forwards: 70',
-          'Allow: INVITE, ACK, CANCEL, OPTIONS, BYE',
-          'User-Agent: MicroSIP/3.21.3',
-          authHeader,
-          'Content-Type: application/sdp',
-          `Content-Length: ${Buffer.byteLength(sdp)}`,
-          '',
-          sdp,
-        ].join('\r\n');
-
-        this.logger.log(`SIP: re-INVITE with auth for ${target}`);
-        this.udpSend(invite);
-        return;
-      }
-    }
+  private handleInviteAuth(_challengeMsg: string) {
+    // AMI Originate ishlatilganda bu kerak emas — Asterisk o'zi auth boshqaradi
+    this.logger.debug('SIP: INVITE auth skipped (AMI mode)');
   }
 
   // ─── PROCESS TARGET NUMBER ────────────────────────────────────────────────────
@@ -392,7 +355,7 @@ export class SipBridgeGateway
     return { dialNum: num, display: raw };
   }
 
-  // ─── HANDLE CALL ─────────────────────────────────────────────────────────────
+  // ─── HANDLE CALL (AMI Originate) ──────────────────────────────────────────────
 
   @SubscribeMessage('sip:call')
   async handleCall(@ConnectedSocket() client: Socket, @MessageBody() data: any) {
@@ -429,65 +392,154 @@ export class SipBridgeGateway
     session.userHangupAt = 0;
     this.sessions.set(client.id, session);
 
-    this.logger.log(`CALL: "${display}" → dial="${dialNum}"`);
+    this.logger.log(`CALL: "${display}" → dial="${dialNum}" via AMI Originate`);
 
-    // Always try SIP INVITE first (same as MicroSIP)
-    this.sendSipInvite(dialNum, ext, session, client);
+    // AMI Originate — Asterisk o'zi qo'ng'iroqni amalga oshiradi
+    this.amiOriginate(dialNum, ext, session, client);
   }
 
-  // ─── SIP INVITE ──────────────────────────────────────────────────────────────
+  // ─── AMI ORIGINATE ──────────────────────────────────────────────────────────
 
-  private buildSdp(): string {
-    const ts = Date.now();
-    return [
-      'v=0',
-      `o=- ${ts} ${ts} IN IP4 ${this.LOCAL_IP}`,
-      's=GilamSaaS Call',
-      `c=IN IP4 ${this.LOCAL_IP}`,
-      't=0 0',
-      'm=audio 20000 RTP/AVP 8 0 101',
-      'a=rtpmap:8 PCMA/8000',
-      'a=rtpmap:0 PCMU/8000',
-      'a=rtpmap:101 telephone-event/8000',
-      'a=fmtp:101 0-16',
-      'a=ptime:20',
-      'a=sendrecv',
-      '',
-    ].join('\r\n');
-  }
+  private amiOriginate(target: string, ext: string, session: SipSession, client: Socket) {
+    const actionId = 'orig-' + crypto.randomBytes(4).toString('hex');
+    session.activeCall = {
+      id: actionId,
+      target,
+      fromTag: '',
+      toTag: null,
+      branch: '',
+      amiActionId: actionId,
+    };
 
-  private sendSipInvite(target: string, ext: string, session: SipSession, client: Socket) {
-    this.globalCseq++;
-    const branch = 'z9hG4bK-' + crypto.randomBytes(6).toString('hex');
-    const callId = crypto.randomBytes(8).toString('hex') + '@' + this.LOCAL_IP;
-    const fromTag = crypto.randomBytes(5).toString('hex');
+    const c = new net.Socket();
+    let buf = '';
+    let loggedIn = false;
+    let originated = false;
+    let done = false;
 
-    session.activeCall = { id: callId, target, fromTag, toTag: null, branch, amiActionId: null };
+    const timeout = setTimeout(() => {
+      if (!done) {
+        done = true;
+        c.destroy();
+        client.emit('sip:call_failed', { reason: 'AMI ulanish vaqti tugadi', code: '408' });
+        this.logger.error('AMI: Originate timeout');
+      }
+    }, 15000);
 
-    const sdp = this.buildSdp();
-    const uri = `sip:${target}@${this.SIP_SERVER}`;
+    const cleanup = () => {
+      if (!done) done = true;
+      clearTimeout(timeout);
+      try { c.destroy(); } catch {}
+    };
 
-    const invite = [
-      `INVITE ${uri} SIP/2.0`,
-      `Via: SIP/2.0/UDP ${this.LOCAL_IP}:${this.LOCAL_PORT};branch=${branch};rport`,
-      `From: "${ext}" <sip:${ext}@${this.DOMAIN}>;tag=${fromTag}`,
-      `To: <${uri}>`,
-      `Call-ID: ${callId}`,
-      `CSeq: ${this.globalCseq} INVITE`,
-      `Contact: <sip:${ext}@${this.LOCAL_IP}:${this.LOCAL_PORT}>`,
-      'Max-Forwards: 70',
-      'Allow: INVITE, ACK, CANCEL, OPTIONS, BYE, NOTIFY, REFER',
-      'Supported: replaces, norefersub',
-      'User-Agent: MicroSIP/3.21.3',
-      'Content-Type: application/sdp',
-      `Content-Length: ${Buffer.byteLength(sdp)}`,
-      '',
-      sdp,
-    ].join('\r\n');
+    c.connect(this.AMI_PORT, this.AMI_HOST, () => {
+      this.logger.log(`AMI: Connected to ${this.AMI_HOST}:${this.AMI_PORT}`);
+    });
 
-    this.logger.log(`SIP → INVITE ${uri}`);
-    this.udpSend(invite);
-    client.emit('sip:calling', { target, display: target, method: 'SIP' });
+    c.on('data', (data) => {
+      buf += data.toString();
+      const msgs = buf.split('\r\n\r\n');
+      buf = msgs.pop() || '';
+
+      for (const m of msgs) {
+        // Login
+        if (m.includes('Asterisk Call Manager') && !loggedIn) {
+          loggedIn = true;
+          c.write(`Action: Login\r\nUsername: ${this.AMI_USER}\r\nSecret: ${this.AMI_SECRET}\r\n\r\n`);
+          continue;
+        }
+
+        // Auth accepted → send Originate
+        if (m.includes('Authentication accepted') && !originated) {
+          originated = true;
+          this.logger.log(`AMI: Logged in. Originating call to ${target}`);
+
+          // Channel formatini aniqlash
+          // Agar SIP_TRUNK bo'lsa: SIP/trunk/target, bo'lmasa: PJSIP/target
+          let channel: string;
+          if (this.SIP_TRUNK) {
+            channel = `SIP/${this.SIP_TRUNK}/${target}`;
+          } else {
+            channel = `PJSIP/${target}@${this.DOMAIN}`;
+          }
+
+          const originate = [
+            'Action: Originate',
+            `ActionID: ${actionId}`,
+            `Channel: ${channel}`,
+            `Context: ${this.AMI_CONTEXT}`,
+            `Exten: ${ext}`,
+            'Priority: 1',
+            `CallerID: ${ext}`,
+            'Timeout: 30000',
+            'Async: true',
+            '',
+            '',
+          ].join('\r\n');
+
+          c.write(originate);
+          client.emit('sip:calling', { target, display: target, method: 'AMI' });
+          continue;
+        }
+
+        // Auth failed
+        if (m.includes('Authentication failed')) {
+          this.logger.error('AMI: Authentication failed');
+          client.emit('sip:call_failed', { reason: 'AMI login xato (parol noto\'g\'ri)', code: '401' });
+          cleanup();
+          continue;
+        }
+
+        // Originate response
+        if (m.includes(`ActionID: ${actionId}`)) {
+          if (m.includes('Response: Error')) {
+            const errMsg = m.match(/Message: (.*)/)?.[1] || 'Noma\'lum AMI xato';
+            this.logger.error(`AMI Originate error: ${errMsg}`);
+            client.emit('sip:call_failed', { reason: errMsg, code: '500' });
+            cleanup();
+          } else if (m.includes('Response: Success')) {
+            this.logger.log('AMI: Originate accepted');
+          }
+        }
+
+        // Event: OriginateResponse
+        if (m.includes('Event: OriginateResponse') && m.includes(`ActionID: ${actionId}`)) {
+          const reasonMatch = m.match(/Reason: (\d+)/);
+          const reason = reasonMatch ? parseInt(reasonMatch[1]) : 0;
+
+          if (reason === 4) {
+            // 4 = answered
+            this.logger.log('AMI: Call answered!');
+            session.callAnswered = true;
+            client.emit('sip:call_answered');
+            this.server.emit('sip:call_answered');
+          } else {
+            // 1=no answer, 5=busy, 8=congestion, etc.
+            const reasonText = reason === 1 ? 'Javob bermadi' :
+                               reason === 5 ? 'Band (busy)' :
+                               reason === 8 ? 'Tarmoq xatosi' :
+                               `Xato (code: ${reason})`;
+            this.logger.log(`AMI: Call failed - ${reasonText}`);
+            client.emit('sip:call_failed', { reason: reasonText, code: String(reason) });
+          }
+          // Logoff va cleanup
+          c.write('Action: Logoff\r\n\r\n');
+          setTimeout(() => cleanup(), 1000);
+        }
+      }
+    });
+
+    c.on('error', (err) => {
+      this.logger.error(`AMI connection error: ${err.message}`);
+      if (!done) {
+        client.emit('sip:call_failed', { reason: `AMI ulanish xatosi: ${err.message}`, code: '503' });
+      }
+      cleanup();
+    });
+
+    c.on('close', () => {
+      this.logger.debug('AMI: Connection closed');
+    });
   }
 
   // ─── HANGUP ──────────────────────────────────────────────────────────────────

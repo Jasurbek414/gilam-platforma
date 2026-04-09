@@ -437,12 +437,26 @@ export class SipBridgeGateway
     });
 
     c.on('data', (data) => {
-      buf += data.toString();
+      const chunk = data.toString();
+      this.logger.debug(`AMI RAW: ${JSON.stringify(chunk.substring(0, 200))}`);
+      buf += chunk;
+
+      // Asterisk banner keladi: "Asterisk Call Manager/X.X.X\r\n" — u \r\n\r\n bilan tugamaydi
+      if (!loggedIn && buf.includes('Asterisk Call Manager')) {
+        loggedIn = true;
+        this.logger.log('AMI: Banner detected, sending login...');
+        c.write(`Action: Login\r\nUsername: ${this.AMI_USER}\r\nSecret: ${this.AMI_SECRET}\r\n\r\n`);
+        buf = ''; // clear buffer after login
+        return;
+      }
+
       const msgs = buf.split('\r\n\r\n');
       buf = msgs.pop() || '';
 
       for (const m of msgs) {
-        // Login
+        this.logger.debug(`AMI MSG: ${m.substring(0, 120)}`);
+
+        // Login — fallback agar banner yuqorida tutilmagan bo'lsa
         if (m.includes('Asterisk Call Manager') && !loggedIn) {
           loggedIn = true;
           c.write(`Action: Login\r\nUsername: ${this.AMI_USER}\r\nSecret: ${this.AMI_SECRET}\r\n\r\n`);

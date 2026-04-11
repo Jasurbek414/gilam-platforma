@@ -33,7 +33,7 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const token = localStorage.getItem('token');
     if (!token) return;
 
-    const WS_BASE = process.env.NEXT_PUBLIC_WS_URL || process.env.NEXT_PUBLIC_API_URL?.replace('/api', '') || 'http://localhost:3000';
+    const WS_BASE = process.env.NEXT_PUBLIC_WS_URL || process.env.NEXT_PUBLIC_API_URL?.replace('/api', '') || '';
     const socketInstance = io(`${WS_BASE}/chat`, {
         query: { token },
         transports: ['websocket', 'polling'],

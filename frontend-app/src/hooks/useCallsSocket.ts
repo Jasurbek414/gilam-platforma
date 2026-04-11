@@ -7,7 +7,7 @@ import { IncomingCallEvent, CallUpdateEvent } from '@/types';
 
 export type { IncomingCallEvent, CallUpdateEvent };
 
-const WS_URL = process.env.NEXT_PUBLIC_WS_URL || 'http://localhost:3000';
+const WS_URL = process.env.NEXT_PUBLIC_WS_URL || '';
 
 export function useCallsSocket() {
   const socketRef = useRef<Socket | null>(null);

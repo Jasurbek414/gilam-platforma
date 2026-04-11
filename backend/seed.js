@@ -16,7 +16,7 @@ const { v4: uuidv4 } = require('uuid');
 async function seed() {
   const client = new Client({
     host: 'localhost',
-    port: 5432,
+    port: 5433,
     user: 'postgres',
     password: 'postgres',
     database: 'gilam_saas',

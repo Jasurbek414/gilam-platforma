@@ -56,13 +56,9 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   if (res.status === 401) {
     removeToken();
     if (typeof window !== 'undefined') {
-      // Operator login sahifasida bo'lsa shu yerga, aks holda asosiy login sahifasiga
-      const isOperatorPage = window.location.pathname.startsWith('/operator');
       const isCompanyPage = window.location.pathname.startsWith('/company');
       
-      if (isOperatorPage) {
-        setTimeout(() => window.location.href = '/operator/login', 0);
-      } else if (isCompanyPage) {
+      if (isCompanyPage) {
         setTimeout(() => window.location.href = '/company/login', 0);
       } else {
         setTimeout(() => window.location.href = '/', 0);

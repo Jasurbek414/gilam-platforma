@@ -4,18 +4,7 @@ const nextConfig: NextConfig = {
   // Allow external domain tunnel proxy to load without cross-origin issues
   serverExternalPackages: [],
   async redirects() {
-    return [
-      {
-        source: '/operators',
-        destination: '/operator/login',
-        permanent: false,
-      },
-      {
-        source: '/operators/:path*',
-        destination: '/operator/:path*',
-        permanent: false,
-      }
-    ];
+    return [];
   },
   async rewrites() {
     // using 127.0.0.1 instead of localhost avoids Node IPv6 resolving bugs (ECONNREFUSED)

@@ -7,8 +7,8 @@ const nextConfig: NextConfig = {
     return [];
   },
   async rewrites() {
-    // using 127.0.0.1 instead of localhost avoids Node IPv6 resolving bugs (ECONNREFUSED)
-    const BACKEND_URL = process.env.BACKEND_URL || 'http://127.0.0.1:3000';
+    // Default to global domain if no env is provided
+    const BACKEND_URL = process.env.BACKEND_URL || 'https://gilam-api.ecos.uz';
     return [
       {
         source: '/api/:path*',

@@ -5,7 +5,7 @@ import { CallsModule } from '../calls/calls.module';
 
 @Module({
   imports: [forwardRef(() => CallsModule)],
-  providers: [CallsGateway, SipBridgeGateway],
-  exports: [CallsGateway, SipBridgeGateway],
+  providers: [CallsGateway /*, SipBridgeGateway */],
+  exports: [CallsGateway /*, SipBridgeGateway */],
 })
 export class GatewayModule {}

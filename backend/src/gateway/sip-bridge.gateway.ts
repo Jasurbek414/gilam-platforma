@@ -52,7 +52,7 @@ function md5(s: string) {
 }
 
 // ─── GATEWAY ─────────────────────────────────────────────────────────────────
-@WebSocketGateway({ cors: { origin: '*' }, namespace: '/sip' })
+@WebSocketGateway({ cors: { origin: '*' }, namespace: '/sip', path: '/api/socket.io' })
 export class SipBridgeGateway
   implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect, OnModuleInit
 {

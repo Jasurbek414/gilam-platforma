@@ -15,6 +15,7 @@ import { Logger } from '@nestjs/common';
     origin: '*',
   },
   namespace: '/calls',
+  path: '/api/socket.io',
 })
 export class CallsGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer()

@@ -189,12 +189,6 @@ export const campaignsApi = {
   remove: (id: string) => request<void>(`/campaigns/${id}`, { method: 'DELETE' }),
 };
 
-// ===== TELEPHONY API =====
-export const telephonyApi = {
-  getConfig: (companyId: string) => request<any>(`/telephony/config/${companyId}`),
-  updateConfig: (data: { companyId?: string, credentials: any }) =>
-    request<any>('/telephony/config', { method: 'POST', body: JSON.stringify(data) }),
-};
 
 export function toSlug(name: string): string {
   return (name || '').toLowerCase().replace(/[^a-z0-9]/g, '');

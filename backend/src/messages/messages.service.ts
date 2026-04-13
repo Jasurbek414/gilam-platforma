@@ -55,4 +55,11 @@ export class MessagesService {
 
     return results;
   }
+
+  async getSupportContact() {
+    const support = await this.messageRepository.manager.query(
+      `SELECT id, "fullName", role, phone FROM "user" WHERE role = 'OPERATOR' OR role = 'SUPER_ADMIN' LIMIT 1`
+    );
+    return support && support.length > 0 ? support[0] : null;
+  }
 }

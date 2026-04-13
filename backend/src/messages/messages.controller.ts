@@ -21,4 +21,11 @@ export class MessagesController {
       otherUserId,
     );
   }
+
+  @Get('support-contact')
+  async getSupportContact() {
+    // For drivers to quickly get the operator/support account to chat with
+    // For now we just find any user with role OPERATOR or SUPER_ADMIN
+    return await this.messagesService.getSupportContact();
+  }
 }

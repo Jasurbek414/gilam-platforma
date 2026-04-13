@@ -57,8 +57,11 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
     removeToken();
     if (typeof window !== 'undefined') {
       const isCompanyPage = window.location.pathname.startsWith('/company');
+      const isDriverPage = window.location.pathname.startsWith('/driver');
       
-      if (isCompanyPage) {
+      if (isDriverPage) {
+        setTimeout(() => window.location.href = '/driver/login', 0);
+      } else if (isCompanyPage) {
         setTimeout(() => window.location.href = '/company/login', 0);
       } else {
         setTimeout(() => window.location.href = '/', 0);

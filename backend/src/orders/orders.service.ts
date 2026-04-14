@@ -210,6 +210,23 @@ export class OrdersService {
         text: `Holati: ${updateDto.status}`,
         type: 'order',
       });
+
+      // Haydovchiga yetkazish vaqti kelganda eslatma
+      if (updateDto.status === OrderStatus.READY_FOR_DELIVERY && order.driverId) {
+        try {
+          const driver = await this.orderRepository.manager.findOne(User, { where: { id: order.driverId } });
+          if (driver && driver.expoPushToken) {
+            this.notificationsService.sendPushNotification(
+              driver.expoPushToken, 
+              'Gilam yetkazishga tayyor! 🚐', 
+              `Buyurtma (${order.id.substring(0, 8)}) qadoqlandi va tayyor. Yo'lga chiqishingiz mumkin!`, 
+              { orderId: order.id, status: updateDto.status }
+            );
+          }
+        } catch (err) {
+          console.warn('Ready for delivery driver push fail:', err);
+        }
+      }
     }
 
     return saved;

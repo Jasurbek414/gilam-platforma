@@ -43,4 +43,11 @@ export class ExpensesService {
     if (!expense) throw new NotFoundException('Expense not found');
     await this.expenseRepository.remove(expense);
   }
+
+  async update(id: string, data: Partial<Expense>): Promise<Expense> {
+    const expense = await this.expenseRepository.findOne({ where: { id } });
+    if (!expense) throw new NotFoundException('Expense not found');
+    Object.assign(expense, data);
+    return this.expenseRepository.save(expense);
+  }
 }

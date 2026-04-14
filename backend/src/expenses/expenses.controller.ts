@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Param, Delete, Query } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Body, Param, Delete, Query } from '@nestjs/common';
 import { ExpensesService } from './expenses.service';
 import { Expense } from './entities/expense.entity';
 
@@ -28,5 +28,10 @@ export class ExpensesController {
   @Delete(':id')
   remove(@Param('id') id: string) {
     return this.expensesService.remove(id);
+  }
+
+  @Patch(':id')
+  update(@Param('id') id: string, @Body() data: Partial<Expense>) {
+    return this.expensesService.update(id, data);
   }
 }

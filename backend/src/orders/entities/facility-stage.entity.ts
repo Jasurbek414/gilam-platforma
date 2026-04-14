@@ -17,8 +17,8 @@ export class FacilityStage {
   @Column({ name: 'order_index', type: 'int', default: 0 })
   orderIndex: number;
 
-  @Column({ name: 'status_filter', nullable: true })
-  statusFilter: string;
+  @Column({ name: 'status_filter', nullable: true, default: null })
+  statusFilter: string | null;
 
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;

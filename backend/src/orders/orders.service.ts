@@ -271,7 +271,7 @@ export class OrdersService {
   }
 
   async getFacilityStages(companyId: string) {
-    return this.facilityStageRepository.find({
+    const stages = await this.facilityStageRepository.find({
       where: { companyId },
       order: { orderIndex: 'ASC', createdAt: 'ASC' }
     });

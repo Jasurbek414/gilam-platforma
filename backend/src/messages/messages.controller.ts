@@ -1,4 +1,4 @@
-import { Controller, Get, Param, UseGuards, Request } from '@nestjs/common';
+import { Controller, Get, Param, UseGuards, Request, Req } from '@nestjs/common';
 import { MessagesService } from './messages.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
@@ -23,9 +23,9 @@ export class MessagesController {
   }
 
   @Get('support-contact')
-  async getSupportContact() {
+  async getSupportContact(@Req() req: any) {
     // For drivers to quickly get the operator/support account to chat with
     // For now we just find any user with role OPERATOR or SUPER_ADMIN
-    return await this.messagesService.getSupportContact();
+    return await this.messagesService.getSupportContact(req.user?.companyId);
   }
 }

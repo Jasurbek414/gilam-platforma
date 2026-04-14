@@ -56,10 +56,19 @@ export class MessagesService {
     return results;
   }
 
-  async getSupportContact() {
-    const support = await this.messageRepository.manager.query(
-      `SELECT id, full_name as "fullName", role, phone FROM "users" WHERE role = 'OPERATOR' OR role = 'SUPER_ADMIN' LIMIT 1`
+  async getSupportContact(companyId?: string) {
+    if (companyId) {
+      const support = await this.messageRepository.manager.query(
+        `SELECT id, full_name as "fullName", role, phone FROM "users" WHERE company_id = $1 AND (role = 'OPERATOR' OR role = 'COMPANY_ADMIN') LIMIT 1`,
+        [companyId]
+      );
+      if (support && support.length > 0) return support[0];
+    }
+    
+    // Fallback to super admin if no company specific support found
+    const fallback = await this.messageRepository.manager.query(
+      `SELECT id, full_name as "fullName", role, phone FROM "users" WHERE role = 'SUPER_ADMIN' LIMIT 1`
     );
-    return support && support.length > 0 ? support[0] : null;
+    return fallback && fallback.length > 0 ? fallback[0] : null;
   }
 }

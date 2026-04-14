@@ -29,7 +29,10 @@ export class StagesController {
   }
 
   @Put('reorder')
-  async reorderStages(@Body('stages') stages: { id: string; orderIndex: number }[]) {
-    return this.ordersService.reorderFacilityStages(stages);
+  async reorderStages(
+    @Body('companyId') companyId: string,
+    @Body('stageIds') stageIds: string[],
+  ) {
+    return this.ordersService.reorderFacilityStages(companyId, stageIds);
   }
 }

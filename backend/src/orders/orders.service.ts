@@ -255,6 +255,7 @@ export class OrdersService {
         { companyId, status: OrderStatus.AT_FACILITY },
         { companyId, status: OrderStatus.WASHING },
         { companyId, status: OrderStatus.DRYING },
+        { companyId, status: OrderStatus.FINISHED },
         { companyId, status: OrderStatus.PICKED_UP }, // Ba'zan sexga yetib kelganini belgilash uchun
       ],
       relations: ['customer', 'items', 'items.service'],

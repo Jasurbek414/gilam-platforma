@@ -28,6 +28,9 @@ export class Expense {
   @Column()
   companyId: string;
 
+  @Column({ type: 'uuid', nullable: true })
+  userId: string;
+
   @CreateDateColumn()
   createdAt: Date;
 

@@ -20,6 +20,11 @@ export class ExpensesController {
     return this.expensesService.findAllByCompany(companyId, startDate, endDate);
   }
 
+  @Get('user/:userId')
+  findByUser(@Param('userId') userId: string) {
+    return this.expensesService.findAllByUser(userId);
+  }
+
   @Delete(':id')
   remove(@Param('id') id: string) {
     return this.expensesService.remove(id);

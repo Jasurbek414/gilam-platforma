@@ -31,6 +31,13 @@ export class ExpensesService {
     return query.getMany();
   }
 
+  async findAllByUser(userId: string): Promise<Expense[]> {
+    return this.expenseRepository.find({
+      where: { userId },
+      order: { createdAt: 'DESC' }
+    });
+  }
+
   async remove(id: string): Promise<void> {
     const expense = await this.expenseRepository.findOne({ where: { id } });
     if (!expense) throw new NotFoundException('Expense not found');

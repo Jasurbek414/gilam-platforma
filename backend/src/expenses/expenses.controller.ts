@@ -2,7 +2,7 @@ import { Controller, Get, Post, Body, Param, Delete, Query } from '@nestjs/commo
 import { ExpensesService } from './expenses.service';
 import { Expense } from './entities/expense.entity';
 
-@Controller('api/expenses')
+@Controller('expenses')
 export class ExpensesController {
   constructor(private readonly expensesService: ExpensesService) {}
 

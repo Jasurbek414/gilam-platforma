@@ -263,12 +263,7 @@ export class OrdersService {
     if (orderIds.length === 0) return [];
 
     return this.orderRepository.find({
-      where: [
-        { id: In(orderIds), companyId, status: OrderStatus.READY_FOR_DELIVERY },
-        { id: In(orderIds), companyId, status: OrderStatus.OUT_FOR_DELIVERY },
-        { id: In(orderIds), companyId, status: OrderStatus.DELIVERED },
-        { id: In(orderIds), companyId, status: OrderStatus.CANCELLED },
-      ],
+      where: { id: In(orderIds), companyId },
       relations: ['customer', 'items', 'items.service', 'facilityStage'],
       order: { updatedAt: 'DESC' },
       take: 50,

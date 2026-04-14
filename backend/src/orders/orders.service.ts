@@ -313,4 +313,32 @@ export class OrdersService {
 
     return { totalOrders, totalRevenue, newOrders, inProgress, completed };
   }
+
+  async updateItemPrice(itemId: string, price: number) {
+    const item = await this.orderItemRepository.findOne({
+      where: { id: itemId },
+    });
+    if (!item) {
+      throw new NotFoundException(`Item #${itemId} topilmadi`);
+    }
+
+    item.totalPrice = price;
+    await this.orderItemRepository.save(item);
+
+    // Update order totalAmount
+    const order = await this.orderRepository.findOne({
+      where: { id: item.orderId },
+      relations: ['items'],
+    });
+
+    if (order) {
+      order.totalAmount = order.items.reduce(
+        (acc, i) => acc + Number(i.totalPrice || 0),
+        0,
+      );
+      await this.orderRepository.save(order);
+    }
+
+    return order;
+  }
 }

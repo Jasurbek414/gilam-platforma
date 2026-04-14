@@ -86,4 +86,12 @@ export class OrdersController {
   ) {
     return this.ordersService.updateStatus(id, updateOrderStatusDto);
   }
+
+  @Patch('items/:itemId/price')
+  updateItemPrice(
+    @Param('itemId', ParseUUIDPipe) itemId: string,
+    @Body('price') price: number,
+  ) {
+    return this.ordersService.updateItemPrice(itemId, price);
+  }
 }

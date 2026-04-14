@@ -265,6 +265,10 @@ export class OrdersService {
   async getDriverCompletedOrders(driverId: string) {
     return this.orderRepository.find({
       where: [
+        { driverId, status: OrderStatus.AT_FACILITY },
+        { driverId, status: OrderStatus.WASHING },
+        { driverId, status: OrderStatus.DRYING },
+        { driverId, status: OrderStatus.FINISHED },
         { driverId, status: OrderStatus.DELIVERED },
         { driverId, status: OrderStatus.CANCELLED },
       ],

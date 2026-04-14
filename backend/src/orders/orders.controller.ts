@@ -76,7 +76,7 @@ export class OrdersController {
   ) {
     // If it's the master looking (no user injected correctly via decorator in simple setup or they are admin), fallback to all.
     // But since JWT guard gives us user, we can check role
-    if (user?.appRole === 'FACILITY') {
+    if (user?.role === UserRole.WASHER || user?.role === UserRole.FINISHER) {
        return this.ordersService.getWorkerCompletedOrders(companyId, user.id);
     }
     return this.ordersService.getFacilityCompletedOrders(companyId);

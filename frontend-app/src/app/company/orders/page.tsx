@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { MdAdd, MdSearch, MdFilterList, MdShoppingCart, MdPerson, MdPhone, MdClose, MdExpandMore, MdExpandLess, MdPrint } from 'react-icons/md';
+import { MdAdd, MdSearch, MdFilterList, MdShoppingCart, MdPerson, MdPhone, MdClose, MdExpandMore, MdExpandLess, MdPrint, MdVisibility, MdLocationOn, MdNotes, MdAccessTime, MdDirectionsCar, MdLocalMall } from 'react-icons/md';
 import Modal from '@/components/ui/Modal';
 import { ordersApi, customersApi, servicesApi, getUser } from '@/lib/api';
 import { useRouter } from 'next/navigation';
@@ -27,6 +27,7 @@ export default function CompanyOrdersPage() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [filterStatus, setFilterStatus] = useState('ALL');
+  const [viewOrder, setViewOrder] = useState<any>(null);
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -415,7 +416,14 @@ export default function CompanyOrdersPage() {
                       {Number(order.totalAmount).toLocaleString()}
                     </span>
                   </td>
-                  <td className="py-5 px-6 text-right">
+                  <td className="py-5 px-6 text-right whitespace-nowrap">
+                    <button 
+                      onClick={() => setViewOrder(order)}
+                      className="p-2.5 bg-blue-50 text-blue-600 rounded-xl hover:bg-blue-600 hover:text-white transition-all shadow-sm mr-2"
+                      title="Batafsil ko'rish"
+                    >
+                      <MdVisibility className="text-xl" />
+                    </button>
                     <button 
                       onClick={() => handlePrint(order)}
                       className="p-2.5 bg-slate-100 text-slate-600 rounded-xl hover:bg-blue-600 hover:text-white transition-all shadow-sm"
@@ -667,17 +675,138 @@ export default function CompanyOrdersPage() {
             />
           </div>
 
-          <div className="flex gap-3 pt-2">
-            <button type="button" onClick={() => setIsModalOpen(false)}
-              className="flex-1 py-4 text-sm font-bold text-slate-500 bg-slate-100 rounded-2xl hover:bg-slate-200 active:scale-95 transition-all">
-              BEKOR QILISH
+          {/* Submit Action */}
+          <div className="pt-4 flex items-center justify-end border-t border-slate-100">
+            <button
+              onClick={() => setIsModalOpen(false)}
+              type="button"
+              className="px-6 py-3 mr-3 text-sm font-bold text-slate-500 hover:text-slate-800 transition-colors"
+            >
+              Bekor qilish
             </button>
-            <button type="submit" disabled={saving}
-              className="flex-1 py-4 text-sm font-black tracking-widest uppercase text-white bg-blue-600 rounded-2xl shadow-xl shadow-blue-500/20 hover:shadow-blue-500/40 hover:-translate-y-0.5 active:scale-95 transition-all disabled:opacity-50">
-              {saving ? 'SAQLANMOQDA...' : 'BUYURTMA QABUL QILISH'}
+            <button
+              disabled={saving}
+              type="submit"
+              className="px-8 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-black shadow-lg shadow-blue-600/30 transition-all disabled:opacity-50"
+            >
+              {saving ? 'Saqlanmoqda...' : 'Tasdiqlash'}
             </button>
           </div>
         </form>
+      </Modal>
+
+      <Modal isOpen={!!viewOrder} onClose={() => setViewOrder(null)} title="Buyurtma Ma'lumotlari">
+        {viewOrder && (
+           <div className="space-y-6 pb-6 text-slate-800">
+             
+              {/* Header Info */}
+              <div className="flex justify-between items-start bg-slate-50 p-4 rounded-2xl border border-slate-100">
+                 <div>
+                    <h3 className="text-lg font-black text-slate-900 mb-1">Buyurtma #{viewOrder.id.substring(0,8)}</h3>
+                    <p className="text-xs font-bold text-slate-500">
+                      <MdAccessTime className="inline mr-1" />
+                      Yaratilgan: {new Date(viewOrder.createdAt).toLocaleString()}
+                    </p>
+                 </div>
+                 <span className={`px-4 py-2 rounded-xl text-xs font-black tracking-wider uppercase ${statusBadge[viewOrder.status] || 'bg-slate-200 text-slate-700'}`}>
+                    {statusLabels[viewOrder.status] || viewOrder.status}
+                 </span>
+              </div>
+
+              {/* Customer Info */}
+              <div className="grid grid-cols-2 gap-4">
+                 <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
+                    <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">Mijoz Obyekti</h4>
+                    <p className="font-bold text-sm text-slate-800 flex items-center mb-1">
+                      <MdPerson className="text-blue-500 mr-2 text-lg"/> 
+                      {viewOrder.customer?.fullName || 'Topilmadi'}
+                    </p>
+                    <p className="font-bold text-sm text-slate-600 flex items-center mb-1">
+                      <MdPhone className="text-green-500 mr-2 text-lg"/> 
+                      {viewOrder.customer?.phone1} {viewOrder.customer?.phone2 && `/ ${viewOrder.customer.phone2}`}
+                    </p>
+                    {viewOrder.customer?.address && (
+                      <p className="font-semibold text-xs text-slate-500 flex items-start mt-2 leading-relaxed">
+                        <MdLocationOn className="text-red-400 mr-2 text-lg shrink-0"/> 
+                        {viewOrder.customer.address}
+                      </p>
+                    )}
+                 </div>
+
+                 <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-between">
+                    <div>
+                        <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">Tarkibiy Qismi</h4>
+                        <p className="font-bold text-sm text-slate-800 flex items-center mb-1">
+                          <MdLocalMall className="text-purple-500 mr-2 text-lg"/>
+                          Jami: {viewOrder.items?.length || 0} xil tur
+                        </p>
+                        {viewOrder.driver && (
+                          <p className="font-bold text-sm text-slate-800 flex items-center mt-2">
+                             <MdDirectionsCar className="text-yellow-500 mr-2 text-lg"/>
+                             Haydovchi: {viewOrder.driver.fullName}
+                          </p>
+                        )}
+                    </div>
+                    {viewOrder.deadlineDate && (
+                      <div className="mt-4 bg-red-50 text-red-600 p-2 rounded-lg text-xs font-bold border border-red-100 flex items-center">
+                         <MdAccessTime className="mr-2 text-base"/>
+                         Qaytarish: {new Date(viewOrder.deadlineDate).toLocaleDateString()}
+                      </div>
+                    )}
+                 </div>
+              </div>
+
+              {/* Special Note */}
+              {viewOrder.notes && (
+                 <div className="bg-yellow-50 border border-yellow-200 p-4 rounded-2xl flex items-start shadow-sm">
+                    <MdNotes className="text-yellow-600 text-2xl mr-3 shrink-0 mt-0.5" />
+                    <div>
+                       <h4 className="text-[10px] font-black text-yellow-600 uppercase tracking-widest mb-1">Alohida Izoh</h4>
+                       <p className="font-bold text-sm text-yellow-800 whitespace-pre-line leading-relaxed">{viewOrder.notes}</p>
+                    </div>
+                 </div>
+              )}
+
+              {/* Items List */}
+              <div className="bg-slate-50 p-1 rounded-2xl border border-slate-200 shadow-inner">
+                 <table className="w-full text-left border-collapse">
+                    <thead>
+                      <tr>
+                         <th className="py-3 px-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Xizmat</th>
+                         <th className="py-3 px-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Miqdor</th>
+                         <th className="py-3 px-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Summa</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {viewOrder.items?.map((it:any, idx:number) => {
+                         const u = MEASUREMENT_UNITS.find(m => m.value === it.service?.measurementUnit)?.label || it.service?.measurementUnit;
+                         return (
+                           <tr key={idx} className="border-t border-slate-200 bg-white first:rounded-t-xl hover:bg-slate-50 transition-colors">
+                              <td className="py-3 px-4">
+                                 <p className="font-bold text-sm text-slate-800">{it.service?.name}</p>
+                                 {(it.width && it.length) ? (
+                                    <p className="text-xs font-semibold text-slate-500 mt-0.5">O'lcham: {it.width} x {it.length}</p>
+                                 ) : null}
+                              </td>
+                              <td className="py-3 px-4 text-center">
+                                 <span className="bg-slate-100 text-slate-700 px-2.5 py-1 rounded-lg text-xs font-bold">{it.quantity} {u}</span>
+                              </td>
+                              <td className="py-3 px-4 text-right font-black text-sm text-slate-800">
+                                 {Number(it.totalPrice).toLocaleString()}
+                              </td>
+                           </tr>
+                         )
+                      })}
+                    </tbody>
+                 </table>
+                 <div className="p-5 flex justify-between items-center border-t border-slate-200 bg-white rounded-b-2xl">
+                    <span className="text-xs font-black text-slate-400 uppercase tracking-widest">Jami To'lov:</span>
+                    <span className="text-xl font-black text-blue-600">{Number(viewOrder.totalAmount).toLocaleString()} so'm</span>
+                 </div>
+              </div>
+
+           </div>
+        )}
       </Modal>
     </div>
   );

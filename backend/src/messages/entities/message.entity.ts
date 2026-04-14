@@ -31,7 +31,7 @@ export class Message {
   @JoinColumn({ name: 'recipient_id' })
   recipient: User;
 
-  @Column({ name: 'company_id', type: 'uuid' })
+  @Column({ name: 'company_id', type: 'uuid', nullable: true })
   companyId: string;
 
   @ManyToOne(() => Company)

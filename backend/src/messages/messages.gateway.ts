@@ -77,18 +77,23 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
     if (!senderId) return;
 
-    // Save to DB
-    const message = await this.messagesService.create({
-      text: data.text,
-      senderId,
-      recipientId: data.recipientId,
-      companyId: data.companyId,
-    });
+    try {
+      // Save to DB
+      const message = await this.messagesService.create({
+        text: data.text,
+        senderId,
+        recipientId: data.recipientId,
+        companyId: data.companyId,
+      });
 
-    // Notify recipient if connected
-    this.server.to(`user-${data.recipientId}`).emit('newMessage', message);
+      // Notify recipient if connected
+      this.server.to(`user-${data.recipientId}`).emit('newMessage', message);
 
-    // Echo to sender (for multi-device sync if needed, but here just confirmation)
-    return message;
+      // Echo to sender (for multi-device sync if needed, but here just confirmation)
+      return message;
+    } catch(e) {
+      console.error('SendMessage DB Error:', e);
+      return { error: 'Failed to save message' };
+    }
   }
 }

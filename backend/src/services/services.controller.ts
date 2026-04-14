@@ -33,9 +33,20 @@ export class ServicesController {
     @Param('companyId', ParseUUIDPipe) companyId: string,
     @CurrentUser() user: User,
   ) {
+    if (user.role === UserRole.SUPER_ADMIN || user.role === UserRole.OPERATOR) {
+      if (!companyId || companyId === 'null') return this.servicesService.findAll();
+    }
     const targetId =
       (user.role === UserRole.SUPER_ADMIN || user.role === UserRole.OPERATOR) ? companyId : user.companyId;
     return this.servicesService.findAllByCompany(targetId);
+  }
+
+  @Get()
+  findAllGlobal(@CurrentUser() user: User) {
+    if (user.role === UserRole.SUPER_ADMIN || user.role === UserRole.OPERATOR) {
+      return this.servicesService.findAll();
+    }
+    return this.servicesService.findAllByCompany(user.companyId);
   }
 
   @Get(':id')

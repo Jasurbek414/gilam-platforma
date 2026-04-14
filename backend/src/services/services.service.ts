@@ -16,6 +16,13 @@ export class ServicesService {
     return this.serviceRepository.save(service);
   }
 
+  async findAll(): Promise<Service[]> {
+    return this.serviceRepository.find({
+      order: { name: 'ASC' },
+      relations: ['company']
+    });
+  }
+
   async findAllByCompany(companyId: string): Promise<Service[]> {
     return this.serviceRepository.find({
       where: { companyId },

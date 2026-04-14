@@ -34,9 +34,31 @@ export class CustomersController {
     @Param('companyId', ParseUUIDPipe) companyId: string,
     @CurrentUser() user: User,
   ) {
+    if (user.role === UserRole.SUPER_ADMIN || user.role === UserRole.OPERATOR) {
+      if (!companyId || companyId === 'null') return this.customersService.findAll();
+    }
     const targetId =
       (user.role === UserRole.SUPER_ADMIN || user.role === UserRole.OPERATOR) ? companyId : user.companyId;
     return this.customersService.findAllByCompany(targetId);
+  }
+
+  @Get()
+  findAllGlobal(@CurrentUser() user: User) {
+    if (user.role === UserRole.SUPER_ADMIN || user.role === UserRole.OPERATOR) {
+      return this.customersService.findAll();
+    }
+    return this.customersService.findAllByCompany(user.companyId);
+  }
+
+  @Get('search/global')
+  searchGlobal(
+    @Query('q') query: string,
+    @CurrentUser() user: User,
+  ) {
+    if (user.role === UserRole.SUPER_ADMIN || user.role === UserRole.OPERATOR) {
+      return this.customersService.search(null, query || '');
+    }
+    return this.customersService.search(user.companyId, query || '');
   }
 
   @Get('search/:companyId')

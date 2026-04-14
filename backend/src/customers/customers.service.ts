@@ -36,6 +36,13 @@ export class CustomersService {
     return this.customerRepository.save(customer);
   }
 
+  async findAll(): Promise<Customer[]> {
+    return this.customerRepository.find({
+      relations: ['operator'],
+      order: { createdAt: 'DESC' },
+    });
+  }
+
   async findAllByCompany(companyId: string): Promise<Customer[]> {
     return this.customerRepository.find({
       where: { companyId },
@@ -55,16 +62,23 @@ export class CustomersService {
     return customer;
   }
 
-  async search(companyId: string, query: string): Promise<Customer[]> {
-    return this.customerRepository
-      .createQueryBuilder('c')
-      .where('c.company_id = :companyId', { companyId })
-      .andWhere(
-        '(c.full_name ILIKE :q OR c.phone_1 ILIKE :q OR c.phone_2 ILIKE :q)',
-        { q: `%${query}%` },
-      )
-      .orderBy('c.full_name', 'ASC')
-      .getMany();
+  async search(companyId: string | null, query: string): Promise<Customer[]> {
+    const qb = this.customerRepository.createQueryBuilder('c');
+    
+    if (companyId) {
+      qb.where('c.company_id = :companyId', { companyId });
+    }
+
+    if (query) {
+      const condition = '(c.full_name ILIKE :q OR c.phone_1 ILIKE :q OR c.phone_2 ILIKE :q)';
+      if (companyId) {
+        qb.andWhere(condition, { q: `%${query}%` });
+      } else {
+        qb.where(condition, { q: `%${query}%` });
+      }
+    }
+
+    return qb.orderBy('c.full_name', 'ASC').getMany();
   }
 
   async update(id: string, dto: UpdateCustomerDto): Promise<Customer> {

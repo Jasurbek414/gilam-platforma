@@ -166,11 +166,14 @@ export class OrdersService {
     return order;
   }
 
-  async updateStatus(id: string, updateDto: UpdateOrderStatusDto, userId?: string) {
+  async updateStatus(id: string, updateDto: any, userId?: string) {
     const order = await this.findOne(id);
 
     if (updateDto.status) {
       order.status = updateDto.status;
+    }
+    if (updateDto.facilityStageId !== undefined) {
+      order.facilityStageId = updateDto.facilityStageId || null;
     }
     if (updateDto.driverId) {
       order.driverId = updateDto.driverId;
@@ -266,10 +269,29 @@ export class OrdersService {
         { id: In(orderIds), companyId, status: OrderStatus.DELIVERED },
         { id: In(orderIds), companyId, status: OrderStatus.CANCELLED },
       ],
-      relations: ['customer', 'items', 'items.service'],
+      relations: ['customer', 'items', 'items.service', 'facilityStage'],
       order: { updatedAt: 'DESC' },
       take: 50,
     });
+  }
+
+  async getFacilityStages(companyId: string) {
+    return this.facilityStageRepository.find({
+      where: { companyId },
+      order: { orderIndex: 'ASC', createdAt: 'ASC' }
+    });
+  }
+
+  async createFacilityStage(companyId: string, name: string, icon: string) {
+    const existing = await this.facilityStageRepository.find({ where: { companyId }});
+    const nextIndex = existing.length > 0 ? Math.max(...existing.map(s => s.orderIndex)) + 1 : 0;
+    const stage = this.facilityStageRepository.create({
+      companyId,
+      name,
+      icon: icon || 'folder',
+      orderIndex: nextIndex,
+    });
+    return this.facilityStageRepository.save(stage);
   }
 
   async getDriverActiveOrders(driverId: string) {

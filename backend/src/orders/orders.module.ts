@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { OrdersController } from './orders.controller';
+import { StagesController } from './stages.controller';
 import { OrdersService } from './orders.service';
 import { DeadlineCronService } from './deadline-cron.service';
 import { Order } from './entities/order.entity';
@@ -17,7 +18,7 @@ import { AuthModule } from '../auth/auth.module';
     NotificationsModule,
     AuthModule,
   ],
-  controllers: [OrdersController],
+  controllers: [OrdersController, StagesController],
   providers: [OrdersService, DeadlineCronService],
   exports: [OrdersService],
 })

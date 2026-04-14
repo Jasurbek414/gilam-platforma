@@ -15,6 +15,7 @@ import { MessagesModule } from './messages/messages.module';
 import { CampaignsModule } from './campaigns/campaigns.module';
 import { GatewayModule } from './gateway/gateway.module';
 import { CallsModule } from './calls/calls.module';
+import { ScheduleModule } from '@nestjs/schedule';
 
 @Module({
   imports: [
@@ -36,6 +37,7 @@ import { CallsModule } from './calls/calls.module';
         synchronize: true,
       }),
     }),
+    ScheduleModule.forRoot(),
     CompaniesModule,
     UsersModule,
     AuthModule,

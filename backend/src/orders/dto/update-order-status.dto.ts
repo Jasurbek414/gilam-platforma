@@ -23,4 +23,8 @@ export class UpdateOrderStatusDto {
   @IsOptional()
   @IsString()
   notes?: string;
+
+  @IsOptional()
+  @IsString()
+  deadlineDate?: string;
 }

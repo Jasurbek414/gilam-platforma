@@ -200,6 +200,9 @@ export class OrdersService {
     if (updateDto.notes) {
       order.notes = updateDto.notes;
     }
+    if (updateDto.deadlineDate) {
+      order.deadlineDate = new Date(updateDto.deadlineDate);
+    }
 
     const saved = await this.orderRepository.save(order);
 

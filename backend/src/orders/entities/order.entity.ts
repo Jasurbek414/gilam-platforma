@@ -101,6 +101,9 @@ export class Order {
   @OneToMany(() => OrderItem, (item) => item.order, { cascade: true })
   items: OrderItem[];
 
+  @Column({ name: 'deadline_date', type: 'timestamp', nullable: true })
+  deadlineDate: Date;
+
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
 

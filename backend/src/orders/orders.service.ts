@@ -270,6 +270,20 @@ export class OrdersService {
     });
   }
 
+  async getFacilityCompletedOrders(companyId: string) {
+    return this.orderRepository.find({
+      where: [
+        { companyId, status: OrderStatus.READY_FOR_DELIVERY },
+        { companyId, status: OrderStatus.OUT_FOR_DELIVERY },
+        { companyId, status: OrderStatus.DELIVERED },
+        { companyId, status: OrderStatus.CANCELLED },
+      ],
+      relations: ['customer', 'items', 'items.service'],
+      order: { updatedAt: 'DESC' },
+      take: 50,
+    });
+  }
+
   async getCompanyStats(companyId: string) {
     const orders = await this.orderRepository.find({
       where: { companyId },

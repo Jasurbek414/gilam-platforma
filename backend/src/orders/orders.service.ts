@@ -45,6 +45,21 @@ export class OrdersService {
     // Run within transaction for ACID compliance
     return this.orderRepository.manager.transaction(
       async (manager: EntityManager) => {
+        // 0. Pre-fetch services to infer companyId if missing and calculate prices later
+        let services = [];
+        let serviceMap = new Map();
+        if (items && items.length > 0) {
+          const serviceIds = items.map((i) => i.serviceId);
+          services = await manager.find(Service, {
+            where: { id: In(serviceIds) },
+          });
+          serviceMap = new Map(services.map((s) => [s.id, s]));
+          
+          if (!orderData.companyId && services.length > 0) {
+            orderData.companyId = services[0].companyId;
+          }
+        }
+
         // 1. Create Order shell
         const order = manager.create(Order, {
           ...orderData,
@@ -56,18 +71,6 @@ export class OrdersService {
         let totalAmount = 0;
 
         if (items && items.length > 0) {
-          // 2. Fetch all services at once (Optimization)
-          const serviceIds = items.map((i) => i.serviceId);
-          const services = await manager.find(Service, {
-            where: { id: In(serviceIds) },
-          });
-
-          // Auto-infer companyId if it's missing (Global Operator logic)
-          if (!order.companyId && services.length > 0) {
-            order.companyId = services[0].companyId;
-          }
-
-          const serviceMap = new Map(services.map((s) => [s.id, s]));
           const orderItems: OrderItem[] = [];
 
           for (const itemDto of items) {

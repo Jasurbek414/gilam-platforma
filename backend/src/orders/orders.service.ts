@@ -275,9 +275,29 @@ export class OrdersService {
       where: { companyId },
       order: { orderIndex: 'ASC', createdAt: 'ASC' }
     });
+
+    // Agar hech qanday bosqich topilmasa, standart bosqichlarni yaratamiz
+    if (stages.length === 0) {
+      const defaults = [
+        { name: 'Sexga tushgan', icon: 'business', statusFilter: 'AT_FACILITY', orderIndex: 0 },
+        { name: 'Yuvilmoqda', icon: 'water', statusFilter: 'WASHING', orderIndex: 1 },
+        { name: 'Quritilmoqda', icon: 'sunny', statusFilter: 'DRYING', orderIndex: 2 },
+        { name: 'Pardozda', icon: 'sparkles', statusFilter: 'FINISHED', orderIndex: 3 },
+      ];
+      for (const d of defaults) {
+        const stage = this.facilityStageRepository.create({ companyId, ...d });
+        await this.facilityStageRepository.save(stage);
+      }
+      return this.facilityStageRepository.find({
+        where: { companyId },
+        order: { orderIndex: 'ASC' }
+      });
+    }
+
+    return stages;
   }
 
-  async createFacilityStage(companyId: string, name: string, icon: string) {
+  async createFacilityStage(companyId: string, name: string, icon: string, statusFilter?: string) {
     const existing = await this.facilityStageRepository.find({ where: { companyId }});
     const nextIndex = existing.length > 0 ? Math.max(...existing.map(s => s.orderIndex)) + 1 : 0;
     const stage = this.facilityStageRepository.create({
@@ -285,6 +305,7 @@ export class OrdersService {
       name,
       icon: icon || 'folder',
       orderIndex: nextIndex,
+      statusFilter: statusFilter || null,
     });
     return this.facilityStageRepository.save(stage);
   }

@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { MdSearch, MdFilterList, MdBusiness, MdShoppingCart } from 'react-icons/md';
+import { MdSearch, MdFilterList, MdBusiness, MdShoppingCart, MdVisibility, MdPrint, MdClose, MdPerson, MdPhone, MdLocationOn, MdNotes, MdAccessTime, MdDirectionsCar, MdLocalMall } from 'react-icons/md';
 import { ordersApi } from '@/lib/api';
 
 export default function AdminOrdersPage() {
@@ -9,6 +9,7 @@ export default function AdminOrdersPage() {
   const [statusFilter, setStatusFilter] = useState('ALL');
   const [orders, setOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [viewOrder, setViewOrder] = useState<any>(null);
 
   useEffect(() => {
     loadOrders();
@@ -24,6 +25,10 @@ export default function AdminOrdersPage() {
       setLoading(false);
     }
   }
+
+  const handlePrint = (order: any) => {
+    window.print();
+  };
 
   const statusLabels: Record<string, string> = {
     'NEW': 'Yangi',
@@ -119,6 +124,7 @@ export default function AdminOrdersPage() {
                 <th className="py-5 px-6">Mijoz / Telefon</th>
                 <th className="py-5 px-6 text-center">Holati</th>
                 <th className="py-5 px-8 text-right">Summa</th>
+                <th className="py-5 px-6 text-right">Amallar</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">

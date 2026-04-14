@@ -119,15 +119,17 @@ export default function CompanyFinancePage() {
      return c >= parsedStart && c <= parsedEnd;
   });
 
+  const totalIncomes = expenses.filter(e => e.type === 'INCOME').reduce((acc, e) => acc + Number(e.amount || 0), 0);
+  const totalExpenses = expenses.filter(e => e.type !== 'INCOME').reduce((acc, e) => acc + Number(e.amount || 0), 0);
+  
   const totalRevenue = filteredOrders
      .filter(o => ['DELIVERED', 'COMPLETED'].includes(o.status))
-     .reduce((acc, o) => acc + Number(o.totalAmount || 0), 0);
+     .reduce((acc, o) => acc + Number(o.totalAmount || 0), 0) + totalIncomes;
 
   const expectedRevenue = filteredOrders
      .filter(o => !['DELIVERED', 'COMPLETED', 'CANCELLED'].includes(o.status))
      .reduce((acc, o) => acc + Number(o.totalAmount || 0), 0);
 
-  const totalExpenses = expenses.reduce((acc, e) => acc + Number(e.amount || 0), 0);
   const residual = totalRevenue - totalExpenses;
 
   const stats = [
@@ -262,25 +264,27 @@ export default function CompanyFinancePage() {
                   (exp.title.toLowerCase().includes(expenseSearch.toLowerCase()) || 
                    exp.comment.toLowerCase().includes(expenseSearch.toLowerCase()))
                 )
-                .map((exp) => (
-                <tr key={exp.id} className="hover:bg-slate-50/50 transition-colors">
-                  <td className="px-6 py-4">
-                    <p className="text-sm font-bold text-slate-800">{exp.title}</p>
-                    <p className="text-xs text-slate-500 mt-0.5">{exp.date}</p>
-                  </td>
-                  <td className="px-6 py-4 text-sm font-medium text-slate-600">
-                    <span className="px-2 py-1 bg-slate-100 rounded-md text-[10px] uppercase font-black">
-                      {exp.category}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 text-sm text-slate-500 italic max-w-xs truncate">
-                    {exp.comment || "-"}
-                  </td>
-                  <td className="px-6 py-4 text-right text-rose-600 font-bold">
-                    -{Number(exp.amount).toLocaleString()} so'm
-                  </td>
-                </tr>
-              ))}
+                .map((exp) => {
+                  const isIncome = exp.type === 'INCOME';
+                  return (
+                  <tr key={exp.id} className="hover:bg-slate-50/50 transition-colors">
+                    <td className="px-6 py-4">
+                      <p className="text-sm font-bold text-slate-800">{exp.title}</p>
+                      <p className="text-xs text-slate-500 mt-0.5">{exp.date}</p>
+                    </td>
+                    <td className="px-6 py-4 text-sm font-medium text-slate-600">
+                      <span className={`px-2 py-1 rounded-md text-[10px] uppercase font-black ${isIncome ? 'bg-blue-100 text-blue-700' : 'bg-slate-100'}`}>
+                        {exp.category}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 text-sm text-slate-500 italic max-w-xs truncate">
+                      {exp.comment || "-"}
+                    </td>
+                    <td className={`px-6 py-4 text-right font-bold ${isIncome ? 'text-blue-600' : 'text-rose-600'}`}>
+                      {isIncome ? '+' : '-'}{Number(exp.amount).toLocaleString()} so'm
+                    </td>
+                  </tr>
+                )})}
               {expenses.length === 0 && (
                 <tr>
                   <td colSpan={4} className="px-6 py-12 text-center text-slate-400 font-medium">

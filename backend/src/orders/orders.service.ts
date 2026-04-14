@@ -237,11 +237,22 @@ export class OrdersService {
       where: [
         { driverId, status: OrderStatus.DRIVER_ASSIGNED },
         { driverId, status: OrderStatus.PICKED_UP },
-        { driverId, status: OrderStatus.AT_FACILITY },
-        { driverId, status: OrderStatus.WASHING },
-        { driverId, status: OrderStatus.DRYING },
+        // Haydovchi gibrid ko'rishi mumkin lekin asosan yetkazishlari
         { driverId, status: OrderStatus.READY_FOR_DELIVERY },
         { driverId, status: OrderStatus.OUT_FOR_DELIVERY },
+      ],
+      relations: ['customer', 'items', 'items.service'],
+      order: { createdAt: 'DESC' },
+    });
+  }
+
+  async getFacilityOrders(companyId: string) {
+    return this.orderRepository.find({
+      where: [
+        { companyId, status: OrderStatus.AT_FACILITY },
+        { companyId, status: OrderStatus.WASHING },
+        { companyId, status: OrderStatus.DRYING },
+        { companyId, status: OrderStatus.PICKED_UP }, // Ba'zan sexga yetib kelganini belgilash uchun
       ],
       relations: ['customer', 'items', 'items.service'],
       order: { createdAt: 'DESC' },

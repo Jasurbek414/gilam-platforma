@@ -21,6 +21,7 @@ export default function SettingsPage() {
     confirmPassword: ''
   });
   const [servicesList, setServicesList] = useState<any[]>([]);
+  const [newService, setNewService] = useState({ name: '', price: '', unit: 'SQM' });
 
   useEffect(() => {
     const initData = async () => {
@@ -92,12 +93,43 @@ export default function SettingsPage() {
     e.preventDefault();
     try {
       const promises = servicesList.map(s => 
-        servicesApi.update(s.id, { price: s.price })
+        servicesApi.update(s.id, { price: parseInt(s.price) })
       );
       await Promise.all(promises);
       toast.success('Narxlar muvaffaqiyatli saqlandi! 💰');
     } catch (err) {
       toast.error('Narxlarni saqlashda xatolik yuz berdi');
+    }
+  };
+
+  const handleAddService = async () => {
+    if (!newService.name || !newService.price) {
+      toast.error('Xizmat nomi va narxini kiritish majburiy');
+      return;
+    }
+    try {
+      const added = await servicesApi.create({
+        name: newService.name,
+        price: parseInt(newService.price) || 0,
+        measurementUnit: newService.unit,
+        companyId: user.companyId
+      });
+      setServicesList([...servicesList, added]);
+      setNewService({ name: '', price: '', unit: 'SQM' });
+      toast.success('Yangi xizmat qo\'shildi!');
+    } catch (err) {
+      toast.error('Qo\'shishda xatolik yuz berdi');
+    }
+  };
+
+  const handleDeleteService = async (id: string) => {
+    if (!confirm('Ushbu xizmatni rostdan ham o\'chirmoqchimisiz?')) return;
+    try {
+      await servicesApi.remove(id);
+      setServicesList(servicesList.filter(s => s.id !== id));
+      toast.success('O\'chirildi!');
+    } catch (err) {
+      toast.error('Xatolik yuz berdi do\'stim');
     }
   };
 
@@ -189,7 +221,7 @@ export default function SettingsPage() {
               </div>
 
               <div className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 gap-4">
                   {servicesList.length === 0 ? (
                     <div className="text-slate-400">Xizmatlar topilmadi.</div>
                   ) : servicesList.map(item => (
@@ -198,17 +230,62 @@ export default function SettingsPage() {
                         <span className="font-bold text-slate-800 text-sm">{item.name}</span>
                         <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-0.5">O'lchov: {item.measurementUnit === 'SQM' ? 'kv.m' : item.measurementUnit === 'PIECE' ? 'dona' : item.measurementUnit}</span>
                       </div>
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-3">
                         <input 
                           type="number" 
-                          className="w-24 px-3 py-2 rounded-xl border border-slate-200 text-right font-black text-slate-800 outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/5 transition-all"
+                          className="w-28 px-3 py-2 rounded-xl border border-slate-200 text-right font-black text-slate-800 outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/5 transition-all"
                           value={item.price}
                           onChange={(e) => handleUpdatePrice(item.id, parseInt(e.target.value) || 0)}
                         />
                         <span className="text-[10px] font-black text-slate-400 uppercase">so'm</span>
+                        <button onClick={() => handleDeleteService(item.id)} className="w-8 h-8 rounded-full bg-red-50 text-red-500 flex items-center justify-center hover:bg-red-500 hover:text-white transition-all ml-2" title="O'chirish">
+                          <span className="material-icons-round text-sm">✕</span>
+                        </button>
                       </div>
                     </div>
                   ))}
+                </div>
+
+                {/* Add New Service Form */}
+                <div className="mt-6 border-t-2 border-dashed border-slate-200 pt-6">
+                  <h4 className="text-sm font-bold text-slate-800 mb-4">Yangi Xizmat Qo'shish</h4>
+                  <div className="flex flex-col md:flex-row gap-4 items-end">
+                    <div className="flex-1 space-y-1.5">
+                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1">Xizmat nomi</label>
+                      <input 
+                        type="text" 
+                        placeholder="Masalan: Oddiy gilam"
+                        className="w-full px-4 py-3 rounded-2xl border border-slate-200 focus:border-indigo-500 outline-none font-bold text-slate-800 transition-all"
+                        value={newService.name}
+                        onChange={e => setNewService({...newService, name: e.target.value})}
+                      />
+                    </div>
+                    <div className="w-32 space-y-1.5">
+                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1">O'lchov</label>
+                      <select 
+                        className="w-full px-4 py-3 rounded-2xl border border-slate-200 focus:border-indigo-500 outline-none font-bold text-slate-800 transition-all"
+                        value={newService.unit}
+                        onChange={e => setNewService({...newService, unit: e.target.value})}
+                      >
+                        <option value="SQM">kv.m</option>
+                        <option value="PIECE">dona</option>
+                        <option value="KG">kg</option>
+                      </select>
+                    </div>
+                    <div className="w-40 space-y-1.5">
+                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1">Narxi (so'm)</label>
+                      <input 
+                        type="number" 
+                        placeholder="12000"
+                        className="w-full px-4 py-3 rounded-2xl border border-slate-200 focus:border-indigo-500 outline-none font-bold text-slate-800 transition-all"
+                        value={newService.price}
+                        onChange={e => setNewService({...newService, price: e.target.value})}
+                      />
+                    </div>
+                    <button onClick={handleAddService} className="h-[50px] px-6 bg-slate-800 text-white rounded-2xl font-black hover:bg-slate-900 transition-all flex items-center gap-2">
+                       Qo'shish
+                    </button>
+                  </div>
                 </div>
               </div>
 

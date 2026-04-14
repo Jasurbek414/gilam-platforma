@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Param, ParseUUIDPipe, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, ParseUUIDPipe, UseGuards, Delete, Put } from '@nestjs/common';
 import { OrdersService } from './orders.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
@@ -21,5 +21,15 @@ export class StagesController {
     @Body('icon') icon: string,
   ) {
     return this.ordersService.createFacilityStage(companyId, name, icon);
+  }
+
+  @Delete(':id')
+  async deleteStage(@Param('id', ParseUUIDPipe) id: string) {
+    return this.ordersService.deleteFacilityStage(id);
+  }
+
+  @Put('reorder')
+  async reorderStages(@Body('stages') stages: { id: string; orderIndex: number }[]) {
+    return this.ordersService.reorderFacilityStages(stages);
   }
 }

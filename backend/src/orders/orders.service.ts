@@ -289,6 +289,17 @@ export class OrdersService {
     return this.facilityStageRepository.save(stage);
   }
 
+  async deleteFacilityStage(id: string) {
+    // Rely on cascade or set null for orders (which is defined in schema with SET NULL)
+    return this.facilityStageRepository.delete(id);
+  }
+
+  async reorderFacilityStages(stages: { id: string; orderIndex: number }[]) {
+    return Promise.all(stages.map(st => 
+        this.facilityStageRepository.update(st.id, { orderIndex: st.orderIndex })
+    ));
+  }
+
   async getDriverActiveOrders(driverId: string) {
     return this.orderRepository.find({
       where: [

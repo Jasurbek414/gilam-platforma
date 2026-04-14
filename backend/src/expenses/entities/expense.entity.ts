@@ -9,6 +9,9 @@ export class Expense {
   @Column()
   title: string;
 
+  @Column({ type: 'varchar', length: 20, default: 'EXPENSE' })
+  type: string;
+
   @Column({ type: 'decimal', precision: 12, scale: 2 })
   amount: number;
 

@@ -4,12 +4,35 @@ import { Repository, IsNull } from 'typeorm';
 import { Notification } from './entities/notification.entity';
 import { CreateNotificationDto } from './dto/create-notification.dto';
 
+import { Expo } from 'expo-server-sdk';
+
+const expo = new Expo();
+
 @Injectable()
 export class NotificationsService {
   constructor(
     @InjectRepository(Notification)
     private readonly notificationRepo: Repository<Notification>,
   ) {}
+
+  async sendPushNotification(pushToken: string, title: string, body: string, payload?: any) {
+    if (!pushToken || !Expo.isExpoPushToken(pushToken)) return false;
+
+    try {
+      const messages = [{
+        to: pushToken,
+        sound: 'default',
+        title,
+        body,
+        data: payload || {},
+      }];
+      await expo.sendPushNotificationsAsync(messages as any);
+      return true;
+    } catch (e) {
+      console.error('Push Error:', e);
+      return false;
+    }
+  }
 
   async create(dto: CreateNotificationDto) {
     const notification = this.notificationRepo.create(dto);

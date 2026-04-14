@@ -4,6 +4,7 @@ import { Repository, In, EntityManager } from 'typeorm';
 import { Order, OrderStatus } from './entities/order.entity';
 import { OrderItem } from './entities/order-item.entity';
 import { Service, MeasurementUnit } from '../services/entities/service.entity';
+import { User } from '../users/entities/user.entity';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { UpdateOrderStatusDto } from './dto/update-order-status.dto';
 import { NotificationsService } from '../notifications/notifications.service';
@@ -168,6 +169,21 @@ export class OrdersService {
           text: `Buyurtmaga haydovchi biriktirildi.`,
           type: 'order',
         });
+      }
+
+      // 📱 DISPATCH PUSH NOTIFICATION TO DRIVER'S MOBILE
+      try {
+        const driver = await this.orderRepository.manager.findOne(User, { where: { id: updateDto.driverId } });
+        if (driver && driver.expoPushToken) {
+           this.notificationsService.sendPushNotification(
+              driver.expoPushToken, 
+              'Yangi buyurtma qabul qilindi! 🎉', 
+              `Sizga ajoyib bir yangi manzil biriktirildi. Diqqat bilan ko'zdan kechiring!`, 
+              { orderId: order.id }
+           );
+        }
+      } catch (err) {
+         console.warn('Driver Push fail:', err);
       }
     }
     if (updateDto.paymentStatus) {

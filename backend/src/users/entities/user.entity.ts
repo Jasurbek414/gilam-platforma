@@ -60,6 +60,9 @@ export class User {
   @Column({ type: 'enum', enum: UserStatus, default: UserStatus.ACTIVE })
   status: UserStatus;
 
+  @Column({ name: 'expo_push_token', nullable: true })
+  expoPushToken: string;
+
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
 

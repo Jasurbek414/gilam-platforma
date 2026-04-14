@@ -103,6 +103,10 @@ export class UsersService {
     return this.usersRepository.save(user);
   }
 
+  async updatePushToken(id: string, token: string): Promise<void> {
+    await this.usersRepository.update(id, { expoPushToken: token });
+  }
+
   async remove(id: string): Promise<void> {
     const user = await this.findOne(id);
     user.status = UserStatus.DELETED;

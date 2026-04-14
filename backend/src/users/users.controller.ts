@@ -70,6 +70,11 @@ export class UsersController {
     return this.usersService.findAllByCompany(targetId);
   }
 
+  @Put('push-token')
+  updatePushToken(@CurrentUser() user: User, @Body('token') token: string) {
+    return this.usersService.updatePushToken(user.id, token);
+  }
+
   @Get(':id')
   findOne(@Param('id', ParseUUIDPipe) id: string, @CurrentUser() user: User) {
     // Basic protection: check if same company or superadmin

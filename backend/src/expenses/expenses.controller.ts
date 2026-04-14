@@ -1,0 +1,27 @@
+import { Controller, Get, Post, Body, Param, Delete, Query } from '@nestjs/common';
+import { ExpensesService } from './expenses.service';
+import { Expense } from './entities/expense.entity';
+
+@Controller('api/expenses')
+export class ExpensesController {
+  constructor(private readonly expensesService: ExpensesService) {}
+
+  @Post()
+  create(@Body() data: Partial<Expense>) {
+    return this.expensesService.create(data);
+  }
+
+  @Get('company/:companyId')
+  findAll(
+    @Param('companyId') companyId: string,
+    @Query('startDate') startDate?: string,
+    @Query('endDate') endDate?: string,
+  ) {
+    return this.expensesService.findAllByCompany(companyId, startDate, endDate);
+  }
+
+  @Delete(':id')
+  remove(@Param('id') id: string) {
+    return this.expensesService.remove(id);
+  }
+}

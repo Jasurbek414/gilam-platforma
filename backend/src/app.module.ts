@@ -16,6 +16,7 @@ import { CampaignsModule } from './campaigns/campaigns.module';
 import { GatewayModule } from './gateway/gateway.module';
 import { CallsModule } from './calls/calls.module';
 import { ScheduleModule } from '@nestjs/schedule';
+import { ExpensesModule } from './expenses/expenses.module';
 
 @Module({
   imports: [
@@ -50,6 +51,7 @@ import { ScheduleModule } from '@nestjs/schedule';
     CampaignsModule,
     CallsModule,
     GatewayModule,
+    ExpensesModule,
   ],
   controllers: [AppController],
   providers: [AppService],

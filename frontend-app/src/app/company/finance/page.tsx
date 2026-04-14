@@ -11,67 +11,130 @@ import {
 } from 'react-icons/md';
 import Modal from '@/components/ui/Modal';
 import toast from 'react-hot-toast';
+import { getUser, ordersApi, expensesApi } from '@/lib/api';
+import { useRouter } from 'next/navigation';
 
 export default function CompanyFinancePage() {
+  const router = useRouter();
+  const [user, setUser] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
   const [period, setPeriod] = useState<'daily' | 'weekly' | 'monthly'>('daily'); 
-  const [startDate, setStartDate] = useState(new Date(new Date().setDate(new Date().getDate() - 30)).toISOString().split('T')[0]);
+  
+  const [startDate, setStartDate] = useState(new Date().toISOString().split('T')[0]);
   const [endDate, setEndDate] = useState(new Date().toISOString().split('T')[0]);
   const [isExpenseModalOpen, setIsExpenseModalOpen] = useState(false);
   const [expenseSearch, setExpenseSearch] = useState('');
   const [expenseCategory, setExpenseCategory] = useState('ALL');
+  const [saving, setSaving] = useState(false);
 
   const [expenses, setExpenses] = useState<any[]>([]);
+  const [orders, setOrders] = useState<any[]>([]);
   
   useEffect(() => {
-    const saved = localStorage.getItem('company_expenses');
-    if (saved) {
-      setExpenses(JSON.parse(saved));
-    } else {
-      const defaultExp = [
-        { id: 1, title: 'Yoqilg\'i', amount: '150,000', category: 'Logistika', comment: 'Isuzu uchun dizel', date: new Date().toISOString().split('T')[0] },
-        { id: 2, title: 'Xodim haqi', amount: '450,000', category: 'Ish haqi', comment: 'Kunlik to\'lovlar', date: new Date().toISOString().split('T')[0] },
-      ];
-      setExpenses(defaultExp);
-      localStorage.setItem('company_expenses', JSON.stringify(defaultExp));
+    const currentUser = getUser();
+    if (!currentUser || !currentUser.company) {
+      setTimeout(() => router.push('/company/login'), 0);
+      return;
     }
+    setUser(currentUser);
   }, []);
+
+  useEffect(() => {
+    if (user?.company?.id) {
+       loadData();
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [startDate, endDate, user]);
+
+  const loadData = async () => {
+     try {
+       setLoading(true);
+       const [ordData, expData] = await Promise.all([
+          ordersApi.getByCompany(user.company.id),
+          expensesApi.getByCompany(user.company.id, startDate, endDate)
+       ]);
+       setOrders(ordData);
+       setExpenses(expData);
+     } catch (err) {
+       console.error(err);
+     } finally {
+       setLoading(false);
+     }
+  };
 
   const [newExpense, setNewExpense] = useState({
     title: '',
     amount: '',
-    category: 'Boshqa',
+    category: 'Logistika',
     comment: ''
   });
 
-  const handleAddExpense = (e: React.FormEvent) => {
+  const handlePeriodChange = (p: 'daily' | 'weekly' | 'monthly') => {
+    setPeriod(p);
+    const now = new Date();
+    setEndDate(now.toISOString().split('T')[0]);
+    if (p === 'daily') {
+      setStartDate(now.toISOString().split('T')[0]);
+    } else if (p === 'weekly') {
+      const d = new Date();
+      d.setDate(d.getDate() - 7);
+      setStartDate(d.toISOString().split('T')[0]);
+    } else if (p === 'monthly') {
+      const d = new Date();
+      d.setMonth(d.getMonth() - 1);
+      setStartDate(d.toISOString().split('T')[0]);
+    }
+  }
+
+  const handleAddExpense = async (e: React.FormEvent) => {
     e.preventDefault();
-    const expense = {
-      id: expenses.length + 1,
-      ...newExpense,
-      date: new Date().toISOString().split('T')[0]
-    };
-    const updated = [expense, ...expenses];
-    setExpenses(updated);
-    localStorage.setItem('company_expenses', JSON.stringify(updated));
-    setIsExpenseModalOpen(false);
-    setNewExpense({ title: '', amount: '', category: 'Boshqa', comment: '' });
-    toast.success('Xarajat muvaffaqiyatli saqlandi! ✅');
+    if (!user?.company?.id) return;
+    setSaving(true);
+    try {
+      await expensesApi.create({
+        companyId: user.company.id,
+        title: newExpense.title,
+        amount: Number(newExpense.amount),
+        category: newExpense.category,
+        comment: newExpense.comment,
+        date: new Date().toISOString().split('T')[0]
+      });
+      toast.success('Xarajat muvaffaqiyatli saqlandi! ✅');
+      setIsExpenseModalOpen(false);
+      setNewExpense({ title: '', amount: '', category: 'Logistika', comment: '' });
+      loadData();
+    } catch(err: any) {
+      toast.error('Xatolik: ' + err.message);
+    } finally {
+      setSaving(false);
+    }
   };
 
-  const revenueData = {
-    daily: { total: "840,000", expected: "1,200,000", expenses: "150,000" },
-    weekly: { total: "5,800,000", expected: "7,500,000", expenses: "1,200,000" },
-    monthly: { total: "24,500,000", expected: "32,000,000", expenses: "4,800,000" }
-  };
+  const parsedStart = new Date(startDate);
+  const parsedEnd = new Date(endDate);
+  parsedEnd.setHours(23, 59, 59, 999);
 
-  const currentData = revenueData[period];
-  const residual = parseInt(currentData.total.replace(/,/g, '')) - parseInt(currentData.expenses.replace(/,/g, ''));
+  const filteredOrders = orders.filter(o => {
+     const c = new Date(o.createdAt);
+     return c >= parsedStart && c <= parsedEnd;
+  });
+
+  const totalRevenue = filteredOrders
+     .filter(o => ['DELIVERED', 'COMPLETED'].includes(o.status))
+     .reduce((acc, o) => acc + Number(o.totalAmount || 0), 0);
+
+  const expectedRevenue = filteredOrders
+     .filter(o => !['DELIVERED', 'COMPLETED', 'CANCELLED'].includes(o.status))
+     .reduce((acc, o) => acc + Number(o.totalAmount || 0), 0);
+
+  const totalExpenses = expenses.reduce((acc, e) => acc + Number(e.amount || 0), 0);
+  const residual = totalRevenue - totalExpenses;
 
   const stats = [
-    { title: "Tushum", value: currentData.total, icon: MdAttachMoney, color: "emerald", up: true, trend: "+12%" },
-    { title: "Kutilayotgan Tushum", value: currentData.expected, icon: MdTrendingUp, color: "blue", up: true, trend: "+5%" },
-    { title: "Jami Xarajatlar", value: currentData.expenses, icon: MdTrendingDown, color: "rose", up: false, trend: "+2%" },
-    { title: "Qoldiq Summa", value: residual.toLocaleString(), icon: MdLibraryBooks, color: "amber", up: true, trend: "Sof foyda" },
+    { title: "Tushum", value: totalRevenue, icon: MdAttachMoney, color: "emerald", up: true, trend: "Tasdiqlangan" },
+    { title: "Kutilayotgan Tushum", value: expectedRevenue, icon: MdTrendingUp, color: "blue", up: true, trend: "Jarayonda" },
+    { title: "Jami Xarajatlar", value: totalExpenses, icon: MdTrendingDown, color: "rose", up: false, trend: "Chiqim" },
+    { title: "Qoldiq Summa", value: residual, icon: MdLibraryBooks, color: "amber", up: true, trend: "Sof foyda" },
   ];
 
   return (
@@ -86,7 +149,7 @@ export default function CompanyFinancePage() {
             {(['daily', 'weekly', 'monthly'] as const).map((p) => (
               <button
                 key={p}
-                onClick={() => setPeriod(p)}
+                onClick={() => handlePeriodChange(p)}
                 className={`px-4 py-2 rounded-lg text-[10px] font-black transition-all ${
                   period === p 
                     ? 'bg-white text-blue-600 shadow-sm' 
@@ -137,13 +200,13 @@ export default function CompanyFinancePage() {
               <div className={`p-3 rounded-xl bg-${stat.color}-50 text-${stat.color}-600 group-hover:bg-${stat.color}-100 transition-colors`}>
                 <stat.icon className="text-2xl" />
               </div>
-              <span className={`flex items-center text-sm font-bold ${stat.up ? 'text-emerald-600 bg-emerald-50' : 'text-rose-600 bg-rose-50'} px-2 py-1 rounded-md`}>
+              <span className={`flex items-center text-xs font-bold ${stat.up ? 'text-emerald-600 bg-emerald-50' : 'text-rose-600 bg-rose-50'} px-2 py-1 rounded-md`}>
                 {stat.up ? <MdTrendingUp className="mr-1" /> : <MdTrendingDown className="mr-1" />}
                 {stat.trend}
               </span>
             </div>
             <div className="mt-4">
-              <h3 className="text-3xl font-black text-slate-800 tracking-tight">{stat.value} so'm</h3>
+              <h3 className="text-3xl font-black text-slate-800 tracking-tight">{stat.value.toLocaleString()} so'm</h3>
               <p className="text-sm font-medium text-slate-500 mt-1">{stat.title}</p>
             </div>
           </div>
@@ -214,7 +277,7 @@ export default function CompanyFinancePage() {
                     {exp.comment || "-"}
                   </td>
                   <td className="px-6 py-4 text-right text-rose-600 font-bold">
-                    -{exp.amount} so'm
+                    -{Number(exp.amount).toLocaleString()} so'm
                   </td>
                 </tr>
               ))}
@@ -292,9 +355,10 @@ export default function CompanyFinancePage() {
             </button>
             <button 
               type="submit"
-              className="flex-1 py-3 text-sm font-bold text-white bg-blue-600 rounded-xl shadow-lg shadow-blue-500/20 hover:shadow-blue-500/40"
+              disabled={saving}
+              className="flex-1 py-3 text-sm font-bold text-white bg-blue-600 rounded-xl shadow-lg shadow-blue-500/20 hover:shadow-blue-500/40 disabled:opacity-50"
             >
-              Saqlash
+              {saving ? 'Saqlanmoqda...' : 'Saqlash'}
             </button>
           </div>
         </form>

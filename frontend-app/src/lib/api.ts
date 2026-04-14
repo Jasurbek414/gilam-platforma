@@ -142,6 +142,20 @@ export const servicesApi = {
   remove: (id: string) => request<void>(`/services/${id}`, { method: 'DELETE' }),
 };
 
+// ===== EXPENSES API =====
+export const expensesApi = {
+  getByCompany: (companyId: string, startDate?: string, endDate?: string) => {
+    let url = `/expenses/company/${companyId}`;
+    const params = new URLSearchParams();
+    if (startDate) params.append('startDate', startDate);
+    if (endDate) params.append('endDate', endDate);
+    if (params.toString()) url += `?${params.toString()}`;
+    return request<any[]>(url);
+  },
+  create: (data: any) => request<any>('/expenses', { method: 'POST', body: JSON.stringify(data) }),
+  remove: (id: string) => request<void>(`/expenses/${id}`, { method: 'DELETE' }),
+};
+
 // ===== ORDERS API =====
 export const ordersApi = {
   getAll: () => request<Order[]>('/orders'),

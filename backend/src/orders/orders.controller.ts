@@ -59,6 +59,11 @@ export class OrdersController {
     return this.ordersService.getDriverActiveOrders(driverId);
   }
 
+  @Get('driver/:driverId/history')
+  getDriverCompletedOrders(@Param('driverId', ParseUUIDPipe) driverId: string) {
+    return this.ordersService.getDriverCompletedOrders(driverId);
+  }
+
   @Get(':id')
   findOne(@Param('id', ParseUUIDPipe) id: string) {
     return this.ordersService.findOne(id);

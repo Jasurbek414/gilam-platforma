@@ -62,6 +62,11 @@ export class OrdersService {
             where: { id: In(serviceIds) },
           });
 
+          // Auto-infer companyId if it's missing (Global Operator logic)
+          if (!order.companyId && services.length > 0) {
+            order.companyId = services[0].companyId;
+          }
+
           const serviceMap = new Map(services.map((s) => [s.id, s]));
           const orderItems: OrderItem[] = [];
 
@@ -212,10 +217,25 @@ export class OrdersService {
       where: [
         { driverId, status: OrderStatus.DRIVER_ASSIGNED },
         { driverId, status: OrderStatus.PICKED_UP },
+        { driverId, status: OrderStatus.AT_FACILITY },
+        { driverId, status: OrderStatus.WASHING },
+        { driverId, status: OrderStatus.DRYING },
         { driverId, status: OrderStatus.READY_FOR_DELIVERY },
         { driverId, status: OrderStatus.OUT_FOR_DELIVERY },
       ],
-      relations: ['customer', 'items'],
+      relations: ['customer', 'items', 'items.service'],
+      order: { createdAt: 'DESC' },
+    });
+  }
+
+  async getDriverCompletedOrders(driverId: string) {
+    return this.orderRepository.find({
+      where: [
+        { driverId, status: OrderStatus.DELIVERED },
+        { driverId, status: OrderStatus.CANCELLED },
+      ],
+      relations: ['customer', 'items', 'items.service'],
+      order: { updatedAt: 'DESC' },
     });
   }
 

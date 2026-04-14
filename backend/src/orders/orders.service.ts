@@ -46,8 +46,8 @@ export class OrdersService {
     return this.orderRepository.manager.transaction(
       async (manager: EntityManager) => {
         // 0. Pre-fetch services to infer companyId if missing and calculate prices later
-        let services = [];
-        let serviceMap = new Map();
+        let services: Service[] = [];
+        let serviceMap = new Map<string, Service>();
         if (items && items.length > 0) {
           const serviceIds = items.map((i) => i.serviceId);
           services = await manager.find(Service, {

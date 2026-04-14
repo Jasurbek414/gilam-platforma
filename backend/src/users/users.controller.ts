@@ -54,7 +54,7 @@ export class UsersController {
 
   @Get()
   findAll(@CurrentUser() user: User) {
-    if (user.role === UserRole.SUPER_ADMIN) {
+    if (user.role === UserRole.SUPER_ADMIN || user.role === UserRole.OPERATOR) {
       return this.usersService.findAll();
     }
     return this.usersService.findAllByCompany(user.companyId);

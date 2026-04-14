@@ -212,6 +212,7 @@ export class OrdersService {
       where: [
         { driverId, status: OrderStatus.DRIVER_ASSIGNED },
         { driverId, status: OrderStatus.PICKED_UP },
+        { driverId, status: OrderStatus.READY_FOR_DELIVERY },
         { driverId, status: OrderStatus.OUT_FOR_DELIVERY },
       ],
       relations: ['customer', 'items'],

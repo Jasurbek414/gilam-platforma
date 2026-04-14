@@ -3,6 +3,8 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, In, EntityManager } from 'typeorm';
 import { Order, OrderStatus } from './entities/order.entity';
 import { OrderItem } from './entities/order-item.entity';
+import { FacilityStage } from './entities/facility-stage.entity';
+import { OrderAction } from './entities/order-action.entity';
 import { Service, MeasurementUnit } from '../services/entities/service.entity';
 import { User } from '../users/entities/user.entity';
 import { CreateOrderDto } from './dto/create-order.dto';
@@ -18,6 +20,10 @@ export class OrdersService {
     private orderItemRepository: Repository<OrderItem>,
     @InjectRepository(Service)
     private serviceRepository: Repository<Service>,
+    @InjectRepository(FacilityStage)
+    private facilityStageRepository: Repository<FacilityStage>,
+    @InjectRepository(OrderAction)
+    private orderActionRepository: Repository<OrderAction>,
     private readonly notificationsService: NotificationsService,
   ) {}
 
@@ -160,7 +166,7 @@ export class OrdersService {
     return order;
   }
 
-  async updateStatus(id: string, updateDto: UpdateOrderStatusDto) {
+  async updateStatus(id: string, updateDto: UpdateOrderStatusDto, userId?: string) {
     const order = await this.findOne(id);
 
     if (updateDto.status) {
@@ -232,7 +238,38 @@ export class OrdersService {
       }
     }
 
+    if (updateDto.status && userId) {
+      const action = this.orderActionRepository.create({
+        orderId: id,
+        userId: userId,
+        action: updateDto.status,
+      });
+      await this.orderActionRepository.save(action);
+    }
+
     return saved;
+  }
+
+  async getWorkerCompletedOrders(companyId: string, userId: string) {
+    const actions = await this.orderActionRepository.find({
+      where: { userId },
+      select: ['orderId'],
+    });
+
+    const orderIds = [...new Set(actions.map(a => a.orderId))];
+    if (orderIds.length === 0) return [];
+
+    return this.orderRepository.find({
+      where: [
+        { id: In(orderIds), companyId, status: OrderStatus.READY_FOR_DELIVERY },
+        { id: In(orderIds), companyId, status: OrderStatus.OUT_FOR_DELIVERY },
+        { id: In(orderIds), companyId, status: OrderStatus.DELIVERED },
+        { id: In(orderIds), companyId, status: OrderStatus.CANCELLED },
+      ],
+      relations: ['customer', 'items', 'items.service'],
+      order: { updatedAt: 'DESC' },
+      take: 50,
+    });
   }
 
   async getDriverActiveOrders(driverId: string) {

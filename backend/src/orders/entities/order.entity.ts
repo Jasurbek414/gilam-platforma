@@ -12,6 +12,7 @@ import { Company } from '../../companies/entities/company.entity';
 import { User } from '../../users/entities/user.entity';
 import { Customer } from '../../customers/entities/customer.entity';
 import { OrderItem } from './order-item.entity';
+import { FacilityStage } from './facility-stage.entity';
 
 export enum OrderStatus {
   NEW = 'NEW',
@@ -65,6 +66,13 @@ export class Order {
   @ManyToOne(() => User, { onDelete: 'SET NULL' })
   @JoinColumn({ name: 'driver_id' })
   driver: User;
+
+  @Column({ name: 'facility_stage_id', type: 'uuid', nullable: true })
+  facilityStageId: string;
+
+  @ManyToOne(() => FacilityStage, { onDelete: 'SET NULL' })
+  @JoinColumn({ name: 'facility_stage_id' })
+  facilityStage: FacilityStage;
 
   @Column({ type: 'enum', enum: OrderStatus, default: OrderStatus.NEW })
   status: OrderStatus;

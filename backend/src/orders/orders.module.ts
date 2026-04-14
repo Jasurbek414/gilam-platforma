@@ -5,13 +5,15 @@ import { OrdersService } from './orders.service';
 import { DeadlineCronService } from './deadline-cron.service';
 import { Order } from './entities/order.entity';
 import { OrderItem } from './entities/order-item.entity';
+import { FacilityStage } from './entities/facility-stage.entity';
+import { OrderAction } from './entities/order-action.entity';
 import { Service } from '../services/entities/service.entity';
 import { NotificationsModule } from '../notifications/notifications.module';
 import { AuthModule } from '../auth/auth.module';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Order, OrderItem, Service]),
+    TypeOrmModule.forFeature([Order, OrderItem, Service, FacilityStage, OrderAction]),
     NotificationsModule,
     AuthModule,
   ],

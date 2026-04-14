@@ -70,7 +70,15 @@ export class OrdersController {
   }
 
   @Get('facility/:companyId/history')
-  getFacilityCompletedOrders(@Param('companyId', ParseUUIDPipe) companyId: string) {
+  getFacilityCompletedOrders(
+     @Param('companyId', ParseUUIDPipe) companyId: string,
+     @CurrentUser() user: User
+  ) {
+    // If it's the master looking (no user injected correctly via decorator in simple setup or they are admin), fallback to all.
+    // But since JWT guard gives us user, we can check role
+    if (user?.appRole === 'FACILITY') {
+       return this.ordersService.getWorkerCompletedOrders(companyId, user.id);
+    }
     return this.ordersService.getFacilityCompletedOrders(companyId);
   }
 
@@ -83,8 +91,9 @@ export class OrdersController {
   updateStatus(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() updateOrderStatusDto: UpdateOrderStatusDto,
+    @CurrentUser() user: User,
   ) {
-    return this.ordersService.updateStatus(id, updateOrderStatusDto);
+    return this.ordersService.updateStatus(id, updateOrderStatusDto, user?.id);
   }
 
   @Patch('items/:itemId/price')

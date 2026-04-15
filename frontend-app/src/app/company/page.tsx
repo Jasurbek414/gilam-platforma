@@ -102,7 +102,7 @@ export default function CompanyDashboardPage() {
           address: formData.address || 'Kiritilmagan',
           companyId: user.companyId,
           operatorId: user.id
-        });
+        } as any);
         customerId = newCustomer.id;
       }
 
@@ -406,7 +406,7 @@ export default function CompanyDashboardPage() {
                         const found = await customersApi.search(user.companyId, val);
                         if (found && found.length > 0) {
                           setSelectedCustomer(found[0]);
-                          setFormData(prev => ({...prev, customerName: found[0].fullName, address: found[0].address}));
+                          setFormData(prev => ({...prev, customerName: found[0].fullName, address: found[0].address || ''}));
                         } else {
                           setSelectedCustomer(null);
                         }

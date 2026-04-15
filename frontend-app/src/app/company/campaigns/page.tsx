@@ -72,7 +72,7 @@ export default function CampaignsPage() {
     if (!form.name || !form.phoneNumber) { toast.error('Ism va raqam majburiy'); return; }
     setIsSaving(true);
     try {
-      const payload = { ...form, driverId: form.driverId || undefined };
+      const payload = { ...form, driverId: form.driverId || undefined, status: form.status as any };
       if (editId) await campaignsApi.update(editId, payload);
       else await campaignsApi.create(payload);
       toast.success(editId ? 'Yangilandi!' : 'Yaratildi!');

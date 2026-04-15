@@ -112,11 +112,19 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
               where: { id: senderId },
             });
             const senderName = senderUser?.fullName || 'Xabar';
+
+            // channelId: 'chat_messages' — Android da HIGH importance kanal
+            // Bu "heads-up" (ekran tepasidan tushuvchi) bildirishnomani ta'minlaydi
             await this.notificationsService.sendPushNotification(
               recipient.expoPushToken,
               `💬 ${senderName}`,
               data.text,
-              { type: 'chat', senderId, companyId: data.companyId },
+              {
+                type: 'chat',
+                senderId,
+                companyId: data.companyId,
+                channelId: 'chat_messages',
+              },
             );
           }
         } catch (pushErr) {

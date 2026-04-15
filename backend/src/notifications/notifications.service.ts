@@ -19,12 +19,18 @@ export class NotificationsService {
     if (!pushToken || !Expo.isExpoPushToken(pushToken)) return false;
 
     try {
+      // channelId ni payload dan olamiz yoki default ga tushamiz
+      const channelId = payload?.channelId || 'default';
+
       const messages = [{
         to: pushToken,
-        sound: 'default',
+        sound: 'default' as const,
         title,
         body,
         data: payload || {},
+        channelId,      // Android: heads-up notification uchun HIGH importance kanal
+        priority: 'high' as const,
+        // iOS: critical xabar emas, lekin ovoz+banner
       }];
       await expo.sendPushNotificationsAsync(messages as any);
       return true;

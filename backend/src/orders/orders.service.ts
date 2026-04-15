@@ -188,19 +188,25 @@ export class OrdersService {
         });
       }
 
-      // 📱 DISPATCH PUSH NOTIFICATION TO DRIVER'S MOBILE
+      // 📱 HAYDOVCHI TELEFONIGA PUSH NOTIFICATION
       try {
         const driver = await this.orderRepository.manager.findOne(User, { where: { id: updateDto.driverId } });
-        if (driver && driver.expoPushToken) {
-           this.notificationsService.sendPushNotification(
-              driver.expoPushToken, 
-              'Yangi buyurtma qabul qilindi! 🎉', 
-              `Sizga ajoyib bir yangi manzil biriktirildi. Diqqat bilan ko'zdan kechiring!`, 
-              { orderId: order.id }
-           );
+        if (driver?.expoPushToken) {
+          const customerName = order.customer?.fullName || 'Mijoz';
+          const address = order.customer?.address || order.notes || 'Manzil ko\'rsatilmagan';
+          this.notificationsService.sendPushNotification(
+            driver.expoPushToken,
+            '🆕 Yangi buyurtma!',
+            `${customerName} — ${address}`,
+            {
+              type: 'new_order',
+              orderId: order.id,
+              channelId: 'default',
+            },
+          );
         }
       } catch (err) {
-         console.warn('Driver Push fail:', err);
+        console.warn('[Push] Driver assignment push fail:', err);
       }
     }
     if (updateDto.paymentStatus) {
@@ -223,20 +229,44 @@ export class OrdersService {
         type: 'order',
       });
 
-      // Haydovchiga yetkazish vaqti kelganda eslatma
-      if (updateDto.status === OrderStatus.READY_FOR_DELIVERY && order.driverId) {
+      // 📱 STATUS O'ZGARGANDA HAYDOVCHIGA PUSH
+      if (order.driverId) {
         try {
           const driver = await this.orderRepository.manager.findOne(User, { where: { id: order.driverId } });
-          if (driver && driver.expoPushToken) {
-            this.notificationsService.sendPushNotification(
-              driver.expoPushToken, 
-              'Gilam yetkazishga tayyor! 🚐', 
-              `Buyurtma (${order.id.substring(0, 8)}) qadoqlandi va tayyor. Yo'lga chiqishingiz mumkin!`, 
-              { orderId: order.id, status: updateDto.status }
-            );
+          if (driver?.expoPushToken) {
+            let pushTitle = '';
+            let pushBody = '';
+
+            if (updateDto.status === OrderStatus.READY_FOR_DELIVERY) {
+              pushTitle = '🚐 Yetkazishga tayyor!';
+              pushBody = `Buyurtma #${order.id.substring(0, 8)} qadoqlandi. Yo'lga chiqishingiz mumkin!`;
+            } else if (updateDto.status === OrderStatus.WASHING) {
+              pushTitle = '🧺 Gilam tozalanmoqda';
+              pushBody = `Buyurtma #${order.id.substring(0, 8)} ishlov jarayonida.`;
+            } else if (updateDto.status === OrderStatus.DELIVERED) {
+              pushTitle = '✅ Yetkazib berildi';
+              pushBody = `Buyurtma #${order.id.substring(0, 8)} muvaffaqiyatli yetkazildi!`;
+            } else if (updateDto.status === OrderStatus.FINISHED) {
+              pushTitle = '✨ Tayyor!';
+              pushBody = `Buyurtma #${order.id.substring(0, 8)} tozalash yakunlandi, yetkazishga tayyor.`;
+            }
+
+            if (pushTitle) {
+              this.notificationsService.sendPushNotification(
+                driver.expoPushToken,
+                pushTitle,
+                pushBody,
+                {
+                  type: 'order_status',
+                  orderId: order.id,
+                  status: updateDto.status,
+                  channelId: 'default',
+                },
+              );
+            }
           }
         } catch (err) {
-          console.warn('Ready for delivery driver push fail:', err);
+          console.warn('[Push] Status push fail:', err);
         }
       }
     }

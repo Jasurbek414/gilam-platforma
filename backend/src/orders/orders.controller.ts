@@ -7,6 +7,7 @@ import {
   Patch,
   ParseUUIDPipe,
   UseGuards,
+  ForbiddenException,
 } from '@nestjs/common';
 import { OrdersService } from './orders.service';
 import { CreateOrderDto } from './dto/create-order.dto';
@@ -102,5 +103,37 @@ export class OrdersController {
     @Body('price') price: number,
   ) {
     return this.ordersService.updateItemPrice(itemId, price);
+  }
+
+  /**
+   * Sex hodimi: o'lchab tekshirganidan keyin butun buyurtma summasini qo'lda kiritish.
+   * WASHER, FINISHER, COMPANY_ADMIN roli kerak.
+   */
+  @Patch(':id/total')
+  updateTotal(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body('totalAmount') totalAmount: number,
+    @CurrentUser() user: User,
+  ) {
+    const allowed = [
+      UserRole.WASHER, UserRole.FINISHER,
+      UserRole.COMPANY_ADMIN, UserRole.SUPER_ADMIN,
+    ];
+    if (!allowed.includes(user.role)) {
+      throw new ForbiddenException('Faqat sex hodimi va admin uchun ruxsat etilgan');
+    }
+    return this.ordersService.updateTotalAmount(id, totalAmount);
+  }
+
+  /**
+   * Operator: tayinlangan haydovchiga mijoz lokatsiyasini yuborish.
+   * Push notification + WebSocket orqali.
+   */
+  @Post(':id/send-location')
+  sendLocationToDriver(
+    @Param('id', ParseUUIDPipe) id: string,
+    @CurrentUser() user: User,
+  ) {
+    return this.ordersService.sendLocationToDriver(id, user.id);
   }
 }

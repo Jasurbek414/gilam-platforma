@@ -165,7 +165,10 @@ export const ordersApi = {
   getOne: (id: string) => request<Order>(`/orders/${id}`),
   create: (data: any) => request<Order>('/orders', { method: 'POST', body: JSON.stringify(data) }),
   updateStatus: (id: string, data: { status: string; driverId?: string }) => request<Order>(`/orders/${id}/status`, { method: 'PATCH', body: JSON.stringify(data) }),
+  /** Operator: tayinlangan haydovchiga mijoz lokatsiyasini push orqali yuborish */
+  sendLocationToDriver: (id: string) => request<{ success: boolean }>(`/orders/${id}/send-location`, { method: 'POST' }),
 };
+
 
 // ===== NOTIFICATIONS API =====
 export const notificationsApi = {

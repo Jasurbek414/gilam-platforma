@@ -435,4 +435,86 @@ export class OrdersService {
 
     return order;
   }
+
+  /**
+   * Sex hodimi o'lchovlardan keyin butun buyurtma summasini qo'lda belgilaydi.
+   * Bu metod totalAmount ni to'g'ridan-to'g'ri yozadi va
+   * company notification yaratadi.
+   */
+  async updateTotalAmount(id: string, totalAmount: number) {
+    const order = await this.findOne(id);
+    order.totalAmount = totalAmount;
+    const saved = await this.orderRepository.save(order);
+
+    this.notificationsService
+      .create({
+        companyId: order.companyId,
+        title: 'Buyurtma narxi belgilandi',
+        text: `Buyurtma #${id.substring(0, 8)} uchun summa: ${Number(totalAmount).toLocaleString()} so'm`,
+        type: 'order',
+      })
+      .catch(() => {});
+
+    return saved;
+  }
+
+  /**
+   * Operator tayinlangan haydovchiga mijoz manzili va koordinatasini
+   * push notification orqali yetkazadi.
+   */
+  async sendLocationToDriver(orderId: string, senderId: string): Promise<{ success: boolean }> {
+    const order = await this.findOne(orderId);
+
+    if (!order.driverId) {
+      throw new NotFoundException('Bu buyurtmaga haydovchi tayinlanmagan');
+    }
+
+    const driver = await this.orderRepository.manager.findOne(User, {
+      where: { id: order.driverId },
+    });
+
+    if (!driver) {
+      throw new NotFoundException('Haydovchi topilmadi');
+    }
+
+    const customer = order.customer;
+    const address = customer?.address || 'Manzil kiritilmagan';
+    const location = customer?.location;
+
+    // Koordinata mavjud bo'lsa Google Maps / Yandex deeplink yaratamiz
+    let mapsUrl = '';
+    if (location) {
+      const coords = typeof location === 'object'
+        ? `${location.lat},${location.lng}`
+        : String(location);
+      mapsUrl = `https://maps.google.com/?q=${coords}`;
+    } else if (address && address !== 'Manzil kiritilmagan') {
+      mapsUrl = `https://maps.google.com/?q=${encodeURIComponent(address)}`;
+    }
+
+    const pushBody = mapsUrl
+      ? `📍 ${address} — Haritada ochish uchun bosing`
+      : `📍 ${address}`;
+
+    // Push notification
+    if (driver.expoPushToken) {
+      await this.notificationsService.sendPushNotification(
+        driver.expoPushToken,
+        `🗺️ Mijoz lokatsiyasi: ${customer?.fullName || 'Mijoz'}`,
+        pushBody,
+        {
+          type: 'customer_location',
+          orderId,
+          customerId: customer?.id,
+          customerName: customer?.fullName,
+          address,
+          location: location || null,
+          mapsUrl,
+        },
+      );
+    }
+
+    return { success: true };
+  }
 }
+

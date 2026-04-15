@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { MdAdd, MdSearch, MdFilterList, MdShoppingCart, MdPerson, MdPhone, MdClose, MdExpandMore, MdExpandLess, MdPrint, MdVisibility, MdLocationOn, MdNotes, MdAccessTime, MdDirectionsCar, MdLocalMall } from 'react-icons/md';
+import { MdAdd, MdSearch, MdFilterList, MdShoppingCart, MdPerson, MdPhone, MdClose, MdExpandMore, MdExpandLess, MdPrint, MdVisibility, MdLocationOn, MdNotes, MdAccessTime, MdDirectionsCar, MdLocalMall, MdSend, MdMyLocation, MdOpenInNew } from 'react-icons/md';
 import Modal from '@/components/ui/Modal';
 import { ordersApi, customersApi, servicesApi, getUser } from '@/lib/api';
 import { useRouter } from 'next/navigation';
@@ -31,6 +31,8 @@ export default function CompanyOrdersPage() {
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [sendingLocation, setSendingLocation] = useState(false);
+  const [locationInput, setLocationInput] = useState('');
   const [formData, setFormData] = useState<any>({
     customerId: '',
     notes: '',
@@ -189,6 +191,42 @@ export default function CompanyOrdersPage() {
     try {
       await ordersApi.updateStatus(orderId, { status: newStatus });
       await loadData(user.company.id);
+    } catch (err: any) {
+      toast.error('Xatolik: ' + err.message);
+    }
+  };
+
+  /** Haydovchiga mijoz lokatsiyasini push notification orqali yuborish */
+  const handleSendLocationToDriver = async (orderId: string) => {
+    setSendingLocation(true);
+    try {
+      await ordersApi.sendLocationToDriver(orderId);
+      toast.success('📍 Lokatsiya haydovchiga yuborildi!');
+    } catch (err: any) {
+      toast.error('Xatolik: ' + (err.message || 'Yuborib bo\'lmadi'));
+    } finally {
+      setSendingLocation(false);
+    }
+  };
+
+  /** Operator mijoz profiliga lokatsiya (manzil yoki koordinata) saqlaydi */
+  const handleSaveCustomerLocation = async (customerId: string, addressOrCoords: string) => {
+    if (!addressOrCoords.trim()) { toast.error('Manzil yoki koordinata kiriting'); return; }
+    try {
+      // Koordinata formati: 41.311, 69.240 — JSON ob'ektga o'giramiz
+      const parts = addressOrCoords.split(',');
+      let updateData: any = { address: addressOrCoords };
+      if (parts.length === 2 && !isNaN(Number(parts[0])) && !isNaN(Number(parts[1]))) {
+        updateData = {
+          location: { lat: Number(parts[0].trim()), lng: Number(parts[1].trim()) },
+          address: addressOrCoords,
+        };
+      }
+      await customersApi.update(customerId, updateData);
+      // Refresh orders
+      if (user?.company?.id) await loadData(user.company.id);
+      toast.success('📍 Mijoz lokatsiyasi saqlandi!');
+      setLocationInput('');
     } catch (err: any) {
       toast.error('Xatolik: ' + err.message);
     }
@@ -803,6 +841,67 @@ export default function CompanyOrdersPage() {
                     <span className="text-xs font-black text-slate-400 uppercase tracking-widest">Jami To'lov:</span>
                     <span className="text-xl font-black text-blue-600">{Number(viewOrder.totalAmount).toLocaleString()} so'm</span>
                  </div>
+              </div>
+
+              {/* ═══ OPERATOR AMALLAR ════════════════════════════════════ */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
+
+                 {/* Haydovchiga lokatsiya yuborish */}
+                 {viewOrder.driver && (
+                   <div className="bg-sky-50 border border-sky-200 rounded-2xl p-4">
+                     <h4 className="text-[10px] font-black text-sky-600 uppercase tracking-widest mb-2 flex items-center gap-1">
+                       <MdSend /> Haydovchiga Lokatsiya Yuborish
+                     </h4>
+                     <p className="text-xs text-slate-500 mb-3">
+                       Haydovchi: <span className="font-bold text-slate-700">{viewOrder.driver.fullName}</span>
+                     </p>
+                     <button
+                       onClick={() => handleSendLocationToDriver(viewOrder.id)}
+                       disabled={sendingLocation}
+                       className="w-full flex items-center justify-center gap-2 bg-sky-600 hover:bg-sky-700 text-white py-2.5 rounded-xl text-sm font-bold transition-all disabled:opacity-50"
+                     >
+                       <MdMyLocation className="text-base" />
+                       {sendingLocation ? 'Yuborilmoqda...' : 'Push orqali yuborish'}
+                     </button>
+                   </div>
+                 )}
+
+                 {/* Mijoz lokatsiyasini saqlash */}
+                 <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-4">
+                   <h4 className="text-[10px] font-black text-emerald-600 uppercase tracking-widest mb-2 flex items-center gap-1">
+                     <MdLocationOn /> Mijoz Lokatsiyasini Saqlash
+                   </h4>
+                   <p className="text-xs text-slate-500 mb-2">
+                     Hozirgi manzil: <span className="font-bold text-slate-700">{viewOrder.customer?.address || '—'}</span>
+                   </p>
+                   <div className="flex gap-2">
+                     <input
+                       type="text"
+                       placeholder="41.311, 69.240 yoki matn manzil"
+                       className="flex-1 px-3 py-2 text-xs border border-emerald-200 rounded-lg outline-none focus:border-emerald-500 bg-white"
+                       value={locationInput}
+                       onChange={e => setLocationInput(e.target.value)}
+                       onKeyDown={e => e.key === 'Enter' && handleSaveCustomerLocation(viewOrder.customer.id, locationInput)}
+                     />
+                     <button
+                       onClick={() => handleSaveCustomerLocation(viewOrder.customer.id, locationInput)}
+                       className="px-3 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold transition-all"
+                     >
+                       Saqlash
+                     </button>
+                   </div>
+                   {viewOrder.customer?.address && (
+                     <a
+                       href={`https://maps.google.com/?q=${encodeURIComponent(viewOrder.customer.address)}`}
+                       target="_blank"
+                       rel="noreferrer"
+                       className="flex items-center gap-1 text-emerald-600 text-xs font-bold mt-2 hover:underline"
+                     >
+                       <MdOpenInNew /> Google Xaritada ko'rish
+                     </a>
+                   )}
+                 </div>
+
               </div>
 
            </div>

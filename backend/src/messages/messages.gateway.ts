@@ -10,6 +10,10 @@ import {
 import { Server, Socket } from 'socket.io';
 import { MessagesService } from './messages.service';
 import { JwtService } from '@nestjs/jwt';
+import { NotificationsService } from '../notifications/notifications.service';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { User } from '../users/entities/user.entity';
 
 @WebSocketGateway({
   cors: {
@@ -26,6 +30,9 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   constructor(
     private readonly messagesService: MessagesService,
     private readonly jwtService: JwtService,
+    private readonly notificationsService: NotificationsService,
+    @InjectRepository(User)
+    private readonly userRepository: Repository<User>,
   ) {}
 
   async handleConnection(socket: Socket) {
@@ -40,7 +47,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       const userId = payload.sub;
 
       this.connectedUsers.set(userId, socket.id);
-      socket.join(`user-${userId}`); // Join private room
+      socket.join(`user-${userId}`);
 
       console.log(`User connected to chat: ${userId}`);
     } catch (e) {
@@ -49,7 +56,6 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   }
 
   async handleDisconnect(socket: Socket) {
-    // Find and remove userId entry
     for (const [userId, socketId] of this.connectedUsers.entries()) {
       if (socketId === socket.id) {
         this.connectedUsers.delete(userId);
@@ -78,7 +84,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     if (!senderId) return;
 
     try {
-      // Save to DB
+      // Save to DB — canonical source of truth
       const message = await this.messagesService.create({
         text: data.text,
         senderId,
@@ -86,12 +92,41 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         companyId: data.companyId,
       });
 
-      // Notify recipient if connected
+      // 1. Deliver to recipient's room (operator or driver on another device)
       this.server.to(`user-${data.recipientId}`).emit('newMessage', message);
 
-      // Echo to sender (for multi-device sync if needed, but here just confirmation)
+      // 2. Echo DB-persisted message back to sender's room.
+      //    Mobile client listens to 'messageSent' to replace optimistic local copy
+      //    with the real DB record that has a proper id and createdAt timestamp.
+      this.server.to(`user-${senderId}`).emit('messageSent', message);
+
+      // 3. If recipient is offline → send Expo push notification
+      const isRecipientOnline = this.connectedUsers.has(data.recipientId);
+      if (!isRecipientOnline) {
+        try {
+          const recipient = await this.userRepository.findOne({
+            where: { id: data.recipientId },
+          });
+          if (recipient?.expoPushToken) {
+            const senderUser = await this.userRepository.findOne({
+              where: { id: senderId },
+            });
+            const senderName = senderUser?.fullName || 'Xabar';
+            await this.notificationsService.sendPushNotification(
+              recipient.expoPushToken,
+              `💬 ${senderName}`,
+              data.text,
+              { type: 'chat', senderId, companyId: data.companyId },
+            );
+          }
+        } catch (pushErr) {
+          // Push failure must not break message delivery
+          console.warn('[Chat] Push notification error:', pushErr);
+        }
+      }
+
       return message;
-    } catch(e) {
+    } catch (e) {
       console.error('SendMessage DB Error:', e);
       return { error: 'Failed to save message' };
     }

@@ -42,8 +42,8 @@ export interface Customer {
   companyId: string;
   company?: Company;
   fullName: string;
-  phone1: string;
-  phone2?: string;
+  phone1: string;      // DB column: phone_1 (NOT 'phone')
+  phone2?: string;     // DB column: phone_2
   address?: string;
   location?: any;
   operatorId?: string;
@@ -143,7 +143,8 @@ export interface Call {
 export interface Notification {
   id: string;
   title?: string;
-  message: string;
+  text: string;        // Backend entity field name (was incorrectly 'message')
+  message?: string;    // Alias kept for backward compat — use text instead
   type: string;
   companyId?: string;
   userId?: string;

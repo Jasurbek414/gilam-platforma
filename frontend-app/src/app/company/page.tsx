@@ -98,11 +98,11 @@ export default function CompanyDashboardPage() {
       if (!customerId) {
         const newCustomer = await customersApi.create({
           fullName: formData.customerName || 'Ismsiz Mijoz',
-          phone: formData.phone,
+          phone1: formData.phone,
           address: formData.address || 'Kiritilmagan',
           companyId: user.companyId,
           operatorId: user.id
-        } as any);
+        });
         customerId = newCustomer.id;
       }
 

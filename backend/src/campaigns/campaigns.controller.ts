@@ -32,6 +32,12 @@ export class CampaignsController {
     return this.campaignsService.findAll(companyId);
   }
 
+  @Get('by-line/:phoneNumber')
+  @Roles(UserRole.COMPANY_ADMIN, UserRole.SUPER_ADMIN, UserRole.OPERATOR)
+  findByLine(@Param('phoneNumber') phoneNumber: string) {
+    return this.campaignsService.findByPhoneNumber(phoneNumber);
+  }
+
   @Get(':id')
   @Roles(UserRole.COMPANY_ADMIN, UserRole.SUPER_ADMIN, UserRole.OPERATOR)
   findOne(@Param('id') id: string, @Request() req: any) {

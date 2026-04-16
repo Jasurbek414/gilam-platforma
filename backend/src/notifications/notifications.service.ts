@@ -107,17 +107,20 @@ export class NotificationsService {
     channelId: string,
     data?: any,
   ): Promise<boolean> {
-    // Agar FCM_SERVER_KEY mavjud bo'lsa, Legacy API ni to'g'ridan-to'g'ri ishlat (sodda va ishonchli)
+    // FCM_SERVER_KEY faqat haqiqiy Server Key bo'lsa ishlat (AAAA... bilan boshlanadi)
+    // AIzaSy... client API key FCM Legacy uchun ishlamaydi
     const serverKey = process.env.FCM_SERVER_KEY || '';
-    if (serverKey) {
-      console.log('[FCM] FCM_SERVER_KEY mavjud → Legacy API ishlatilmoqda');
+    const isRealServerKey = serverKey.startsWith('AAAA');
+    if (isRealServerKey) {
+      console.log('[FCM] Server Key topildi → FCM Legacy API ishlatilmoqda');
       return this.sendFcmLegacy(fcmToken, title, body, channelId, data);
     }
 
+    // Firebase Admin SDK (FIREBASE_SERVICE_ACCOUNT_JSON env bilan)
     try {
       const admin = getFirebaseAdmin();
       if (!admin) {
-        console.warn('[FCM] firebase-admin ishlamayapti va FCM_SERVER_KEY yo\'q. Push yuborilmadi.');
+        console.warn('[FCM] firebase-admin va Server Key yo\'q. Push yuborilmadi. Firebase Console → Cloud Messaging → Server Key kerak.');
         return false;
       }
 

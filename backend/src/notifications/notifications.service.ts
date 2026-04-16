@@ -82,23 +82,20 @@ export class NotificationsService {
     const channelId = payload?.channelId || 'default';
     
     // Token tipini aniqlash
+    // Expo token 'ExponentPushToken[...]' formatida bo'ladi
+    // FCM token - boshqa barcha formatlar (Android FCM, APNs)
     const isExpoToken = pushToken.startsWith('ExponentPushToken[');
-    const isFcmToken = !isExpoToken && pushToken.length > 100;
+    const isFcmToken = !isExpoToken && pushToken.trim().length > 10;
 
-    console.log(`[Push] Yuborilmoqda → type=${isExpoToken ? 'Expo' : 'FCM'} title="${title}"`);
+    console.log(`[Push] Yuborilmoqda → type=${isExpoToken ? 'Expo' : 'FCM'} title="${title}" token_prefix="${pushToken.substring(0, 15)}..."`);
 
     if (isFcmToken) {
       return this.sendFcmNotification(pushToken, title, body, channelId, payload);
     } else if (isExpoToken) {
       return this.sendExpoNotification(pushToken, title, body, channelId, payload);
     } else {
-      console.warn('[Push] Noma\'lum token formati:', pushToken.substring(0, 30));
-      // Ikkalasini ham sinab ko'ramiz
-      const fcmResult = await this.sendFcmNotification(pushToken, title, body, channelId, payload);
-      if (!fcmResult) {
-        return this.sendExpoNotification(pushToken, title, body, channelId, payload);
-      }
-      return fcmResult;
+      console.warn('[Push] Token juda qisqa yoki bo\'sh:', pushToken);
+      return false;
     }
   }
 
@@ -110,15 +107,23 @@ export class NotificationsService {
     channelId: string,
     data?: any,
   ): Promise<boolean> {
+    // Agar FCM_SERVER_KEY mavjud bo'lsa, Legacy API ni to'g'ridan-to'g'ri ishlat (sodda va ishonchli)
+    const serverKey = process.env.FCM_SERVER_KEY || '';
+    if (serverKey) {
+      console.log('[FCM] FCM_SERVER_KEY mavjud → Legacy API ishlatilmoqda');
+      return this.sendFcmLegacy(fcmToken, title, body, channelId, data);
+    }
+
     try {
       const admin = getFirebaseAdmin();
       if (!admin) {
-        console.warn('[FCM] firebase-admin ishlamayapti, FCM Legacy API sinab ko\'riladi');
-        return this.sendFcmLegacy(fcmToken, title, body, channelId, data);
+        console.warn('[FCM] firebase-admin ishlamayapti va FCM_SERVER_KEY yo\'q. Push yuborilmadi.');
+        return false;
       }
 
       const message = {
         token: fcmToken,
+        // notification field - bu sistemadan bildirishnoma yaratadi (heads-up)
         notification: { title, body },
         android: {
           priority: 'high' as const,
@@ -127,13 +132,27 @@ export class NotificationsService {
             sound: 'default',
             priority: 'max' as const,
             defaultVibrateTimings: true,
+            // Ilovada ochiq bo'lganda ham ko'rinsin
+            notificationCount: 1,
+          },
+        },
+        apns: {
+          payload: {
+            aps: {
+              sound: 'default',
+              badge: 1,
+              'content-available': 1,
+            },
           },
         },
         data: {
           type: data?.type || 'default',
-          orderId: data?.orderId || '',
-          senderId: data?.senderId || '',
-          companyId: data?.companyId || '',
+          orderId: String(data?.orderId || ''),
+          senderId: String(data?.senderId || ''),
+          companyId: String(data?.companyId || ''),
+          customerName: String(data?.customerName || ''),
+          address: String(data?.address || ''),
+          mapsUrl: String(data?.mapsUrl || ''),
           channelId,
         },
       };
@@ -193,15 +212,27 @@ export class NotificationsService {
       };
 
       const req = https.request(options, (res) => {
-        let data = '';
-        res.on('data', (chunk) => data += chunk);
+        let responseData = '';
+        res.on('data', (chunk) => responseData += chunk);
         res.on('end', () => {
-          console.log('[FCM Legacy] Javob:', data.substring(0, 100));
-          resolve(res.statusCode === 200);
+          try {
+            const parsed = JSON.parse(responseData);
+            if (parsed.success === 1 || (parsed.results && !parsed.results[0]?.error)) {
+              console.log('[FCM Legacy] ✅ Yuborildi. MessageId:', parsed.results?.[0]?.message_id);
+              resolve(true);
+            } else {
+              const errCode = parsed.results?.[0]?.error || 'unknown';
+              console.error('[FCM Legacy] ❌ Xatolik:', errCode, '| Token:', fcmToken.substring(0, 20) + '...');
+              resolve(false);
+            }
+          } catch {
+            console.log('[FCM Legacy] Javob (raw):', responseData.substring(0, 150));
+            resolve(res.statusCode === 200);
+          }
         });
       });
       req.on('error', (e) => {
-        console.error('[FCM Legacy] Xatolik:', e.message);
+        console.error('[FCM Legacy] Network xatolik:', e.message);
         resolve(false);
       });
       req.write(payload);

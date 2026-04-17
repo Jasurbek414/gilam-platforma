@@ -21,7 +21,8 @@ async function bootstrap() {
     }),
   );
 
-  await app.listen(3000, '0.0.0.0');
-  console.log('Backend ishlayapti: http://localhost:3000/api');
+  const port = process.env.PORT || 3000;
+  await app.listen(port, '0.0.0.0');
+  console.log(`Backend ishlayapti: http://localhost:${port}/api`);
 }
 bootstrap();

@@ -4,7 +4,6 @@ module.exports = {
     script: 'dist/main.js',
     cwd: 'D:/gilam/gilam-platforma-main/backend',
     env: {
-      PORT: '3002',
       DB_HOST: 'localhost',
       DB_PORT: '5432',
       DB_USER: 'postgres',

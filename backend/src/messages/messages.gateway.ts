@@ -92,13 +92,15 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         companyId: data.companyId,
       });
 
+      // Sender ma'lumotini olib qo'shamiz (UI uchun)
+      const senderUser = await this.userRepository.findOne({ where: { id: senderId } });
+      const enriched = { ...message, sender: senderUser };
+
       // 1. Deliver to recipient's room (operator or driver on another device)
-      this.server.to(`user-${data.recipientId}`).emit('newMessage', message);
+      this.server.to(`user-${data.recipientId}`).emit('newMessage', enriched);
 
       // 2. Echo DB-persisted message back to sender's room.
-      //    Mobile client listens to 'messageSent' to replace optimistic local copy
-      //    with the real DB record that has a proper id and createdAt timestamp.
-      this.server.to(`user-${senderId}`).emit('messageSent', message);
+      this.server.to(`user-${senderId}`).emit('messageSent', enriched);
 
       // 3. If recipient is offline → send Expo push notification
       const isRecipientOnline = this.connectedUsers.has(data.recipientId);

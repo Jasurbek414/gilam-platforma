@@ -104,7 +104,9 @@ export class UsersService {
   }
 
   async updatePushToken(id: string, token: string): Promise<void> {
+    console.log(`[PushToken] 📱 Saving token for user ${id}: "${token?.substring(0, 30)}..." (length: ${token?.length})`);
     await this.usersRepository.update(id, { expoPushToken: token });
+    console.log(`[PushToken] ✅ Token saved successfully for user ${id}`);
   }
 
   async remove(id: string): Promise<void> {

@@ -71,7 +71,13 @@ export class UsersController {
   }
 
   @Put('push-token')
-  updatePushToken(@CurrentUser() user: User, @Body('token') token: string) {
+  updatePushToken(@CurrentUser() user: User, @Body() body: any) {
+    console.log(`[PushToken] 🔔 PUT /push-token called by user ${user.id} (${user.phone}), body:`, JSON.stringify(body));
+    const token = body?.token;
+    if (!token) {
+      console.warn('[PushToken] ⚠️ No token in request body!');
+      return { error: 'Token is required' };
+    }
     return this.usersService.updatePushToken(user.id, token);
   }
 

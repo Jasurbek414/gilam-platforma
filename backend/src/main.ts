@@ -21,7 +21,14 @@ async function bootstrap() {
     }),
   );
 
-  const port = process.env.PORT || 3000;
+  const port = parseInt(process.env.PORT || '3000', 10);
+  const server = app.getHttpServer();
+  server.on('error', (err: any) => {
+    if (err.code === 'EADDRINUSE') {
+      console.error(`Port ${port} band! 5 soniyadan keyin urinib ko'riladi...`);
+      setTimeout(() => server.listen(port, '0.0.0.0'), 5000);
+    }
+  });
   await app.listen(port, '0.0.0.0');
   console.log(`Backend ishlayapti: http://localhost:${port}/api`);
 }

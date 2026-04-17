@@ -23,8 +23,13 @@ export class OrdersController {
 
   @Post()
   create(@Body() createOrderDto: CreateOrderDto, @CurrentUser() user: User) {
-    if (user.role !== UserRole.SUPER_ADMIN && user.role !== UserRole.OPERATOR) {
+    // Har doim companyId ni token'dan olish (SUPER_ADMIN bundan mustasno)
+    if (user.role !== UserRole.SUPER_ADMIN) {
       createOrderDto.companyId = user.companyId;
+    }
+    // Operator o'zini avtomatik belgilaydi
+    if (user.role === UserRole.OPERATOR || user.role === UserRole.COMPANY_ADMIN) {
+      (createOrderDto as any).operatorId = user.id;
     }
     return this.ordersService.create(createOrderDto);
   }

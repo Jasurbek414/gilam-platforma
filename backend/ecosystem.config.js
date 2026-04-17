@@ -12,7 +12,7 @@ module.exports = {
       JWT_SECRET: 'gilam-saas-jwt-secret-key-2026',
       FIREBASE_SERVICE_ACCOUNT_PATH: 'D:/gilam/gilam-platforma-main/backend/firebase-service-account.json',
       NODE_ENV: 'production',
-      PORT: '4000'
+      PORT: '5555'
     }
   }]
 };

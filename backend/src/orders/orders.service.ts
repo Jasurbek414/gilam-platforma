@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, Inject, forwardRef } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, In, EntityManager } from 'typeorm';
 import { Order, OrderStatus } from './entities/order.entity';
@@ -10,6 +10,7 @@ import { User } from '../users/entities/user.entity';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { UpdateOrderStatusDto } from './dto/update-order-status.dto';
 import { NotificationsService } from '../notifications/notifications.service';
+import { CallsGateway } from '../gateway/calls.gateway';
 
 @Injectable()
 export class OrdersService {
@@ -25,6 +26,8 @@ export class OrdersService {
     @InjectRepository(OrderAction)
     private orderActionRepository: Repository<OrderAction>,
     private readonly notificationsService: NotificationsService,
+    @Inject(forwardRef(() => CallsGateway))
+    private readonly callsGateway: CallsGateway,
   ) {}
 
   private calculateItemPrice(
@@ -119,6 +122,19 @@ export class OrdersService {
             type: 'order',
           })
           .catch((err) => console.error('Notification failed:', err));
+
+        // 📡 Real-time: barcha operatorlarga WebSocket orqali xabar
+        try {
+          const fullOrder = await manager.findOne(Order, {
+            where: { id: finalOrder.id },
+            relations: ['customer', 'driver', 'operator', 'items', 'items.service', 'company'],
+          });
+          this.callsGateway.server
+            ?.to(`company:${finalOrder.companyId}`)
+            .emit('order:new', fullOrder || finalOrder);
+        } catch (wsErr) {
+          console.warn('[WS] order:new emit failed:', wsErr);
+        }
 
         return finalOrder;
       },
@@ -220,6 +236,19 @@ export class OrdersService {
     }
 
     const saved = await this.orderRepository.save(order);
+
+    // 📡 Real-time: company'ga buyurtma holati o'zgardi
+    try {
+      const fullOrder = await this.orderRepository.findOne({
+        where: { id },
+        relations: ['customer', 'driver', 'operator', 'items', 'items.service'],
+      });
+      this.callsGateway.server
+        ?.to(`company:${order.companyId}`)
+        .emit('order:updated', fullOrder || saved);
+    } catch (wsErr) {
+      console.warn('[WS] order:updated emit failed:', wsErr);
+    }
 
     if (updateDto.status) {
       await this.notificationsService.create({

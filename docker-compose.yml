@@ -37,6 +37,9 @@ services:
       - JWT_SECRET=gilam-saas-jwt-secret-key-2026
       - FCM_SERVER_KEY=${FCM_SERVER_KEY:-AIzaSyDgofVJlPKD5WWAZUtwrrFZpdnWMSXHaIA}
       - FIREBASE_SERVICE_ACCOUNT_PATH=/app/firebase-service-account.json
+      - FIREBASE_SERVICE_ACCOUNT_B64=${FIREBASE_SERVICE_ACCOUNT_B64:-}
+    volumes:
+      - ./backend/firebase-service-account.json:/app/firebase-service-account.json:ro
     depends_on:
       db:
         condition: service_healthy

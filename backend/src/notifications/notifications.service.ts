@@ -12,10 +12,34 @@ function getFirebaseAdmin() {
   try {
     const admin = require('firebase-admin');
     if (!admin.apps.length) {
-      const serviceAccountPath =
-        process.env.FIREBASE_SERVICE_ACCOUNT_PATH ||
-        '/app/firebase-service-account.json';
-      const serviceAccount = require(serviceAccountPath);
+      let serviceAccount: any = null;
+
+      // 1. Base64 env var orqali (production, docker uchun eng ishonchli)
+      const b64 = process.env.FIREBASE_SERVICE_ACCOUNT_B64;
+      if (b64) {
+        const json = Buffer.from(b64, 'base64').toString('utf-8');
+        serviceAccount = JSON.parse(json);
+        console.log('[FCM] ✅ Firebase service account base64 dan yuklandi');
+      }
+
+      // 2. Fayl orqali (local dev)
+      if (!serviceAccount) {
+        const filePath =
+          process.env.FIREBASE_SERVICE_ACCOUNT_PATH ||
+          '/app/firebase-service-account.json';
+        try {
+          serviceAccount = require(filePath);
+          console.log('[FCM] ✅ Firebase service account fayldan yuklandi:', filePath);
+        } catch (fileErr: any) {
+          console.warn('[FCM] ⚠️ Service account fayli topilmadi:', filePath);
+        }
+      }
+
+      if (!serviceAccount) {
+        console.error('[FCM] ❌ Firebase service account topilmadi. FCM ishlamaydi.');
+        return null;
+      }
+
       admin.initializeApp({
         credential: admin.credential.cert(serviceAccount),
       });

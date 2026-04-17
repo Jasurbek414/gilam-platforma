@@ -115,12 +115,20 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
             });
             const senderName = senderUser?.fullName || 'Xabar';
 
-            // channelId: 'chat_messages' — Android da HIGH importance kanal
-            // Bu "heads-up" (ekran tepasidan tushuvchi) bildirishnomani ta'minlaydi
+            // Push notification matni: rasm/lokatsiya uchun maxsus
+            let pushBody = data.text;
+            if (data.text?.startsWith('[IMAGE]:')) {
+              pushBody = '📷 Rasm yubordi';
+            } else if (data.text?.startsWith('[LOCATION]:')) {
+              pushBody = '📍 Lokatsiya yubordi';
+            } else if (pushBody && pushBody.length > 80) {
+              pushBody = pushBody.substring(0, 80) + '…';
+            }
+
             await this.notificationsService.sendPushNotification(
               recipient.expoPushToken,
               `💬 ${senderName}`,
-              data.text,
+              pushBody,
               {
                 type: 'chat',
                 senderId,

@@ -102,45 +102,42 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       // 2. Echo DB-persisted message back to sender's room.
       this.server.to(`user-${senderId}`).emit('messageSent', enriched);
 
-      // 3. If recipient is offline → send Expo push notification
-      const isRecipientOnline = this.connectedUsers.has(data.recipientId);
-      if (!isRecipientOnline) {
-        try {
-          const recipient = await this.userRepository.findOne({
-            where: { id: data.recipientId },
+      // 3. Always send push notification (mobile app will handle foreground suppression)
+      try {
+        const recipient = await this.userRepository.findOne({
+          where: { id: data.recipientId },
+        });
+        if (recipient?.expoPushToken) {
+          const senderUser = await this.userRepository.findOne({
+            where: { id: senderId },
           });
-          if (recipient?.expoPushToken) {
-            const senderUser = await this.userRepository.findOne({
-              where: { id: senderId },
-            });
-            const senderName = senderUser?.fullName || 'Xabar';
+          const senderName = senderUser?.fullName || 'Xabar';
 
-            // Push notification matni: rasm/lokatsiya uchun maxsus
-            let pushBody = data.text;
-            if (data.text?.startsWith('[IMAGE]:')) {
-              pushBody = '📷 Rasm yubordi';
-            } else if (data.text?.startsWith('[LOCATION]:')) {
-              pushBody = '📍 Lokatsiya yubordi';
-            } else if (pushBody && pushBody.length > 80) {
-              pushBody = pushBody.substring(0, 80) + '…';
-            }
-
-            await this.notificationsService.sendPushNotification(
-              recipient.expoPushToken,
-              `💬 ${senderName}`,
-              pushBody,
-              {
-                type: 'chat',
-                senderId,
-                companyId: data.companyId,
-                channelId: 'chat_messages',
-              },
-            );
+          // Push notification matni: rasm/lokatsiya uchun maxsus
+          let pushBody = data.text;
+          if (data.text?.startsWith('[IMAGE]:')) {
+            pushBody = '📷 Rasm yubordi';
+          } else if (data.text?.startsWith('[LOCATION]:')) {
+            pushBody = '📍 Lokatsiya yubordi';
+          } else if (pushBody && pushBody.length > 80) {
+            pushBody = pushBody.substring(0, 80) + '…';
           }
-        } catch (pushErr) {
-          // Push failure must not break message delivery
-          console.warn('[Chat] Push notification error:', pushErr);
+
+          await this.notificationsService.sendPushNotification(
+            recipient.expoPushToken,
+            `💬 ${senderName}`,
+            pushBody,
+            {
+              type: 'chat',
+              senderId,
+              companyId: data.companyId,
+              channelId: 'chat_messages',
+            },
+          );
         }
+      } catch (pushErr) {
+        // Push failure must not break message delivery
+        console.warn('[Chat] Push notification error:', pushErr);
       }
 
       return message;

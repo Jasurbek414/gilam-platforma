@@ -57,4 +57,7 @@ export class UpdateUserDto {
   @IsOptional()
   @IsUUID()
   companyId?: string | null;
+
+  @IsOptional()
+  currentLocation?: any;
 }

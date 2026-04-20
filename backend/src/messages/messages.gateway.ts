@@ -20,6 +20,7 @@ import { User } from '../users/entities/user.entity';
     origin: '*',
   },
   namespace: 'chat',
+  path: '/api/socket.io',
 })
 export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer()

@@ -20,6 +20,10 @@ import { User } from '../users/entities/user.entity';
     origin: '*',
   },
   namespace: 'chat',
+  path: '/socket.io',
+  pingTimeout: 60000,
+  pingInterval: 25000,
+  transports: ['polling', 'websocket'],
 })
 export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer()

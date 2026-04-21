@@ -128,10 +128,11 @@ export default function LogisticsPage() {
           <p className="text-slate-500 text-sm font-medium">Haydovchilarni real vaqtda kuzating (OpenStreetMap)</p>
         </div>
         <button 
-          onClick={() => { setLoading(true); loadBackendData(); }}
-          className="flex items-center gap-2 bg-blue-600 text-white px-5 py-2.5 rounded-xl font-bold hover:shadow-lg transition-all"
+          onClick={() => { setLoading(true); loadBackendData(); toast.success('Ma\'lumotlar yangilandi'); }}
+          disabled={loading}
+          className={`flex items-center gap-2 bg-blue-600 text-white px-5 py-2.5 rounded-xl font-bold hover:shadow-lg transition-all disabled:opacity-60 ${loading ? 'animate-pulse' : ''}`}
         >
-          <MdRefresh className="text-xl" /> Yangilash
+          <MdRefresh className={`text-xl ${loading ? 'animate-spin' : ''}`} /> {loading ? 'Yuklanmoqda...' : 'Yangilash'}
         </button>
       </div>
 

@@ -5,6 +5,7 @@ import { NotificationsService } from '../notifications/notifications.service';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User } from '../users/entities/user.entity';
+import { ChatGateway } from './messages.gateway';
 
 @Controller('messages')
 @UseGuards(JwtAuthGuard)
@@ -12,6 +13,7 @@ export class MessagesController {
   constructor(
     private readonly messagesService: MessagesService,
     private readonly notificationsService: NotificationsService,
+    private readonly chatGateway: ChatGateway,
     @InjectRepository(User)
     private readonly userRepo: Repository<User>,
   ) {}
@@ -25,10 +27,7 @@ export class MessagesController {
   @Get('history/:otherUserId')
   async getHistory(@Request() req, @Param('otherUserId') otherUserId: string) {
     const userId = req.user.id;
-    return await this.messagesService.findAllByConversation(
-      userId,
-      otherUserId,
-    );
+    return await this.messagesService.findAllByConversation(userId, otherUserId);
   }
 
   @Get('support-contact')
@@ -36,12 +35,13 @@ export class MessagesController {
     return await this.messagesService.getSupportContact(req.user?.companyId);
   }
 
-  // HTTP fallback — socket offline bo'lsa Flutter shu endpoint orqali xabar yuboradi
+  // Flutter ilovasi shu endpoint orqali xabar yuboradi (REST fallback)
   @Post()
   async createMessage(@Request() req, @Body() body: any) {
     const senderId = req.user.id;
     const { recipientId, text, companyId } = body;
 
+    // 1. DB ga saqlash
     const message = await this.messagesService.create({
       senderId,
       recipientId,
@@ -49,12 +49,40 @@ export class MessagesController {
       companyId,
     });
 
-    // Push notification recipient'ga
+    // 2. Sender ma'lumotlarini boyitish (UI uchun)
+    const senderUser = await this.userRepo.findOne({ where: { id: senderId } });
+    const msg = message as any;
+    const enriched = {
+      id: msg.id,
+      text: msg.text,
+      senderId: msg.senderId,
+      recipientId: msg.recipientId,
+      companyId: msg.companyId,
+      isRead: msg.isRead,
+      createdAt: msg.createdAt,
+      senderName: senderUser?.fullName,
+      senderRole: senderUser?.role,
+      sender: {
+        id: senderUser?.id,
+        fullName: senderUser?.fullName,
+        role: senderUser?.role,
+        phone: senderUser?.phone,
+      },
+    };
+
+    // 3. Operator Socket.IO orqali REAL-TIME xabar olsin
+    try {
+      this.chatGateway.server.to(`user-${recipientId}`).emit('newMessage', enriched);
+      console.log(`[HTTP→Socket] newMessage → user-${recipientId}`);
+    } catch (e) {
+      console.warn('[HTTP→Socket] Emit failed:', e);
+    }
+
+    // 4. Push notification (fon xabari)
     try {
       const recipient = await this.userRepo.findOne({ where: { id: recipientId } });
       if (recipient?.expoPushToken) {
-        const sender = await this.userRepo.findOne({ where: { id: senderId } });
-        const senderName = sender?.fullName || 'Xabar';
+        const senderName = senderUser?.fullName || 'Xabar';
         let pushBody = text || '';
         if (text?.startsWith('[IMAGE]:')) pushBody = '📷 Rasm yubordi';
         else if (text?.startsWith('[LOCATION]:')) pushBody = '📍 Lokatsiya yubordi';
@@ -69,6 +97,6 @@ export class MessagesController {
       }
     } catch (_) {}
 
-    return message;
+    return enriched;
   }
 }

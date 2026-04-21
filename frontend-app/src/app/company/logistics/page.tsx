@@ -94,6 +94,11 @@ export default function LogisticsPage() {
 
   useEffect(() => {
     loadBackendData();
+    const interval = setInterval(() => {
+      loadBackendData();
+    }, 5000); // 5 seconds real-time auto-refresh interval.
+    
+    return () => clearInterval(interval);
   }, []);
 
   return (

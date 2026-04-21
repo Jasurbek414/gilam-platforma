@@ -281,7 +281,7 @@ export default function CompaniesPage() {
             </thead>
             <tbody className="divide-y divide-slate-100">
               {companies.map((company) => (
-                <tr key={company.id} className="hover:bg-slate-50/50 transition-colors group">
+                <tr key={company.id} className="hover:bg-slate-50/50 transition-colors">
                   <td className="py-5 px-8">
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 rounded-full bg-indigo-100 text-indigo-700 font-black flex items-center justify-center">

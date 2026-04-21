@@ -184,6 +184,8 @@ export default function LogisticsPage() {
             ))}
           </div>
         </div>
+      </div>
+
       {/* ─── Mileage Report Section ────────────────────────────────── */}
       <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">

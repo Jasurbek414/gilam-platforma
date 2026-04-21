@@ -81,11 +81,11 @@ export default function SettingsPage() {
                   
                   <div className="flex items-center gap-4 relative z-10">
                     <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-colors ${
-                      isActive ? 'bg-white/10 text-white' : \`\${tab.bg} \${tab.color} group-hover:scale-110 shadow-inner duration-300\`
+                      isActive ? 'bg-white/10 text-white' : `${tab.bg} ${tab.color} group-hover:scale-110 shadow-inner duration-300`
                     }`}>
                       <Icon className="text-[22px]" />
                     </div>
-                    <span className={\`font-black text-[15px] \${isActive ? 'text-white' : 'text-slate-700'}\`}>
+                    <span className={`font-black text-[15px] ${isActive ? 'text-white' : 'text-slate-700'}`}>
                       {tab.name}
                     </span>
                   </div>
@@ -194,7 +194,7 @@ export default function SettingsPage() {
                     <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-8">
                       <div className="max-w-md">
                         <div className="flex items-center gap-3 mb-3">
-                          <div className="\`\w-12 h-12 rounded-2xl flex items-center justify-center \${is2FAEnabled ? 'bg-emerald-500/20 text-emerald-400' : 'bg-white/10 text-white'}\`\">
+                          <div className={`w-12 h-12 rounded-2xl flex items-center justify-center ${is2FAEnabled ? 'bg-emerald-500/20 text-emerald-400' : 'bg-white/10 text-white'}`}>
                             <MdSecurity className="text-2xl" />
                           </div>
                           <h3 className="text-2xl font-black">Ikki Bosqichli Tasdiqlash (2FA)</h3>

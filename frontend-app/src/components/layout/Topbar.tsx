@@ -1,7 +1,8 @@
 'use client';
 
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { MdNotifications, MdSearch, MdPayment, MdSettings, MdSecurity, MdDoneAll } from 'react-icons/md';
+import { MdNotifications, MdSearch, MdPayment, MdSettings, MdSecurity, MdDoneAll, MdClose } from 'react-icons/md';
+import { useRouter } from 'next/navigation';
 
 import { notificationsApi, getUser } from '@/lib/api';
 import { User, Notification } from '@/types';
@@ -11,6 +12,26 @@ export default function Topbar() {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const [user, setUser] = useState<User | null>(null);
+  const [searchTerm, setSearchTerm] = useState('');
+  const router = useRouter();
+
+  const handleGlobalSearch = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter' && searchTerm.trim()) {
+      const basePath = user?.role === 'SUPER_ADMIN' ? '/admin' : '/company';
+      // Navigate to order page with the search query injected
+      // Since NextJS state isn't perfectly persisted on global param changes, we can just push
+      router.push(`${basePath}/orders`);
+      
+      // Using timeout to dispatch a global search event across components if needed,
+      // or just trust the new page to pick it up later. For instant cross-page reactivity in current setup:
+      setTimeout(() => {
+        const fakeInput = document.createElement('input');
+        fakeInput.value = searchTerm.trim();
+        // Dispatc a custom event that `AdminOrdersPage` or `CompanyOrdersPage` can listen to if needed.
+        window.dispatchEvent(new CustomEvent('global-search', { detail: searchTerm.trim() }));
+      }, 500);
+    }
+  };
 
   const loadNotifications = useCallback(async (currentUser: User) => {
     try {
@@ -80,14 +101,22 @@ export default function Topbar() {
 
   return (
     <div className="flex items-center justify-between w-full gap-3">
-      {/* Search — hidden on small, shown on md+ */}
-      <div className="hidden md:flex items-center bg-slate-100/50 rounded-full px-4 py-2 flex-1 max-w-sm border border-slate-200/50 focus-within:bg-white focus-within:ring-2 focus-within:ring-blue-500/10 transition-all">
-        <MdSearch className="text-slate-400 text-lg flex-shrink-0" />
+      {/* Global Search functionality */}
+      <div className="hidden md:flex items-center bg-slate-50 hover:bg-slate-100 focus-within:bg-white focus-within:hover:bg-white rounded-2xl px-5 py-3.5 flex-1 max-w-lg border border-transparent focus-within:border-blue-500/50 focus-within:shadow-[0_8px_30px_-12px_rgba(59,130,246,0.25)] transition-all group">
+        <MdSearch className="text-slate-400 group-focus-within:text-blue-500 text-xl flex-shrink-0 transition-colors" />
         <input
           type="text"
-          placeholder="Qidirish..."
-          className="bg-transparent border-none outline-none text-sm w-full ml-2 text-slate-700 placeholder-slate-400"
+          placeholder="Buyurtma ID, mijoz telefoni orqali tezkor qidiruv..."
+          className="bg-transparent border-none outline-none font-bold text-[13px] w-full ml-3 text-slate-800 placeholder-slate-400"
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          onKeyDown={handleGlobalSearch}
         />
+        {searchTerm && (
+          <button onClick={() => setSearchTerm('')} className="text-slate-400 hover:text-slate-700 transition-colors flex-shrink-0 ml-2">
+            <MdClose className="text-lg" />
+          </button>
+        )}
       </div>
 
       <div className="flex items-center gap-3 lg:gap-6 ml-auto">

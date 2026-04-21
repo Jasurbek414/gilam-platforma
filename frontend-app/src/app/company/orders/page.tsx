@@ -57,6 +57,12 @@ export default function CompanyOrdersPage() {
     }
     setUser(currentUser);
     loadData(currentUser.company.id);
+
+    const handleGlobalSearch = (e: any) => {
+      setSearch(e.detail);
+    };
+    window.addEventListener('global-search', handleGlobalSearch);
+    return () => window.removeEventListener('global-search', handleGlobalSearch);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

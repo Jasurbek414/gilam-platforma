@@ -121,6 +121,8 @@ export const usersApi = {
   create: (data: Partial<User> & { password?: string }) => request<User>('/users', { method: 'POST', body: JSON.stringify(data) }),
   update: (id: string, data: Partial<User> & { password?: string }) => request<User>(`/users/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
   remove: (id: string) => request<void>(`/users/${id}`, { method: 'DELETE' }),
+  getMileage: (id: string, from: string, to: string) => request<{ totalKm: number; pointCount: number }>(`/users/${id}/mileage?from=${from}&to=${to}`),
+  getMileageDaily: (id: string, from: string, to: string) => request<{ date: string; km: number; points: number }[]>(`/users/${id}/mileage/daily?from=${from}&to=${to}`),
 };
 
 // ===== CUSTOMERS API =====

@@ -6,6 +6,9 @@ import {
   MdRoute, 
   MdRefresh, 
   MdDirectionsCar,
+  MdSpeed,
+  MdCalendarToday,
+  MdDateRange,
 } from 'react-icons/md';
 import { usersApi, ordersApi, getUser } from '@/lib/api';
 import toast from 'react-hot-toast';
@@ -21,6 +24,15 @@ export default function LogisticsPage() {
   const [drivers, setDrivers] = useState<any[]>([]);
   const [orderPoints, setOrderPoints] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // ─── Mileage Report State ─────────────────────────────────────
+  const [mileageDriver, setMileageDriver] = useState<string | null>(null);
+  const [mileagePeriod, setMileagePeriod] = useState<'today' | 'week' | 'month' | 'custom'>('today');
+  const [mileageFrom, setMileageFrom] = useState('');
+  const [mileageTo, setMileageTo] = useState('');
+  const [mileageData, setMileageData] = useState<{ totalKm: number; pointCount: number } | null>(null);
+  const [mileageDaily, setMileageDaily] = useState<{ date: string; km: number; points: number }[]>([]);
+  const [mileageLoading, setMileageLoading] = useState(false);
 
   const loadBackendData = async () => {
     try {
@@ -113,7 +125,7 @@ export default function LogisticsPage() {
           <h1 className="text-2xl font-black text-slate-800 flex items-center gap-2">
             Logistika <MdRoute className="text-blue-500" />
           </h1>
-          <p className="text-slate-500 text-sm font-medium">Haydovchilarni real vaqtda kuzating (Google Maps Detailed)</p>
+          <p className="text-slate-500 text-sm font-medium">Haydovchilarni real vaqtda kuzating (OpenStreetMap)</p>
         </div>
         <button 
           onClick={() => { setLoading(true); loadBackendData(); }}
@@ -172,6 +184,174 @@ export default function LogisticsPage() {
             ))}
           </div>
         </div>
+      {/* ─── Mileage Report Section ────────────────────────────────── */}
+      <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-indigo-100 rounded-xl flex items-center justify-center">
+              <MdSpeed className="text-xl text-indigo-600" />
+            </div>
+            <div>
+              <h2 className="text-lg font-black text-slate-800">Masofa Hisoboti</h2>
+              <p className="text-xs text-slate-400 font-medium">Haydovchi qancha km bosib o'tgani</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+          {/* Driver selector */}
+          <div>
+            <label className="block text-[10px] font-black text-slate-500 uppercase tracking-wider mb-1.5">Haydovchi</label>
+            <select 
+              value={mileageDriver || ''} 
+              onChange={(e) => setMileageDriver(e.target.value || null)}
+              className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold text-slate-700 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all"
+            >
+              <option value="">— Tanlang —</option>
+              {drivers.map(d => (
+                <option key={d.id} value={d.id}>{d.name}</option>
+              ))}
+            </select>
+          </div>
+
+          {/* Period selector */}
+          <div>
+            <label className="block text-[10px] font-black text-slate-500 uppercase tracking-wider mb-1.5">Davr</label>
+            <div className="flex bg-slate-50 rounded-xl border border-slate-200 p-1 gap-1">
+              {[
+                { key: 'today', label: 'Bugun' },
+                { key: 'week', label: 'Hafta' },
+                { key: 'month', label: 'Oy' },
+                { key: 'custom', label: 'Oraliq' },
+              ].map(p => (
+                <button 
+                  key={p.key} 
+                  onClick={() => setMileagePeriod(p.key as any)}
+                  className={`flex-1 px-2 py-2 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all ${
+                    mileagePeriod === p.key 
+                      ? 'bg-indigo-600 text-white shadow-md' 
+                      : 'text-slate-500 hover:bg-white hover:text-slate-700'
+                  }`}
+                >
+                  {p.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Custom date range */}
+          {mileagePeriod === 'custom' && (
+            <div className="flex gap-2">
+              <div className="flex-1">
+                <label className="block text-[10px] font-black text-slate-500 uppercase tracking-wider mb-1.5">Dan</label>
+                <input 
+                  type="date" 
+                  value={mileageFrom} 
+                  onChange={(e) => setMileageFrom(e.target.value)}
+                  className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold text-slate-700 outline-none focus:ring-2 focus:ring-indigo-500"
+                />
+              </div>
+              <div className="flex-1">
+                <label className="block text-[10px] font-black text-slate-500 uppercase tracking-wider mb-1.5">Gacha</label>
+                <input 
+                  type="date" 
+                  value={mileageTo} 
+                  onChange={(e) => setMileageTo(e.target.value)}
+                  className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold text-slate-700 outline-none focus:ring-2 focus:ring-indigo-500"
+                />
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Load report button */}
+        <button 
+          onClick={async () => {
+            if (!mileageDriver) { toast.error('Haydovchini tanlang'); return; }
+            setMileageLoading(true);
+            try {
+              const now = new Date();
+              let from: string, to: string;
+
+              if (mileagePeriod === 'today') {
+                from = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString();
+                to = now.toISOString();
+              } else if (mileagePeriod === 'week') {
+                const weekAgo = new Date(now); weekAgo.setDate(weekAgo.getDate() - 7);
+                from = weekAgo.toISOString();
+                to = now.toISOString();
+              } else if (mileagePeriod === 'month') {
+                const monthAgo = new Date(now); monthAgo.setMonth(monthAgo.getMonth() - 1);
+                from = monthAgo.toISOString();
+                to = now.toISOString();
+              } else {
+                if (!mileageFrom || !mileageTo) { toast.error('Sanalarni kiriting'); setMileageLoading(false); return; }
+                from = new Date(mileageFrom).toISOString();
+                to = new Date(mileageTo + 'T23:59:59').toISOString();
+              }
+
+              const [total, daily] = await Promise.all([
+                usersApi.getMileage(mileageDriver, from, to),
+                usersApi.getMileageDaily(mileageDriver, from, to),
+              ]);
+              setMileageData(total);
+              setMileageDaily(daily);
+            } catch (err) {
+              toast.error('Hisobotni yuklashda xatolik');
+            } finally {
+              setMileageLoading(false);
+            }
+          }}
+          disabled={mileageLoading}
+          className="w-full md:w-auto px-6 py-3 bg-indigo-600 text-white rounded-xl font-black text-sm hover:bg-indigo-700 hover:shadow-lg transition-all disabled:opacity-50 flex items-center justify-center gap-2 mb-6"
+        >
+          <MdDateRange className="text-lg" />
+          {mileageLoading ? 'Yuklanmoqda...' : 'Hisobotni ko\'rsatish'}
+        </button>
+
+        {/* Results */}
+        {mileageData && (
+          <div className="space-y-4">
+            {/* Summary Card */}
+            <div className="grid grid-cols-2 gap-4">
+              <div className="bg-gradient-to-br from-indigo-500 to-indigo-700 text-white p-5 rounded-2xl">
+                <p className="text-[10px] font-bold uppercase tracking-widest opacity-80">Jami Masofa</p>
+                <p className="text-3xl font-black mt-1">{mileageData.totalKm.toFixed(2)} <span className="text-base font-bold opacity-70">km</span></p>
+              </div>
+              <div className="bg-gradient-to-br from-emerald-500 to-emerald-700 text-white p-5 rounded-2xl">
+                <p className="text-[10px] font-bold uppercase tracking-widest opacity-80">GPS Nuqtalar</p>
+                <p className="text-3xl font-black mt-1">{mileageData.pointCount} <span className="text-base font-bold opacity-70">ta</span></p>
+              </div>
+            </div>
+
+            {/* Daily Breakdown Table */}
+            {mileageDaily.length > 0 && (
+              <div className="border border-slate-100 rounded-2xl overflow-hidden">
+                <table className="w-full">
+                  <thead>
+                    <tr className="bg-slate-50">
+                      <th className="text-left px-5 py-3 text-[10px] font-black text-slate-500 uppercase tracking-wider">Sana</th>
+                      <th className="text-right px-5 py-3 text-[10px] font-black text-slate-500 uppercase tracking-wider">Masofa (km)</th>
+                      <th className="text-right px-5 py-3 text-[10px] font-black text-slate-500 uppercase tracking-wider">Nuqtalar</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-50">
+                    {mileageDaily.map((row, i) => (
+                      <tr key={i} className="hover:bg-slate-50 transition">
+                        <td className="px-5 py-3 text-sm font-bold text-slate-700">
+                          <MdCalendarToday className="inline mr-2 text-indigo-400" />
+                          {new Date(row.date).toLocaleDateString('uz-UZ')}
+                        </td>
+                        <td className="px-5 py-3 text-sm font-black text-right text-indigo-600">{row.km.toFixed(2)}</td>
+                        <td className="px-5 py-3 text-sm font-bold text-right text-slate-500">{row.points}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );

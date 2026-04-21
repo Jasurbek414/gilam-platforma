@@ -34,7 +34,7 @@ export default function LogisticsPage() {
       const points = allOrders
         .filter((o: any) => o.customer?.location || o.customer?.address)
         .map((o: any) => {
-          let pos: [number, number] = [41.311081, 69.240562];
+          let pos: [number, number] | null = null;
           if (o.customer?.location) {
             if (typeof o.customer.location === 'object') {
               pos = [o.customer.location.y || o.customer.location.lat, o.customer.location.x || o.customer.location.lng];
@@ -59,8 +59,8 @@ export default function LogisticsPage() {
           }
         });
       
-      const mappedDrivers = realDrivers.map((d: any, i: number) => {
-        let pos: [number, number] = [41.311081 + (i*0.01), 69.240562 + (i*0.01)];
+      const mappedDrivers = realDrivers.map((d: any) => {
+        let pos: [number, number] | null = null;
         if (d.currentLocation) {
           if (typeof d.currentLocation === 'object') {
             pos = [d.currentLocation.y || d.currentLocation.lat, d.currentLocation.x || d.currentLocation.lng];

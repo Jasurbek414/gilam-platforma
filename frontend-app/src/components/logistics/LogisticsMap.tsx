@@ -32,7 +32,7 @@ interface LogisticsMapProps {
   activeDriverId?: string | null;
 }
 
-function MapController({ activeDriverId, drivers }: { activeDriverId?: string | null, drivers: any[] }) {
+function MapController({ activeDriverId, drivers, orderPoints }: { activeDriverId?: string | null, drivers: any[], orderPoints: any[] }) {
   const map = useMap();
   React.useEffect(() => {
     if (activeDriverId) {
@@ -40,26 +40,44 @@ function MapController({ activeDriverId, drivers }: { activeDriverId?: string | 
       if (driver && driver.pos && Array.isArray(driver.pos) && driver.pos.length === 2 && !isNaN(driver.pos[0])) {
         map.flyTo(driver.pos as L.LatLngExpression, 16, { animate: true, duration: 1.2 });
       }
+    } else {
+      // Auto-fit bounds based on all valid markers if available
+      const bounds = L.latLngBounds([]);
+      let hasValidPoints = false;
+      
+      [...drivers, ...orderPoints].forEach(item => {
+        if (item.pos && Array.isArray(item.pos) && !isNaN(item.pos[0])) {
+          bounds.extend(item.pos as L.LatLngExpression);
+          hasValidPoints = true;
+        }
+      });
+      
+      if (hasValidPoints) {
+        map.fitBounds(bounds, { padding: [50, 50], maxZoom: 14 });
+      }
     }
-  }, [activeDriverId, drivers, map]);
+  }, [activeDriverId, drivers, orderPoints, map]);
   return null;
 }
 
 export default function LogisticsMap({ drivers, orderPoints, activeDriverId }: LogisticsMapProps) {
+  const validDrivers = drivers.filter(d => d.pos && Array.isArray(d.pos) && !isNaN(d.pos[0]));
+  const validPoints = orderPoints.filter(p => p.pos && Array.isArray(p.pos) && !isNaN(p.pos[0]));
+
   return (
     <div className="w-full h-full min-h-[500px] border-4 border-slate-100 relative bg-slate-50">
       <MapContainer 
-        center={[41.311081, 69.240562]} 
+        center={[41.311081, 69.240562]} // Fallback center
         zoom={12} 
         style={{ height: '100%', width: '100%', minHeight: '500px' }}
       >
-        <MapController activeDriverId={activeDriverId} drivers={drivers} />
+        <MapController activeDriverId={activeDriverId} drivers={drivers} orderPoints={orderPoints} />
         <TileLayer
           attribution='&copy; Google Maps'
           url={GOOGLE_MAPS_TILES}
         />
-        {drivers.map(driver => (
-          <Marker key={driver.id} position={driver.pos} icon={driverIcon}>
+        {validDrivers.map(driver => (
+          <Marker key={`dr-${driver.id}`} position={driver.pos} icon={driverIcon}>
             <Popup>
               <div className="p-2">
                 <h4 className="font-bold">{driver.name}</h4>
@@ -69,8 +87,8 @@ export default function LogisticsMap({ drivers, orderPoints, activeDriverId }: L
             </Popup>
           </Marker>
         ))}
-        {orderPoints.map(point => (
-          <Marker key={point.id} position={point.pos} icon={point.type === 'pickup' ? pickupIcon : deliveryIcon}>
+        {validPoints.map(point => (
+          <Marker key={`pt-${point.id}`} position={point.pos} icon={point.type === 'pickup' ? pickupIcon : deliveryIcon}>
             <Popup>
               <div className="p-1">
                 <p className="font-bold text-xs">{point.name}</p>

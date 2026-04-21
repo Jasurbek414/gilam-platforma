@@ -106,52 +106,90 @@ export default function Topbar() {
           </button>
 
           {showNotifications && (
-            <div className="absolute right-0 mt-3 w-[calc(100vw-2rem)] sm:w-80 lg:w-96 bg-white rounded-2xl shadow-2xl border border-slate-100 overflow-hidden animate-in fade-in zoom-in duration-200 origin-top-right max-h-[80vh]">
-              <div className="p-4 border-b border-slate-50 bg-slate-50/50 flex justify-between items-center">
-                <h3 className="font-black text-slate-800 text-sm uppercase tracking-widest">Bildirishnomalar</h3>
+            <div className="absolute right-0 mt-3 w-[calc(100vw-2rem)] sm:w-[400px] bg-white/95 backdrop-blur-xl rounded-[2rem] shadow-[0_20px_50px_-12px_rgba(0,0,0,0.25)] border border-slate-100 overflow-hidden animate-in fade-in zoom-in duration-300 origin-top-right z-[100] flex flex-col max-h-[85vh]">
+              
+              {/* Header */}
+              <div className="px-6 py-5 border-b border-slate-100/50 bg-slate-50/50 flex justify-between items-center z-10 shrink-0">
+                <div>
+                  <h3 className="font-black text-slate-800 text-[13px] uppercase tracking-[0.15em] relative">
+                    BILDIRISHNOMALAR
+                  </h3>
+                  <p className="text-[10px] font-bold text-slate-400 mt-1 uppercase tracking-widest">
+                    {unreadCount > 0 ? `${unreadCount} ta yangi xabar` : "Hammasi o'qilgan"}
+                  </p>
+                </div>
                 {unreadCount > 0 && (
                   <button
                     onClick={markAllAsRead}
-                    className="flex items-center gap-1 text-[10px] font-black text-blue-600 uppercase bg-blue-50 px-2 py-1 rounded-lg hover:bg-blue-100 transition-colors"
+                    className="flex items-center gap-1.5 text-[10px] font-black tracking-widest text-blue-600 uppercase bg-white border border-blue-100 hover:bg-blue-600 hover:text-white px-3 py-2 rounded-xl transition-all shadow-sm hover:shadow-lg"
                   >
-                    <MdDoneAll /> {"Hammasini o'qish"}
+                    <MdDoneAll className="text-lg" /> Barchasini O'qish
                   </button>
                 )}
               </div>
 
-              <div className="max-h-[400px] overflow-y-auto">
+              {/* Body */}
+              <div className="overflow-y-auto no-scrollbar z-10 flex-1 p-3">
                 {notifications.length > 0 ? (
-                  notifications.map((n) => (
-                    <div
-                      key={n.id}
-                      onClick={() => markAsRead(n.id, n.isRead)}
-                      className={`p-4 flex gap-4 cursor-pointer hover:bg-slate-50 transition-colors relative border-b border-slate-50 ${!n.isRead ? 'bg-blue-50/30' : ''}`}
-                    >
-                      {!n.isRead && <div className="absolute left-0 top-0 bottom-0 w-1 bg-blue-500"></div>}
-                      <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${n.isRead ? 'bg-slate-100' : 'bg-white shadow-sm'}`}>
-                        {getIcon(n.type)}
+                  <div className="space-y-1.5">
+                    {notifications.map((n) => (
+                      <div
+                        key={n.id}
+                        onClick={() => markAsRead(n.id, n.isRead)}
+                        className={`p-4 rounded-[1.25rem] flex items-start gap-4 cursor-pointer transition-all group ${
+                          !n.isRead 
+                            ? 'bg-white border border-indigo-100 shadow-[0_4px_20px_-8px_rgba(79,70,229,0.2)] hover:border-indigo-300 hover:shadow-[0_8px_30px_-10px_rgba(79,70,229,0.3)] hover:-translate-y-0.5' 
+                            : 'bg-transparent border border-transparent hover:bg-slate-50'
+                        }`}
+                      >
+                        <div className={`w-12 h-12 rounded-[1rem] flex items-center justify-center shrink-0 shadow-inner mt-0.5 ${
+                          !n.isRead 
+                            ? 'bg-gradient-to-tr from-blue-500 to-indigo-500 text-white shadow-md' 
+                            : 'bg-slate-100 text-slate-400'
+                        }`}>
+                          {getIcon(n.type)}
+                        </div>
+                        
+                        <div className="flex-1 min-w-0 pr-1">
+                          <div className="flex justify-between items-start mb-1.5">
+                            <p className={`text-[9px] font-black uppercase tracking-[0.2em] px-2 py-0.5 rounded-md ${
+                              !n.isRead ? 'bg-indigo-50 text-indigo-600' : 'bg-slate-100 text-slate-500'
+                            }`}>
+                              {n.type === 'payment' ? 'TO\'LOV' : n.type === 'security' ? 'XAVFSIZLIK' : 'TIZIM'}
+                            </p>
+                            <span className="text-[10px] font-bold text-slate-400 whitespace-nowrap mt-0.5">
+                              {new Date(n.createdAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                            </span>
+                          </div>
+                          
+                          <p className={`text-[13px] leading-snug break-words pr-2 ${
+                            !n.isRead ? 'font-black text-slate-800' : 'font-semibold text-slate-500 group-hover:text-slate-700'
+                          }`}>
+                            {n.message}
+                          </p>
+                        </div>
+                        
+                        {!n.isRead && (
+                          <div className="w-2.5 h-2.5 rounded-full bg-indigo-500 shadow-[0_0_10px_rgba(99,102,241,0.8)] mt-3 shrink-0"></div>
+                        )}
                       </div>
-                      <div className="flex-1 min-w-0">
-                        <p className={`text-sm leading-tight ${!n.isRead ? 'font-bold text-slate-900' : 'text-slate-600'}`}>
-                          {n.message}
-                        </p>
-                        <span className="text-[10px] font-bold text-slate-400 mt-1 block uppercase">
-                          {new Date(n.createdAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
-                        </span>
-                      </div>
-                    </div>
-                  ))
+                    ))}
+                  </div>
                 ) : (
-                  <div className="p-10 text-center">
-                    <MdNotifications className="text-4xl text-slate-100 mx-auto mb-2" />
-                    <p className="text-slate-400 text-xs font-bold uppercase tracking-widest">{"Yangi bildirishnomalar yo'q"}</p>
+                  <div className="py-20 px-6 text-center flex flex-col items-center justify-center h-full">
+                    <div className="w-24 h-24 bg-slate-50 border border-slate-100 text-slate-300 rounded-[2rem] flex items-center justify-center text-4xl mb-5 shadow-inner">
+                       <MdNotifications />
+                    </div>
+                    <p className="text-slate-800 font-black text-xl tracking-tight">Kontekst Toza</p>
+                    <p className="text-slate-400 text-xs mt-2 font-medium leading-relaxed">Hozircha sizda hech qanday yangi yoki o'qilmagan xabarlar mavjud emas.</p>
                   </div>
                 )}
               </div>
 
-              <div className="p-3 border-t border-slate-50 bg-slate-50/30">
-                <button className="w-full py-2 text-center text-xs font-black text-slate-500 hover:text-blue-600 transition-colors uppercase tracking-widest">
-                  {"Barcha bildirishnomalarni ko'rish"}
+              {/* Footer */}
+              <div className="p-4 border-t border-slate-100/50 bg-slate-50/80 z-10 shrink-0">
+                <button className="w-full py-4 text-center text-[10px] font-black tracking-[0.25em] text-slate-500 hover:bg-slate-900 transition-all uppercase rounded-xl hover:text-white shadow-sm hover:shadow-xl hover:shadow-slate-900/20 active:scale-95 outline-none border border-slate-200">
+                  Barcha Tizim Xabarlariga O'tish
                 </button>
               </div>
             </div>

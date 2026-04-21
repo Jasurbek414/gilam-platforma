@@ -37,9 +37,16 @@ export default function LogisticsPage() {
           let pos: [number, number] = [41.311081, 69.240562];
           if (o.customer?.location) {
             if (typeof o.customer.location === 'object') {
-              pos = [o.customer.location.lat, o.customer.location.lng];
-            } else if (typeof o.customer.location === 'string' && o.customer.location.includes(',')) {
-              pos = o.customer.location.split(',').map(Number) as [number, number];
+              pos = [o.customer.location.y || o.customer.location.lat, o.customer.location.x || o.customer.location.lng];
+            } else if (typeof o.customer.location === 'string') {
+               if (o.customer.location.trim().startsWith('{')) {
+                 try {
+                   const parsed = JSON.parse(o.customer.location);
+                   pos = [parsed.y || parsed.lat, parsed.x || parsed.lng];
+                 } catch(e) {}
+               } else if (o.customer.location.includes(',')) {
+                 pos = o.customer.location.split(',').map(Number) as [number, number];
+               }
             }
           }
           return {
@@ -54,9 +61,16 @@ export default function LogisticsPage() {
         let pos: [number, number] = [41.311081 + (i*0.01), 69.240562 + (i*0.01)];
         if (d.currentLocation) {
           if (typeof d.currentLocation === 'object') {
-            pos = [d.currentLocation.lat, d.currentLocation.lng];
-          } else if (typeof d.currentLocation === 'string' && d.currentLocation.includes(',')) {
-            pos = d.currentLocation.split(',').map(Number) as [number, number];
+            pos = [d.currentLocation.y || d.currentLocation.lat, d.currentLocation.x || d.currentLocation.lng];
+          } else if (typeof d.currentLocation === 'string') {
+            if (d.currentLocation.trim().startsWith('{')) {
+              try {
+                const parsed = JSON.parse(d.currentLocation);
+                pos = [parsed.y || parsed.lat, parsed.x || parsed.lng];
+              } catch(e) {}
+            } else if (d.currentLocation.includes(',')) {
+              pos = d.currentLocation.split(',').map(Number) as [number, number];
+            }
           }
         }
         return {

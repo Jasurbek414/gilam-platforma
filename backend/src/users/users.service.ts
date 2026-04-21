@@ -100,6 +100,15 @@ export class UsersService {
       user.companyId = dto.companyId;
     }
 
+    if (dto.currentLocation !== undefined) {
+      if (typeof dto.currentLocation === 'string' && dto.currentLocation.includes(',')) {
+        const [lat, lng] = dto.currentLocation.split(',').map(Number);
+        user.currentLocation = `${lng},${lat}`; // PostgreSQL geometry point natively accepts 'x,y' strings where x=longitude, y=latitude
+      } else {
+        user.currentLocation = dto.currentLocation;
+      }
+    }
+
     return this.usersRepository.save(user);
   }
 

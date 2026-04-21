@@ -109,14 +109,18 @@ export default function SettingsPage() {
 
   const handleSaveServices = async () => {
     try {
-      toast.loading('Narxlar yangilanmoqda...', { id: 'services' });
+      toast.loading('Saqlanmoqda...', { id: 'services' });
       const promises = servicesList.map(s => 
-        servicesApi.update(s.id, { price: parseInt(s.price) })
+        servicesApi.update(s.id, { 
+          name: s.name,
+          price: parseInt(s.price) || 0,
+          measurementUnit: s.measurementUnit
+        })
       );
       await Promise.all(promises);
-      toast.success('Narxlar muvaffaqiyatli saqlandi! 💰', { id: 'services' });
+      toast.success('Xizmatlar va narxlar muvaffaqiyatli saqlandi! 💰', { id: 'services' });
     } catch (err) {
-      toast.error('Narxlarni saqlashda xatolik yuz berdi', { id: 'services' });
+      toast.error('Saqlashda xatolik yuz berdi', { id: 'services' });
     }
   };
 
@@ -151,9 +155,9 @@ export default function SettingsPage() {
     }
   };
 
-  const handleUpdatePrice = (serviceId: string, newPrice: number) => {
+  const handleUpdateServiceField = (serviceId: string, field: string, value: string | number) => {
     setServicesList(servicesList.map(s => 
-      s.id === serviceId ? { ...s, price: newPrice } : s
+      s.id === serviceId ? { ...s, [field]: value } : s
     ));
   };
 
@@ -313,23 +317,42 @@ export default function SettingsPage() {
                           initial={{ opacity: 0, y: 10 }}
                           animate={{ opacity: 1, y: 0 }}
                           exit={{ opacity: 0, scale: 0.95 }}
-                          className="flex items-center justify-between p-4 bg-white rounded-2xl border border-slate-100 shadow-sm hover:border-fuchsia-200 hover:shadow-md transition-all group"
+                          className="flex flex-col sm:flex-row items-center gap-3 p-3 bg-white rounded-xl border border-slate-100 shadow-sm hover:border-fuchsia-200 hover:shadow-md transition-all group"
                         >
-                          <div className="flex flex-col ml-2">
-                            <span className="font-bold text-slate-800">{item.name}</span>
-                            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">O'lchov: {item.measurementUnit === 'SQM' ? 'Kv.m' : item.measurementUnit === 'PIECE' ? 'Dona' : item.measurementUnit}</span>
+                          <div className="flex-1 w-full relative">
+                            <input
+                              type="text"
+                              className="w-full bg-slate-50 hover:bg-slate-100 focus:bg-white rounded-lg border border-transparent focus:border-slate-200 px-3 py-2 text-sm font-bold text-slate-800 outline-none transition-all"
+                              value={item.name}
+                              placeholder="Xizmat nomi"
+                              onChange={(e) => handleUpdateServiceField(item.id, 'name', e.target.value)}
+                            />
                           </div>
-                          <div className="flex items-center gap-3">
-                            <div className="relative">
+                          
+                          <div className="flex items-center gap-2 w-full sm:w-auto">
+                            <div className="w-28">
+                              <select 
+                                className="w-full bg-slate-50 hover:bg-slate-100 focus:bg-white rounded-lg border border-transparent focus:border-slate-200 text-xs font-black text-slate-600 outline-none px-2 py-2.5 transition-all text-center"
+                                value={item.measurementUnit}
+                                onChange={(e) => handleUpdateServiceField(item.id, 'measurementUnit', e.target.value)}
+                              >
+                                <option value="SQM">Kv.m</option>
+                                <option value="PIECE">Dona</option>
+                                <option value="KG">Kg</option>
+                              </select>
+                            </div>
+
+                            <div className="relative w-32">
                               <input 
                                 type="number" 
-                                className="w-32 pl-4 pr-12 py-3 bg-slate-50 rounded-xl border border-slate-200 text-right font-black text-slate-800 outline-none focus:border-fuchsia-500 focus:bg-white transition-all"
+                                className="w-full pl-3 pr-12 py-2 bg-slate-50 hover:bg-slate-100 focus:bg-white rounded-lg border border-transparent focus:border-slate-200 text-right font-black text-slate-800 outline-none focus:border-fuchsia-500 transition-all text-sm"
                                 value={item.price}
-                                onChange={(e) => handleUpdatePrice(item.id, parseInt(e.target.value) || 0)}
+                                onChange={(e) => handleUpdateServiceField(item.id, 'price', e.target.value)}
                               />
-                              <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[10px] font-black text-slate-400 uppercase">so'm</span>
+                              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-black text-slate-400 uppercase pointer-events-none">so'm</span>
                             </div>
-                            <button onClick={() => handleDeleteService(item.id)} className="w-10 h-10 rounded-xl bg-red-50 text-red-500 flex items-center justify-center hover:bg-red-500 hover:text-white transition-all opacity-50 group-hover:opacity-100" title="O'chirish">
+
+                            <button onClick={() => handleDeleteService(item.id)} className="w-9 h-9 rounded-lg bg-red-50 text-red-500 flex items-center justify-center hover:bg-red-500 hover:text-white transition-all opacity-40 group-hover:opacity-100 shrink-0" title="O'chirish">
                               <MdDeleteOutline className="text-lg" />
                             </button>
                           </div>

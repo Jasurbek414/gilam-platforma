@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import L from 'leaflet';
 
 
@@ -29,16 +29,31 @@ const GOOGLE_MAPS_TILES = "https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}";
 interface LogisticsMapProps {
   drivers: any[];
   orderPoints: any[];
+  activeDriverId?: string | null;
 }
 
-export default function LogisticsMap({ drivers, orderPoints }: LogisticsMapProps) {
+function MapController({ activeDriverId, drivers }: { activeDriverId?: string | null, drivers: any[] }) {
+  const map = useMap();
+  React.useEffect(() => {
+    if (activeDriverId) {
+      const driver = drivers.find(d => d.id === activeDriverId);
+      if (driver && driver.pos && Array.isArray(driver.pos) && driver.pos.length === 2 && !isNaN(driver.pos[0])) {
+        map.flyTo(driver.pos as L.LatLngExpression, 16, { animate: true, duration: 1.2 });
+      }
+    }
+  }, [activeDriverId, drivers, map]);
+  return null;
+}
+
+export default function LogisticsMap({ drivers, orderPoints, activeDriverId }: LogisticsMapProps) {
   return (
     <div className="w-full h-full min-h-[500px] border-4 border-slate-100 relative bg-slate-50">
       <MapContainer 
         center={[41.311081, 69.240562]} 
         zoom={12} 
-        style={{ height: '500px', width: '100%' }}
+        style={{ height: '100%', width: '100%', minHeight: '500px' }}
       >
+        <MapController activeDriverId={activeDriverId} drivers={drivers} />
         <TileLayer
           attribution='&copy; Google Maps'
           url={GOOGLE_MAPS_TILES}

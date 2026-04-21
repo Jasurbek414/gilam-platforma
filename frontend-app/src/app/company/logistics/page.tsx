@@ -120,7 +120,7 @@ export default function LogisticsPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 h-[calc(100vh-220px)] min-h-[500px]">
         <div className="lg:col-span-3 bg-white rounded-2xl border border-slate-100 shadow-sm relative overflow-hidden">
-          <LogisticsMap drivers={drivers} orderPoints={orderPoints} />
+          <LogisticsMap drivers={drivers} orderPoints={orderPoints} activeDriverId={activeDriver} />
         </div>
 
         <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-y-auto">

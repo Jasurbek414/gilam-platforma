@@ -16,6 +16,13 @@ export default function AdminOrdersPage() {
 
   useEffect(() => {
     loadOrders();
+    
+    // Listen to global search bar events
+    const handleGlobalSearch = (e: any) => {
+      setSearch(e.detail);
+    };
+    window.addEventListener('global-search', handleGlobalSearch);
+    return () => window.removeEventListener('global-search', handleGlobalSearch);
   }, []);
 
   async function loadOrders() {

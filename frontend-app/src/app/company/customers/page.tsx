@@ -8,7 +8,8 @@ import {
   MdEdit, 
   MdDelete, 
   MdPhone, 
-  MdLocationOn
+  MdLocationOn,
+  MdDownload
 } from 'react-icons/md';
 import Modal from '@/components/ui/Modal';
 import { customersApi, getUser } from '@/lib/api';
@@ -84,6 +85,38 @@ export default function CustomersPage() {
     }
   };
 
+  const exportToCSV = () => {
+    if (customers.length === 0) {
+      toast.error('Export qilish uchun malummot topilmadi');
+      return;
+    }
+
+    const headers = ['Ism/F.I.SH', 'Asosiy Telefon', 'Qo\'shimcha Telefon', 'Manzil', 'Kiritilgan Sana'];
+    
+    const csvRows = [headers.join(',')];
+    
+    customers.forEach(c => {
+      const name = `"${(c.fullName || '').replace(/"/g, '""')}"`;
+      const phone1 = `"${(c.phone1 || (c as any).phone || '').replace(/"/g, '""')}"`;
+      const phone2 = `"${(c.phone2 || '').replace(/"/g, '""')}"`;
+      const address = `"${(c.address || '').replace(/"/g, '""')}"`;
+      const date = `"${new Date(c.createdAt).toLocaleDateString()}"`;
+      
+      csvRows.push([name, phone1, phone2, address, date].join(','));
+    });
+
+    const csvContent = "data:text/csv;charset=utf-8,\uFEFF" + csvRows.join('\n');
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", `Mijozlar_Bazasi_${new Date().toISOString().split('T')[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    toast.success('Mijozlar muvaffaqiyatli saqlandi!');
+  };
+
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
       {/* Header Section */}
@@ -110,8 +143,16 @@ export default function CustomersPage() {
             />
           </div>
           <button 
+            onClick={exportToCSV}
+            className="hidden md:flex flex items-center gap-2 px-5 py-3 bg-emerald-50 text-emerald-600 font-black rounded-xl hover:bg-emerald-100 hover:text-emerald-700 transition-all text-xs uppercase tracking-widest border border-emerald-100"
+            title="Excel/CSV ga yuklab olish"
+          >
+            <MdDownload className="text-xl" />
+            Eksport
+          </button>
+          <button 
             onClick={() => handleOpenModal()}
-            className="flex items-center gap-2 px-6 py-3 bg-indigo-600 text-white font-black rounded-xl shadow-lg shadow-indigo-500/25 hover:shadow-indigo-500/40 hover:-translate-y-0.5 transition-all text-sm uppercase tracking-widest"
+            className="flex items-center gap-2 px-6 py-3 bg-indigo-600 text-white font-black rounded-xl shadow-[0_8px_20px_-8px_rgba(79,70,229,0.5)] hover:shadow-[0_12px_25px_-8px_rgba(79,70,229,0.7)] hover:-translate-y-0.5 transition-all text-sm uppercase tracking-widest"
           >
             <MdAdd className="text-xl" />
             Qo'shish
@@ -149,7 +190,7 @@ export default function CustomersPage() {
                           <p className="font-black text-slate-800">{c.fullName}</p>
                           <p className="text-xs text-slate-500 flex items-center gap-1 mt-0.5 font-bold">
                             <MdPhone className="text-indigo-400" />
-                            {c.phone}
+                            {c.phone1 || (c as any).phone}
                           </p>
                         </div>
                       </div>

@@ -13,8 +13,8 @@ const icon = L.icon({
   iconAnchor: [12, 41],
 });
 
-// Google Maps Roadmap Tiles - Extremely stable in Uzbekistan and globally
-const GOOGLE_MAPS_TILES = "https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}";
+// OpenStreetMap Tiles - 100% free and open source
+const OSM_TILES = "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png";
 
 interface YandexMapPickerProps {
   onLocationSelect: (lat: number, lng: number, address: string) => void;
@@ -102,8 +102,8 @@ export default function YandexMapPicker({ onLocationSelect, initialLocation, sea
         style={{ height: '100%', width: '100%' }}
       >
         <TileLayer
-          attribution='&copy; Google Maps'
-          url={GOOGLE_MAPS_TILES}
+          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+          url={OSM_TILES}
         />
         <LocationMarker onSelect={handleSelect} initialPos={initialPos} />
         {coords && <MapUpdater center={coords} zoom={zoom} />}
@@ -116,7 +116,7 @@ export default function YandexMapPicker({ onLocationSelect, initialLocation, sea
       )}
 
       <div className="absolute bottom-4 left-4 z-[1000] bg-white px-3 py-1.5 rounded-xl shadow-lg border border-slate-100 pointer-events-none">
-        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest text-center italic">Google Maps Engine</p>
+        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest text-center italic">OpenStreetMap</p>
       </div>
     </div>
   );

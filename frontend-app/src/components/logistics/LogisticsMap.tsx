@@ -24,7 +24,7 @@ const deliveryIcon = L.icon({
   iconAnchor: [15, 30],
 });
 
-const GOOGLE_MAPS_TILES = "https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}";
+const OSM_TILES = "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png";
 
 interface LogisticsMapProps {
   drivers: any[];
@@ -73,8 +73,8 @@ export default function LogisticsMap({ drivers, orderPoints, activeDriverId }: L
       >
         <MapController activeDriverId={activeDriverId} drivers={drivers} orderPoints={orderPoints} />
         <TileLayer
-          attribution='&copy; Google Maps'
-          url={GOOGLE_MAPS_TILES}
+          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+          url={OSM_TILES}
         />
         {validDrivers.map(driver => (
           <Marker key={`dr-${driver.id}`} position={driver.pos} icon={driverIcon}>

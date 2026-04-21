@@ -73,7 +73,9 @@ export default function MapPicker({ onLocationSelect, initialLocation, initialSe
   const [lastSearched, setLastSearched] = useState('');
   const [mapType, setMapType] = useState<'m' | 'y'>('m'); // 'm' = Roadmap, 'y' = Hybrid/Satellite
 
-  const GOOGLE_MAPS_TILES = `https://mt1.google.com/vt/lyrs=${mapType}&hl=uz&x={x}&y={y}&z={z}`;
+  const OSM_ROADMAP = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
+  const ESRI_SATELLITE = 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}';
+  const TILE_URL = mapType === 'm' ? OSM_ROADMAP : ESRI_SATELLITE;
 
   // Live Auto-Search as user types in parent form
   useEffect(() => {
@@ -241,8 +243,8 @@ export default function MapPicker({ onLocationSelect, initialLocation, initialSe
           zoomControl={false}
         >
           <TileLayer
-            attribution='&copy; Google Maps'
-            url={GOOGLE_MAPS_TILES}
+            attribution={mapType === 'm' ? '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>' : '&copy; Esri'}
+            url={TILE_URL}
             maxZoom={20}
           />
           <LocationMarker onSelect={handleSelect} position={position} setPosition={setPosition} />

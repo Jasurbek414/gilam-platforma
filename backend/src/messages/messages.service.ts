@@ -16,14 +16,27 @@ export class MessagesService {
   }
 
   async findAllByConversation(userId1: string, userId2: string) {
-    return await this.messageRepository.find({
-      where: [
-        { senderId: userId1, recipientId: userId2 },
-        { senderId: userId2, recipientId: userId1 },
-      ],
-      order: { createdAt: 'ASC' },
-      relations: ['sender'],
-    });
+    // userId2 - bu operator/support contact. 
+    // Bir kompaniyada bir neechta operator bo'lishi mumkin,
+    // shuning uchun userId2 bilan birga kompaniyaning boshqa operatorlari
+    // bilan ham suhbatni birlashtirish uchun raw query ishlatamiz
+    return await this.messageRepository.query(
+      `SELECT m.*, 
+              s.full_name as "senderName", s.role as "senderRole",
+              r.full_name as "recipientName"
+       FROM messages m
+       LEFT JOIN users s ON s.id = m.sender_id
+       LEFT JOIN users r ON r.id = m.recipient_id
+       WHERE 
+         (m.sender_id = $1 OR m.recipient_id = $1)
+         AND (
+           m.sender_id = $2 OR m.recipient_id = $2
+           OR (s.role IN ('OPERATOR','COMPANY_ADMIN','SUPER_ADMIN') AND m.recipient_id = $1)
+           OR (r.role IN ('OPERATOR','COMPANY_ADMIN','SUPER_ADMIN') AND m.sender_id = $1)
+         )
+       ORDER BY m.created_at ASC`,
+      [userId1, userId2]
+    );
   }
 
   async getConversations(userId: string) {
@@ -58,14 +71,18 @@ export class MessagesService {
 
   async getSupportContact(companyId?: string) {
     if (companyId) {
+      // OPERATOR avval, keyin COMPANY_ADMIN
       const support = await this.messageRepository.manager.query(
-        `SELECT id, full_name as "fullName", role, phone FROM "users" WHERE company_id = $1 AND (role = 'OPERATOR' OR role = 'COMPANY_ADMIN') LIMIT 1`,
+        `SELECT id, full_name as "fullName", role, phone FROM "users" 
+         WHERE company_id = $1 AND (role = 'OPERATOR' OR role = 'COMPANY_ADMIN') 
+         ORDER BY CASE role WHEN 'OPERATOR' THEN 1 WHEN 'COMPANY_ADMIN' THEN 2 ELSE 3 END
+         LIMIT 1`,
         [companyId]
       );
       if (support && support.length > 0) return support[0];
     }
     
-    // Fallback to super admin if no company specific support found
+    // Fallback: super admin
     const fallback = await this.messageRepository.manager.query(
       `SELECT id, full_name as "fullName", role, phone FROM "users" WHERE role = 'SUPER_ADMIN' LIMIT 1`
     );

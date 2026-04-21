@@ -155,7 +155,7 @@ export default function Topbar() {
                             <p className={`text-[9px] font-black uppercase tracking-[0.2em] px-2 py-0.5 rounded-md ${
                               !n.isRead ? 'bg-indigo-50 text-indigo-600' : 'bg-slate-100 text-slate-500'
                             }`}>
-                              {n.type === 'payment' ? 'TO\'LOV' : n.type === 'security' ? 'XAVFSIZLIK' : 'TIZIM'}
+                              {n.title || (n.type === 'payment' ? 'TO\'LOV' : n.type === 'security' ? 'XAVFSIZLIK' : 'TIZIM')}
                             </p>
                             <span className="text-[10px] font-bold text-slate-400 whitespace-nowrap mt-0.5">
                               {new Date(n.createdAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
@@ -165,7 +165,7 @@ export default function Topbar() {
                           <p className={`text-[13px] leading-snug break-words pr-2 ${
                             !n.isRead ? 'font-black text-slate-800' : 'font-semibold text-slate-500 group-hover:text-slate-700'
                           }`}>
-                            {n.message}
+                            {n.text || n.message}
                           </p>
                         </div>
                         

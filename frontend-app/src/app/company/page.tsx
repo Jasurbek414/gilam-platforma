@@ -46,6 +46,7 @@ export default function CompanyDashboardPage() {
     location: null as { lat: number, lng: number } | null
   });
   const [isMapOpen, setIsMapOpen] = useState(false);
+  const [activeFilter, setActiveFilter] = useState<'ALL' | 'NEW' | 'IN_PROGRESS' | 'EMPLOYEES' | null>(null);
 
   useEffect(() => {
     const currentUser = getUser();
@@ -180,26 +181,53 @@ export default function CompanyDashboardPage() {
     );
   }
 
+  // Calculate Bugungi (1 kunlik) holat (Today's stats)
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const filterByDate = (dateString: string) => {
+    if (period === 'daily') return new Date(dateString) >= today;
+    if (period === 'weekly') {
+      const weekAgo = new Date();
+      weekAgo.setDate(today.getDate() - 7);
+      return new Date(dateString) >= weekAgo;
+    }
+    if (period === 'monthly') {
+      const monthAgo = new Date();
+      monthAgo.setMonth(today.getMonth() - 1);
+      return new Date(dateString) >= monthAgo;
+    }
+    return true;
+  };
+
+  const periodOrders = orders.filter(o => filterByDate(o.createdAt));
+  const newOrdersList = periodOrders.filter(o => o.status === 'NEW');
+  const inProgressList = periodOrders.filter(o => !['NEW', 'DELIVERED', 'CANCELLED'].includes(o.status));
+
   const stats = [
     { 
-      title: "Jami Buyurtmalar", 
-      value: companyStats?.totalOrders || "0", 
-      trend: "+12%", up: true, icon: MdShoppingCart, color: "blue" 
+      id: 'ALL',
+      title: period === 'daily' ? "Jami (Bugun)" : period === 'weekly' ? "Jami (Shu Hafta)" : "Jami (Shu Oy)", 
+      value: periodOrders.length.toString(), 
+      trend: "Barcha qabul qilingan", up: true, icon: MdShoppingCart, color: "blue" 
     },
     { 
-      title: "Yangi Buyurtmalar", 
-      value: companyStats?.newOrders || "0", 
-      trend: "-2%", up: false, icon: MdPhoneInTalk, color: "rose" 
+      id: 'NEW',
+      title: "Yangi Kutayotgan", 
+      value: newOrdersList.length.toString(), 
+      trend: "Hali biriktirilmagan", up: false, icon: MdPhoneInTalk, color: "rose" 
     },
     { 
+      id: 'IN_PROGRESS',
       title: "Jarayonda", 
-      value: companyStats?.inProgress || "0", 
-      trend: "+5%", up: true, icon: MdTrendingUp, color: "emerald" 
+      value: inProgressList.length.toString(), 
+      trend: "Yuvish/Quritish/Yo'lda", up: true, icon: MdTrendingUp, color: "emerald" 
     },
     { 
-      title: "Xodimlar", 
-      value: `${users.length} ta`, 
-      trend: "Hammasi liniyada", up: true, icon: MdPeople, color: "indigo" 
+      id: 'EMPLOYEES',
+      title: "Xodimlar (Faol)", 
+      value: `${users.filter(u => u.status === 'ACTIVE').length} ta`, 
+      trend: "Hamma yo'nalishlar", up: true, icon: MdPeople, color: "indigo" 
     },
   ];
 
@@ -224,7 +252,12 @@ export default function CompanyDashboardPage() {
     'DRIVER_ASSIGNED': 'amber',
   };
 
-  const recentOrders = orders.slice(0, 8);
+  let displayedOrders = orders;
+  if (activeFilter === 'ALL') displayedOrders = periodOrders;
+  if (activeFilter === 'NEW') displayedOrders = newOrdersList;
+  if (activeFilter === 'IN_PROGRESS') displayedOrders = inProgressList;
+  
+  const recentOrders = displayedOrders.slice(0, activeFilter ? 20 : 8);
 
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -242,14 +275,14 @@ export default function CompanyDashboardPage() {
             {(['daily', 'weekly', 'monthly'] as const).map((p) => (
               <button
                 key={p}
-                onClick={() => setPeriod(p)}
-                className={`px-4 py-2 rounded-lg text-[10px] font-black transition-all ${
+                onClick={() => { setPeriod(p); setActiveFilter(null); }}
+                className={`px-4 py-2 rounded-lg text-[10px] uppercase tracking-widest font-black transition-all ${
                   period === p 
-                    ? 'bg-white text-blue-600 shadow-sm' 
-                    : 'text-slate-500 hover:text-slate-700'
+                    ? 'bg-white text-indigo-600 shadow-md scale-[1.02]' 
+                    : 'text-slate-500 hover:text-slate-700 hover:bg-slate-200'
                 }`}
               >
-                {p === 'daily' ? 'KUNLIK' : p === 'weekly' ? 'HAFTALIK' : 'OYLIK'}
+                {p === 'daily' ? 'Kunlik (Bugun)' : p === 'weekly' ? 'Haftalik' : 'Oylik'}
               </button>
             ))}
           </div>
@@ -266,29 +299,44 @@ export default function CompanyDashboardPage() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {stats.map((stat, i) => (
-          <div key={i} className={`bg-white p-6 rounded-2xl shadow-sm border border-slate-100 group hover:border-${stat.color}-100 hover:shadow-md transition-all`}>
-            <div className="flex justify-between items-start">
-              <div className={`p-3 rounded-xl bg-${stat.color}-50 text-${stat.color}-600 group-hover:bg-${stat.color}-100 transition-colors`}>
+          <button 
+            key={i} 
+            onClick={() => setActiveFilter(activeFilter === stat.id ? null : stat.id as any)}
+            className={`text-left relative bg-white p-6 rounded-2xl shadow-sm border transition-all outline-none overflow-hidden ${
+              activeFilter === stat.id 
+                ? `border-${stat.color}-400 ring-4 ring-${stat.color}-500/10 shadow-lg scale-[1.02] -translate-y-1` 
+                : 'border-slate-100 opacity-90 hover:opacity-100 hover:shadow-md hover:border-slate-200'
+            }`}
+          >
+            {activeFilter === stat.id && (
+               <div className={`absolute -right-6 -top-6 w-24 h-24 bg-${stat.color}-100 rounded-full blur-2xl opacity-50`}></div>
+            )}
+            <div className="flex justify-between items-start relative z-10">
+              <div className={`p-3 rounded-xl bg-${stat.color}-50 text-${stat.color}-600 ${activeFilter === stat.id ? `bg-${stat.color}-100` : ''} transition-colors`}>
                 <stat.icon className="text-2xl" />
               </div>
-              <span className={`flex items-center text-sm font-bold ${stat.up ? 'text-emerald-600 bg-emerald-50' : 'text-rose-600 bg-rose-50'} px-2 py-1 rounded-md`}>
+              <span className={`flex items-center text-[10px] uppercase tracking-widest font-black ${stat.up ? 'text-emerald-600 bg-emerald-50' : 'text-rose-600 bg-rose-50'} px-2 py-1 rounded-md border border-white/50`}>
                 {stat.up ? <MdTrendingUp className="mr-1" /> : <MdTrendingDown className="mr-1" />}
                 {stat.trend}
               </span>
             </div>
-            <div className="mt-4">
-              <h3 className="text-3xl font-black text-slate-800 tracking-tight">{stat.value}</h3>
-              <p className="text-sm font-medium text-slate-500 mt-1">{stat.title}</p>
+            <div className="mt-4 relative z-10">
+              <h3 className={`text-4xl font-black tracking-tight ${activeFilter === stat.id ? `text-${stat.color}-600` : 'text-slate-800'}`}>
+                {stat.value}
+              </h3>
+              <p className="text-xs font-black uppercase text-slate-400 mt-1.5 tracking-wider">{stat.title}</p>
             </div>
-          </div>
+          </button>
         ))}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden flex flex-col">
           <div className="px-6 py-5 flex justify-between items-center border-b border-slate-100 bg-slate-50/50">
-            <h2 className="text-lg font-bold text-slate-800">So&apos;nggi Buyurtmalar</h2>
-            <button className="text-sm font-medium text-blue-600 hover:underline" onClick={() => router.push('/company/orders')}>Barchasini ko&apos;rish</button>
+            <h2 className="text-lg font-bold text-slate-800">
+              {activeFilter === 'EMPLOYEES' ? 'Barcha Xodimlar Liniyasi' : activeFilter ? 'Filtrlangan Buyurtmalar' : 'So\'nggi Buyurtmalar'}
+            </h2>
+            <button className="text-sm font-medium text-blue-600 hover:underline" onClick={() => router.push('/company/orders')}>Barchasini ko'rish</button>
           </div>
           <div className="p-0 overflow-x-auto text-nowrap">
             <table className="w-full text-left">

@@ -25,6 +25,8 @@ export default function CustomersPage() {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
   const [user, setUser] = useState<User | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 20;
 
   useEffect(() => {
     const currentUser = getUser();
@@ -39,6 +41,7 @@ export default function CustomersPage() {
     try {
       const data = await customersApi.getByCompany(companyId);
       setCustomers(data);
+      setCurrentPage(1);
     } catch (err) {
       toast.error('Mijozlarni yuklashda xatolik yuz berdi');
     } finally {
@@ -56,6 +59,7 @@ export default function CustomersPage() {
       try {
         const found = await customersApi.search(user.companyId, q);
         setCustomers(found);
+        setCurrentPage(1);
       } catch (err) {
         console.error('Search error:', err);
       }
@@ -117,6 +121,18 @@ export default function CustomersPage() {
     toast.success('Mijozlar muvaffaqiyatli saqlandi!');
   };
 
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentCustomers = customers.slice(indexOfFirstItem, indexOfLastItem);
+  const totalPages = Math.ceil(customers.length / itemsPerPage);
+
+  const handlePageChange = (pageNumber: number) => {
+    if (pageNumber >= 1 && pageNumber <= totalPages) {
+      setCurrentPage(pageNumber);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  };
+
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
       {/* Header Section */}
@@ -141,6 +157,7 @@ export default function CustomersPage() {
               value={searchQuery}
               onChange={handleSearch}
             />
+          </div>
           <button 
             onClick={exportToCSV}
             className="flex-1 lg:flex-none flex items-center justify-center gap-2 px-6 py-3 bg-emerald-50 text-emerald-600 font-black rounded-xl hover:bg-emerald-500 hover:text-white transition-all text-xs uppercase tracking-[0.1em] border border-emerald-100 hover:border-emerald-500 shadow-sm outline-none"
@@ -178,7 +195,7 @@ export default function CustomersPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 text-sm">
-                {customers.length > 0 ? (customers as any[]).map((c) => (
+                {currentCustomers.length > 0 ? (currentCustomers as any[]).map((c) => (
                   <tr key={c.id} className="hover:bg-slate-50/50 transition-colors group">
                     <td className="px-6 py-5">
                       <div className="flex items-center gap-3">
@@ -241,6 +258,35 @@ export default function CustomersPage() {
                 )}
               </tbody>
             </table>
+
+            {totalPages > 1 && (
+              <div className="p-4 border-t border-slate-100 flex items-center justify-between bg-slate-50/50">
+                <span className="text-[11px] font-black text-slate-500 uppercase tracking-widest bg-white px-3 py-1.5 rounded-lg border border-slate-200">
+                  {indexOfFirstItem + 1}-{Math.min(indexOfLastItem, customers.length)} (Jami: {customers.length})
+                </span>
+                <div className="flex gap-1.5">
+                  <button
+                    onClick={() => handlePageChange(currentPage - 1)}
+                    disabled={currentPage === 1}
+                    className="w-8 h-8 rounded-xl flex items-center justify-center font-black text-sm transition-all disabled:opacity-30 disabled:cursor-not-allowed border border-slate-200 bg-white hover:bg-slate-100 text-slate-700 shadow-sm"
+                  >
+                    {'<'}
+                  </button>
+                  <button
+                    className="px-4 h-8 rounded-xl flex items-center justify-center font-black text-[11px] transition-all bg-indigo-600 text-white shadow-md shadow-indigo-500/20"
+                  >
+                    Sahifa {currentPage} / {totalPages}
+                  </button>
+                  <button
+                    onClick={() => handlePageChange(currentPage + 1)}
+                    disabled={currentPage === totalPages}
+                    className="w-8 h-8 rounded-xl flex items-center justify-center font-black text-sm transition-all disabled:opacity-30 disabled:cursor-not-allowed border border-slate-200 bg-white hover:bg-slate-100 text-slate-700 shadow-sm"
+                  >
+                    {'>'}
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         )}
       </div>

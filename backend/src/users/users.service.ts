@@ -6,6 +6,7 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User, UserRole, UserStatus } from './entities/user.entity';
+import { LocationHistory } from './entities/location-history.entity';
 import { CreateUserDto, UpdateUserDto } from './dto/user.dto';
 import * as bcrypt from 'bcrypt';
 
@@ -14,6 +15,8 @@ export class UsersService {
   constructor(
     @InjectRepository(User)
     private usersRepository: Repository<User>,
+    @InjectRepository(LocationHistory)
+    private locationHistoryRepo: Repository<LocationHistory>,
   ) {}
 
   async findByPhone(phone: string): Promise<User | null> {
@@ -101,15 +104,111 @@ export class UsersService {
     }
 
     if (dto.currentLocation !== undefined) {
+      let newLat: number | null = null;
+      let newLng: number | null = null;
+
       if (typeof dto.currentLocation === 'string' && dto.currentLocation.includes(',')) {
         const [lat, lng] = dto.currentLocation.split(',').map(Number);
+        newLat = lat;
+        newLng = lng;
         user.currentLocation = `(${lng},${lat})`;
       } else {
         user.currentLocation = dto.currentLocation;
       }
+
+      // Save location history for mileage tracking
+      if (newLat && newLng && !isNaN(newLat) && !isNaN(newLng)) {
+        try {
+          // Get last known location for distance calculation
+          const lastEntry = await this.locationHistoryRepo.findOne({
+            where: { userId: id },
+            order: { createdAt: 'DESC' },
+          });
+
+          let distance = 0;
+          if (lastEntry) {
+            distance = this.haversineDistance(
+              lastEntry.latitude, lastEntry.longitude,
+              newLat, newLng,
+            );
+            // Ignore unrealistic jumps (> 50km in one update — likely GPS glitch)
+            if (distance > 50) distance = 0;
+          }
+
+          await this.locationHistoryRepo.save({
+            userId: id,
+            latitude: newLat,
+            longitude: newLng,
+            distanceFromPrev: distance,
+          });
+        } catch (e) {
+          console.error('[LocationHistory] Save error:', e.message);
+        }
+      }
     }
 
     return this.usersRepository.save(user);
+  }
+
+  /**
+   * Haversine formula — calculates distance between two GPS points in kilometers
+   */
+  private haversineDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
+    const R = 6371; // Earth radius in km
+    const dLat = this.deg2rad(lat2 - lat1);
+    const dLon = this.deg2rad(lon2 - lon1);
+    const a =
+      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos(this.deg2rad(lat1)) * Math.cos(this.deg2rad(lat2)) *
+      Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return R * c;
+  }
+
+  private deg2rad(deg: number): number {
+    return deg * (Math.PI / 180);
+  }
+
+  /**
+   * Get driver mileage report for a date range
+   */
+  async getDriverMileage(userId: string, from: Date, to: Date) {
+    const result = await this.locationHistoryRepo
+      .createQueryBuilder('lh')
+      .select('SUM(lh.distance_from_prev)', 'totalKm')
+      .addSelect('COUNT(lh.id)', 'pointCount')
+      .where('lh.user_id = :userId', { userId })
+      .andWhere('lh.created_at >= :from', { from })
+      .andWhere('lh.created_at <= :to', { to })
+      .getRawOne();
+
+    return {
+      totalKm: parseFloat(result?.totalKm || '0'),
+      pointCount: parseInt(result?.pointCount || '0'),
+    };
+  }
+
+  /**
+   * Get daily breakdown of mileage for a date range
+   */
+  async getDriverMileageDaily(userId: string, from: Date, to: Date) {
+    const results = await this.locationHistoryRepo
+      .createQueryBuilder('lh')
+      .select("DATE(lh.created_at)", 'date')
+      .addSelect('SUM(lh.distance_from_prev)', 'km')
+      .addSelect('COUNT(lh.id)', 'points')
+      .where('lh.user_id = :userId', { userId })
+      .andWhere('lh.created_at >= :from', { from })
+      .andWhere('lh.created_at <= :to', { to })
+      .groupBy("DATE(lh.created_at)")
+      .orderBy("DATE(lh.created_at)", 'ASC')
+      .getRawMany();
+
+    return results.map(r => ({
+      date: r.date,
+      km: parseFloat(r.km || '0'),
+      points: parseInt(r.points || '0'),
+    }));
   }
 
   async updatePushToken(id: string, token: string): Promise<void> {

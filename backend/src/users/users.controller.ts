@@ -81,6 +81,29 @@ export class UsersController {
     return this.usersService.updatePushToken(user.id, token);
   }
 
+  // ─── Mileage Reports ────────────────────────────────────────
+  @Get(':id/mileage')
+  async getDriverMileage(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Query('from') from: string,
+    @Query('to') to: string,
+  ) {
+    const fromDate = from ? new Date(from) : new Date(new Date().setHours(0, 0, 0, 0));
+    const toDate = to ? new Date(to) : new Date();
+    return this.usersService.getDriverMileage(id, fromDate, toDate);
+  }
+
+  @Get(':id/mileage/daily')
+  async getDriverMileageDaily(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Query('from') from: string,
+    @Query('to') to: string,
+  ) {
+    const fromDate = from ? new Date(from) : new Date(new Date().setDate(new Date().getDate() - 30));
+    const toDate = to ? new Date(to) : new Date();
+    return this.usersService.getDriverMileageDaily(id, fromDate, toDate);
+  }
+
   @Get(':id')
   findOne(@Param('id', ParseUUIDPipe) id: string, @CurrentUser() user: User) {
     // Basic protection: check if same company or superadmin

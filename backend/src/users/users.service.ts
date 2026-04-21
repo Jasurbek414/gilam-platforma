@@ -103,7 +103,7 @@ export class UsersService {
     if (dto.currentLocation !== undefined) {
       if (typeof dto.currentLocation === 'string' && dto.currentLocation.includes(',')) {
         const [lat, lng] = dto.currentLocation.split(',').map(Number);
-        user.currentLocation = `${lng},${lat}`; // PostgreSQL geometry point natively accepts 'x,y' strings where x=longitude, y=latitude
+        user.currentLocation = { x: lng, y: lat }; // TypeORM native object mapping for PostgreSQL point columns
       } else {
         user.currentLocation = dto.currentLocation;
       }

@@ -131,30 +131,29 @@ export default function CustomersPage() {
           </div>
         </div>
         
-        <div className="flex w-full md:w-auto items-center gap-3">
-          <div className="relative flex-1 md:w-72">
+        <div className="flex w-full lg:w-auto flex-wrap lg:flex-nowrap items-center gap-3">
+          <div className="relative flex-1 w-full lg:w-80">
             <MdSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-xl" />
             <input 
               type="text" 
-              placeholder="Ism yoki telefon orqali..."
-              className="w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500/20 focus:bg-white outline-none transition-all font-medium text-sm"
+              placeholder="Ism yoki telefon orqali izlang..."
+              className="w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500/50 hover:bg-white outline-none transition-all font-semibold text-sm text-slate-700 placeholder-slate-400 shadow-sm"
               value={searchQuery}
               onChange={handleSearch}
             />
-          </div>
           <button 
             onClick={exportToCSV}
-            className="hidden md:flex flex items-center gap-2 px-5 py-3 bg-emerald-50 text-emerald-600 font-black rounded-xl hover:bg-emerald-100 hover:text-emerald-700 transition-all text-xs uppercase tracking-widest border border-emerald-100"
-            title="Excel/CSV ga yuklab olish"
+            className="flex-1 lg:flex-none flex items-center justify-center gap-2 px-6 py-3 bg-emerald-50 text-emerald-600 font-black rounded-xl hover:bg-emerald-500 hover:text-white transition-all text-xs uppercase tracking-[0.1em] border border-emerald-100 hover:border-emerald-500 shadow-sm outline-none"
+            title="Excel/CSV formatda yuklab olish"
           >
-            <MdDownload className="text-xl" />
+            <MdDownload className="text-xl shrink-0" />
             Eksport
           </button>
           <button 
             onClick={() => handleOpenModal()}
-            className="flex items-center gap-2 px-6 py-3 bg-indigo-600 text-white font-black rounded-xl shadow-[0_8px_20px_-8px_rgba(79,70,229,0.5)] hover:shadow-[0_12px_25px_-8px_rgba(79,70,229,0.7)] hover:-translate-y-0.5 transition-all text-sm uppercase tracking-widest"
+            className="flex-1 lg:flex-none flex items-center justify-center gap-2 px-6 py-3 bg-indigo-600 text-white font-black rounded-xl shadow-[0_8px_15px_-5px_rgba(79,70,229,0.4)] hover:shadow-[0_12px_20px_-8px_rgba(79,70,229,0.7)] hover:-translate-y-0.5 active:scale-95 transition-all text-xs uppercase tracking-[0.1em] outline-none"
           >
-            <MdAdd className="text-xl" />
+            <MdAdd className="text-xl shrink-0" />
             Qo'shish
           </button>
         </div>
@@ -171,10 +170,10 @@ export default function CustomersPage() {
           <div className="overflow-x-auto">
             <table className="w-full text-left">
               <thead>
-                <tr className="bg-slate-50 border-b border-slate-100 text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                <tr className="bg-slate-100/50 border-b border-slate-100 text-[10px] font-black text-slate-500 uppercase tracking-[0.15em]">
                   <th className="px-6 py-4">Mijoz / Telefon</th>
                   <th className="px-6 py-4">Mas'ul Operator</th>
-                  <th className="px-6 py-4">Manzil</th>
+                  <th className="px-6 py-4">Manzil / Mo'ljal</th>
                   <th className="px-6 py-4 text-right">Amallar</th>
                 </tr>
               </thead>
@@ -183,39 +182,39 @@ export default function CustomersPage() {
                   <tr key={c.id} className="hover:bg-slate-50/50 transition-colors group">
                     <td className="px-6 py-5">
                       <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-indigo-50 text-indigo-600 rounded-xl flex items-center justify-center font-black text-xs">
-                          {c.fullName[0].toUpperCase()}
+                        <div className="w-11 h-11 bg-gradient-to-tr from-indigo-50 to-blue-50 text-indigo-600 rounded-[1.25rem] flex items-center justify-center font-black text-sm shadow-sm border border-indigo-100/50">
+                          {c.fullName[0]?.toUpperCase() || 'M'}
                         </div>
                         <div>
-                          <p className="font-black text-slate-800">{c.fullName}</p>
-                          <p className="text-xs text-slate-500 flex items-center gap-1 mt-0.5 font-bold">
+                          <p className="font-black text-slate-800 text-sm tracking-tight">{c.fullName || 'Noma\'lum'}</p>
+                          <p className="text-[11px] text-slate-500 flex items-center gap-1.5 mt-1 font-bold tracking-wide">
                             <MdPhone className="text-indigo-400" />
-                            {c.phone1 || (c as any).phone}
+                            {c.phone1 || (c as any).phone || '-'}
                           </p>
                         </div>
                       </div>
                     </td>
                     <td className="px-6 py-5">
-                      <div className="flex items-center gap-2">
-                        <div className="w-6 h-6 bg-slate-100 text-slate-500 rounded-full flex items-center justify-center text-[10px] font-black">
+                      <div className="flex items-center gap-2.5">
+                        <div className={`w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-black shadow-inner ${c.operator?.fullName ? 'bg-indigo-50 text-indigo-600 border border-indigo-100/50' : 'bg-slate-100 text-slate-400'}`}>
                           {c.operator?.fullName?.[0]?.toUpperCase() || '?'}
                         </div>
-                        <span className="font-bold text-xs text-slate-600 truncate max-w-[120px]">
-                          {c.operator?.fullName?.split(' ')[0] || 'Noma\'lum'}
+                        <span className={`font-bold text-xs truncate max-w-[140px] ${c.operator?.fullName ? 'text-slate-700' : 'text-slate-400 italic'}`}>
+                          {c.operator?.fullName || 'Biriktirilmagan'}
                         </span>
                       </div>
                     </td>
                     <td className="px-6 py-5">
-                      <div className="flex items-center gap-2 text-slate-600 font-medium max-w-[180px] truncate">
-                        <MdLocationOn className="text-slate-400 shrink-0" />
-                        {c.address}
+                      <div className="flex items-start gap-2 text-slate-600 font-medium max-w-[220px]">
+                        <MdLocationOn className="text-slate-400 shrink-0 mt-0.5 text-lg" />
+                        <span className="text-xs leading-snug line-clamp-2">{c.address || 'Manzil berilmagan'}</span>
                       </div>
                     </td>
                     <td className="px-6 py-5">
-                      <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <div className="flex justify-end gap-1.5 opacity-0 group-hover:opacity-100 transition-all">
                         <button 
                           onClick={() => handleOpenModal(c)}
-                          className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all"
+                          className="w-8 h-8 flex items-center justify-center text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all"
                           title="Tahrirlash"
                         >
                           <MdEdit className="text-xl" />

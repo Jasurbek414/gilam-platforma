@@ -16,14 +16,25 @@ export class MessagesService {
   }
 
   async findAllByConversation(userId1: string, userId2: string) {
-    // userId2 - bu operator/support contact. 
-    // Bir kompaniyada bir neechta operator bo'lishi mumkin,
-    // shuning uchun userId2 bilan birga kompaniyaning boshqa operatorlari
-    // bilan ham suhbatni birlashtirish uchun raw query ishlatamiz
+    // Barcha operator/admin xodimlar bilan suhbatni birlashtirish
+    // Muhim: camelCase alias ishlatiladi — frontend senderId, createdAt kutadi
     return await this.messageRepository.query(
-      `SELECT m.*, 
-              s.full_name as "senderName", s.role as "senderRole",
-              r.full_name as "recipientName"
+      `SELECT 
+         m.id,
+         m.text,
+         m.sender_id        AS "senderId",
+         m.recipient_id     AS "recipientId",
+         m.company_id       AS "companyId",
+         m.is_read          AS "isRead",
+         m.created_at       AS "createdAt",
+         s.full_name        AS "senderName",
+         s.role             AS "senderRole",
+         json_build_object(
+           'id',       s.id,
+           'fullName', s.full_name,
+           'role',     s.role,
+           'phone',    s.phone
+         )                  AS sender
        FROM messages m
        LEFT JOIN users s ON s.id = m.sender_id
        LEFT JOIN users r ON r.id = m.recipient_id
@@ -31,8 +42,8 @@ export class MessagesService {
          (m.sender_id = $1 OR m.recipient_id = $1)
          AND (
            m.sender_id = $2 OR m.recipient_id = $2
-           OR (s.role IN ('OPERATOR','COMPANY_ADMIN','SUPER_ADMIN') AND m.recipient_id = $1)
-           OR (r.role IN ('OPERATOR','COMPANY_ADMIN','SUPER_ADMIN') AND m.sender_id = $1)
+           OR (s.role  IN ('OPERATOR','COMPANY_ADMIN','SUPER_ADMIN') AND m.recipient_id = $1)
+           OR (r.role  IN ('OPERATOR','COMPANY_ADMIN','SUPER_ADMIN') AND m.sender_id   = $1)
          )
        ORDER BY m.created_at ASC`,
       [userId1, userId2]

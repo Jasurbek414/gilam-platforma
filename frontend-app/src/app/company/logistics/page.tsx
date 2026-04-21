@@ -135,17 +135,17 @@ export default function LogisticsPage() {
         </button>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 h-[calc(100vh-220px)] min-h-[500px]">
-        <div className="lg:col-span-3 bg-white rounded-2xl border border-slate-100 shadow-sm relative overflow-hidden">
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6" style={{ height: 'calc(100vh - 240px)', minHeight: '480px' }}>
+        <div className="lg:col-span-3 bg-white rounded-2xl border border-slate-100 shadow-sm relative overflow-hidden" style={{ minHeight: '480px' }}>
           <LogisticsMap drivers={drivers} orderPoints={orderPoints} activeDriverId={activeDriver} />
         </div>
 
-        <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-y-auto">
-          <div className="p-5 border-b bg-slate-50 flex justify-between">
+        <div className="bg-white rounded-2xl shadow-sm border border-slate-100 flex flex-col" style={{ maxHeight: 'calc(100vh - 240px)' }}>
+          <div className="p-5 border-b bg-slate-50 flex justify-between shrink-0">
             <h3 className="font-black text-slate-800 text-sm">Haydovchilar</h3>
             <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>
           </div>
-          <div className="divide-y divide-slate-100">
+          <div className="divide-y divide-slate-100 overflow-y-auto flex-1">
             {drivers.map(driver => (
               <div 
                 key={driver.id} 

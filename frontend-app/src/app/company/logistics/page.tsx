@@ -137,14 +137,35 @@ export default function LogisticsPage() {
             {drivers.map(driver => (
               <div 
                 key={driver.id} 
-                onClick={() => setActiveDriver(driver.id)}
+                onClick={() => driver.pos ? setActiveDriver(driver.id) : toast.error("Haydovchidan GPS signali kelmayapti")}
                 className={`p-4 cursor-pointer hover:bg-slate-50 transition-all ${activeDriver === driver.id ? 'bg-blue-50' : ''}`}
               >
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-slate-100 rounded-full flex items-center justify-center font-bold">{driver.name[0]}</div>
-                  <div>
-                    <p className="text-sm font-bold">{driver.name}</p>
-                    <p className="text-[10px] text-slate-400 font-bold uppercase">{driver.car}</p>
+                <div className="flex items-center gap-3 w-full">
+                  <div className="w-10 h-10 bg-slate-200 rounded-full flex items-center justify-center font-bold text-slate-600 relative shrink-0">
+                    {driver.name[0]}
+                    <div 
+                      className={`absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full border-2 border-white ${driver.pos ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.8)]' : 'bg-slate-400'}`} 
+                      title={driver.pos ? "GPS Faol" : "GPS Aloqa yo'q"} 
+                    />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-black text-slate-800 truncate">{driver.name}</p>
+                    <div className="flex items-center justify-between mt-0.5">
+                      <p className="text-[10px] text-slate-500 font-bold uppercase">{driver.car}</p>
+                      {driver.pos ? (
+                        <span className="text-[9px] font-black tracking-wider text-emerald-600 bg-emerald-100 px-1.5 py-0.5 rounded-md flex items-center shrink-0">
+                          <span className="relative flex h-1.5 w-1.5 mr-1.5">
+                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                            <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500"></span>
+                          </span>
+                          LIVE
+                        </span>
+                      ) : (
+                        <span className="text-[9px] font-black tracking-wider text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded-md shrink-0">
+                          NOMA'LUM
+                        </span>
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>

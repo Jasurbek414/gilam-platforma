@@ -1,15 +1,16 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { MdSearch, MdFilterList, MdBusiness, MdShoppingCart, MdVisibility, MdPrint, MdClose, MdPerson, MdPhone, MdLocationOn, MdNotes, MdAccessTime, MdDirectionsCar, MdLocalMall } from 'react-icons/md';
+import { MdSearch, MdFilterList, MdBusiness, MdShoppingCart, MdArrowBack, MdAnalytics, MdCheckCircle, MdAssignment, MdPendingActions, MdLocalShipping, MdKeyboardArrowRight, MdClose, MdLocalMall } from 'react-icons/md';
 import { ordersApi } from '@/lib/api';
+import { motion, AnimatePresence } from 'framer-motion';
 
 export default function AdminOrdersPage() {
   const [search, setSearch] = useState('');
-  const [statusFilter, setStatusFilter] = useState('ALL');
   const [orders, setOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [viewOrder, setViewOrder] = useState<any>(null);
+  const [selectedCompany, setSelectedCompany] = useState<any>(null);
+  const [statusFilter, setStatusFilter] = useState('ALL');
 
   useEffect(() => {
     loadOrders();
@@ -26,10 +27,6 @@ export default function AdminOrdersPage() {
     }
   }
 
-  const handlePrint = (order: any) => {
-    window.print();
-  };
-
   const statusLabels: Record<string, string> = {
     'NEW': 'Yangi',
     'DRIVER_ASSIGNED': 'Haydovchi biriktirilgan',
@@ -38,7 +35,7 @@ export default function AdminOrdersPage() {
     'WASHING': 'Yuvilmoqda',
     'DRYING': 'Quritilmoqda',
     'READY_FOR_DELIVERY': 'Yetkazishga tayyor',
-    'OUT_FOR_DELIVERY': 'Yo\'lda',
+    'OUT_FOR_DELIVERY': "Yo'lda",
     'DELIVERED': 'Yetkazildi',
     'CANCELLED': 'Bekor qilingan',
   };
@@ -56,16 +53,33 @@ export default function AdminOrdersPage() {
     'CANCELLED': 'bg-red-100 text-red-700 border-red-200',
   };
 
-  const filteredOrders = orders.filter(order => {
-    const customerName = order.customer?.fullName || 'Noma\'lum';
-    const companyName = order.company?.name || 'Noma\'lum';
+  const companiesMap = new Map();
+  orders.forEach(o => {
+    const cid = o.company?.id || 'unknown';
+    const cname = o.company?.name || "Noma'lum Korxona";
+    if (!companiesMap.has(cid)) {
+      companiesMap.set(cid, {
+        id: cid,
+        name: cname,
+        orders: [],
+        totalSum: 0,
+        activeCount: 0,
+        deliveredCount: 0,
+        cancelledCount: 0
+      });
+    }
+    const c = companiesMap.get(cid);
+    c.orders.push(o);
+    c.totalSum += Number(o.totalAmount) || 0;
     
-    const matchesSearch = customerName.toLowerCase().includes(search.toLowerCase()) || 
-                          order.id.toLowerCase().includes(search.toLowerCase()) ||
-                          companyName.toLowerCase().includes(search.toLowerCase());
-    const matchesStatus = statusFilter === 'ALL' || order.status === statusFilter;
-    return matchesSearch && matchesStatus;
+    if (o.status === 'DELIVERED') c.deliveredCount++;
+    else if (o.status === 'CANCELLED') c.cancelledCount++;
+    else c.activeCount++;
   });
+
+  const companiesList = Array.from(companiesMap.values()).filter(c => 
+    c.name.toLowerCase().includes(search.toLowerCase())
+  ).sort((a, b) => b.totalSum - a.totalSum);
 
   if (loading) {
     return (
@@ -75,35 +89,46 @@ export default function AdminOrdersPage() {
     );
   }
 
-  return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-2xl font-black text-slate-800 tracking-tight border-b-2 border-indigo-600 inline-block pb-1">
-            Buyurtmalar Monitoringi
-          </h1>
-          <p className="text-slate-500 mt-2 text-sm font-medium">Barcha korxonalar bo'ylab buyurtmalar oqimini kuzatish</p>
-        </div>
-      </div>
+  // Individual company view
+  if (selectedCompany) {
+    const filteredOrders = selectedCompany.orders.filter((o: any) => 
+      statusFilter === 'ALL' || o.status === statusFilter
+    ).sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
-      <div className="flex flex-col md:flex-row gap-4 items-center justify-between bg-white p-4 rounded-2xl shadow-sm border border-slate-100">
-        <div className="relative w-full md:w-96">
-          <MdSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-xl" />
-          <input 
-            type="text" 
-            placeholder="Buyurtma ID, Mijoz yoki Korxona..."
-            className="w-full pl-12 pr-4 py-3 bg-slate-50 border border-slate-100 rounded-xl focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all font-medium text-sm"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
+    return (
+      <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="space-y-6">
+        <button 
+          onClick={() => setSelectedCompany(null)}
+          className="flex items-center gap-2 text-slate-500 hover:text-indigo-600 font-bold bg-white px-4 py-2 rounded-xl border border-slate-200 hover:border-indigo-200 w-max transition-all shadow-sm"
+        >
+          <MdArrowBack /> Umumiy ro'yxatga qaytish
+        </button>
+
+        <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+          <div>
+            <h1 className="text-3xl font-black text-slate-800 tracking-tight flex items-center gap-3">
+              <MdBusiness className="text-indigo-500" /> {selectedCompany.name}
+            </h1>
+            <p className="text-slate-500 mt-1 font-medium">{selectedCompany.id !== 'unknown' ? `Tizim ID: ${selectedCompany.id}` : 'Korxonaga biriktirilmagan'}</p>
+          </div>
+          <div className="flex gap-4">
+            <div className="bg-indigo-50 px-5 py-3 rounded-2xl border border-indigo-100 text-center">
+              <p className="text-[10px] uppercase font-black text-indigo-400 tracking-widest mb-1">Jami Tushum</p>
+              <p className="text-xl font-black text-indigo-700">{selectedCompany.totalSum.toLocaleString()} so'm</p>
+            </div>
+            <div className="bg-emerald-50 px-5 py-3 rounded-2xl border border-emerald-100 text-center">
+              <p className="text-[10px] uppercase font-black text-emerald-400 tracking-widest mb-1">Buyurtmalar</p>
+              <p className="text-xl font-black text-emerald-700">{selectedCompany.orders.length} ta</p>
+            </div>
+          </div>
         </div>
-        <div className="flex gap-2">
-          <div className="relative group">
-            <MdFilterList className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-xl pointer-events-none" />
+
+        <div className="flex justify-between items-center bg-white p-3 rounded-2xl shadow-sm border border-slate-100">
+          <div className="flex gap-2 w-full md:w-auto">
             <select 
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="pl-12 pr-10 py-3 bg-slate-50 border border-slate-100 rounded-xl focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all font-bold text-sm text-slate-600 appearance-none cursor-pointer hover:bg-slate-100"
+              className="px-5 py-3 bg-slate-50 border border-slate-100 rounded-xl focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all font-bold text-sm text-slate-600 appearance-none cursor-pointer hover:bg-slate-100 w-full md:w-64"
             >
               <option value="ALL">Barcha Holatlar</option>
               {Object.keys(statusLabels).map(key => (
@@ -112,78 +137,142 @@ export default function AdminOrdersPage() {
             </select>
           </div>
         </div>
-      </div>
 
-      <div className="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
-        <div className="overflow-x-auto">
+        <div className="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
           <table className="w-full text-left">
             <thead>
               <tr className="bg-slate-50/80 border-b border-slate-100 text-slate-400 text-xs font-black uppercase tracking-widest">
-                <th className="py-5 px-8">Buyurtma ID & Sana</th>
-                <th className="py-5 px-6">Korxona</th>
-                <th className="py-5 px-6">Mijoz / Telefon</th>
+                <th className="py-5 px-8">Sana & ID</th>
+                <th className="py-5 px-6">Mijoz / Manzil</th>
+                <th className="py-5 px-6">Buyumlar</th>
                 <th className="py-5 px-6 text-center">Holati</th>
                 <th className="py-5 px-8 text-right">Summa</th>
-                <th className="py-5 px-6 text-right">Amallar</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {filteredOrders.length > 0 ? filteredOrders.map((order) => {
-                const customerName = order.customer?.fullName || 'Noma\'lum';
-                const customerPhone = order.customer?.phone1 || '';
-                const companyName = order.company?.name || 'Noma\'lum';
-                
-                return (
-                  <tr key={order.id} className="hover:bg-slate-50/50 transition-colors group">
-                    <td className="py-5 px-8">
-                      <div className="flex flex-col">
-                        <span className="font-black text-slate-800 text-sm tracking-tight">{order.id.split('-')[0].toUpperCase().substring(0, 8)}...</span>
-                        <span className="text-slate-500 text-xs font-bold mt-0.5">
-                          {new Date(order.createdAt).toLocaleDateString()}
-                        </span>
-                      </div>
-                    </td>
-                    <td className="py-5 px-6">
-                      <div className="flex items-center gap-2">
-                        <div className="w-8 h-8 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center font-black text-xs shrink-0">
-                          <MdBusiness />
-                        </div>
-                        <span className="text-sm font-bold text-slate-700">{companyName}</span>
-                      </div>
-                    </td>
-                    <td className="py-5 px-6">
-                      <div className="flex flex-col">
-                        <span className="font-bold text-slate-800 text-sm">{customerName}</span>
-                        <span className="text-xs font-semibold text-slate-500">{customerPhone}</span>
-                      </div>
-                    </td>
-                    <td className="py-5 px-6 text-center">
-                      <span className={`inline-block px-3 py-1.5 rounded-lg text-[10px] font-black tracking-tighter uppercase border ${statusColors[order.status] || 'bg-slate-100'}`}>
-                        {statusLabels[order.status] || order.status}
-                      </span>
-                    </td>
-                    <td className="py-5 px-8 text-right font-black text-slate-800 text-sm">
-                      {Number(order.totalAmount).toLocaleString()} so'm
-                    </td>
-                  </tr>
-                );
-              }) : (
-                <tr>
-                  <td colSpan={5} className="py-12 text-center">
-                    <div className="flex flex-col items-center justify-center text-slate-400">
-                      <MdShoppingCart className="text-6xl text-slate-200 mb-4" />
-                      <p className="text-lg font-bold">Buyurtmalar topilmadi</p>
-                      <p className="text-sm mt-1">Ushbu so'rov bo'yicha ma'lumot yo'q</p>
+              {filteredOrders.length > 0 ? filteredOrders.map((order: any) => (
+                <tr key={order.id} className="hover:bg-slate-50/50 transition-colors">
+                  <td className="py-5 px-8">
+                    <div className="flex flex-col">
+                      <span className="font-black text-slate-800 text-sm">{new Date(order.createdAt).toLocaleDateString('uz-UZ', { day: '2-digit', month: 'short', year: 'numeric' })}</span>
+                      <span className="text-slate-400 text-xs font-bold mt-1 uppercase">#{order.id.split('-')[0].substring(0, 6)}</span>
                     </div>
+                  </td>
+                  <td className="py-5 px-6">
+                    <div className="flex flex-col">
+                      <span className="font-bold text-slate-800 text-sm">{order.customer?.fullName || "Noma'lum"}</span>
+                      <span className="text-xs font-bold text-indigo-500 mt-1">{order.customer?.phone1 || order.customer?.phone2 || ''}</span>
+                    </div>
+                  </td>
+                  <td className="py-5 px-6">
+                    <div className="flex items-center gap-1.5">
+                      <MdLocalMall className="text-slate-400" />
+                      <span className="text-sm font-bold text-slate-700">{order.items?.length || 0} ta gilam</span>
+                    </div>
+                  </td>
+                  <td className="py-5 px-6 text-center">
+                    <span className={`inline-block px-3 py-1.5 rounded-lg text-[10px] font-black tracking-tighter uppercase border ${statusColors[order.status] || 'bg-slate-100'}`}>
+                      {statusLabels[order.status] || order.status}
+                    </span>
+                  </td>
+                  <td className="py-5 px-8 text-right font-black text-slate-800 text-sm">
+                    {Number(order.totalAmount).toLocaleString()} so'm
+                  </td>
+                </tr>
+              )) : (
+                <tr>
+                  <td colSpan={5} className="py-12 text-center text-slate-400">
+                    Mavjud emas
                   </td>
                 </tr>
               )}
             </tbody>
           </table>
         </div>
-        <div className="p-4 border-t border-slate-100 text-sm text-slate-500 font-bold bg-slate-50/50">
-          Jami: {filteredOrders.length} ta buyurtma ko'rsatilmoqda
+      </motion.div>
+    );
+  }
+
+  // Dashboard / Companies list view
+  return (
+    <div className="space-y-6">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <div>
+          <h1 className="text-3xl font-black text-slate-800 tracking-tight flex items-center gap-3">
+            <MdAnalytics className="text-indigo-600" /> Korxonalar Bo'yicha Statistika
+          </h1>
+          <p className="text-slate-500 mt-2 text-sm font-medium">Barcha kompaniyalarning umumiy buyurtmalar portfeli va tushumlari tahlili</p>
         </div>
+      </div>
+
+      <div className="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-3">
+        <MdSearch className="text-slate-400 text-2xl ml-2" />
+        <input 
+          type="text" 
+          placeholder="Korxona nomini qidirish..."
+          className="w-full bg-transparent outline-none font-bold text-slate-700"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+        />
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+        {companiesList.length > 0 ? companiesList.map(comp => (
+          <motion.div 
+            key={comp.id}
+            whileHover={{ y: -4, shadow: '0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1)' }}
+            onClick={() => setSelectedCompany(comp)}
+            className="bg-white rounded-3xl p-6 border border-slate-100 shadow-sm cursor-pointer group transition-all"
+          >
+            <div className="flex justify-between items-start mb-6">
+              <div className="flex items-center gap-4">
+                <div className="w-14 h-14 bg-indigo-50 text-indigo-600 rounded-2xl flex items-center justify-center text-2xl font-black group-hover:bg-indigo-600 group-hover:text-white transition-colors">
+                  {comp.name.charAt(0).toUpperCase()}
+                </div>
+                <div>
+                  <h3 className="font-black text-lg text-slate-800 group-hover:text-indigo-600 transition-colors line-clamp-1">{comp.name}</h3>
+                  <p className="text-xs font-bold text-slate-400 mt-1 uppercase tracking-widest">{comp.orders.length} ta operatsiya</p>
+                </div>
+              </div>
+              <div className="w-10 h-10 rounded-full bg-slate-50 flex items-center justify-center text-slate-400 group-hover:bg-indigo-50 group-hover:text-indigo-600 transition-colors">
+                <MdKeyboardArrowRight className="text-2xl" />
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <div className="bg-slate-50 rounded-2xl p-4 flex justify-between items-center border border-slate-100">
+                <span className="text-xs font-black text-slate-500 uppercase tracking-widest">Umumiy Tushum</span>
+                <span className="text-lg font-black text-slate-800">{comp.totalSum.toLocaleString()} so'm</span>
+              </div>
+
+              <div className="grid grid-cols-3 gap-2">
+                <div className="bg-blue-50/50 rounded-xl p-3 border border-blue-100/50 flex flex-col items-center text-center">
+                  <MdPendingActions className="text-blue-500 mb-1" />
+                  <span className="text-lg font-black text-blue-700">{comp.activeCount}</span>
+                  <span className="text-[9px] font-black text-blue-400 uppercase tracking-tighter">Faol</span>
+                </div>
+                <div className="bg-emerald-50/50 rounded-xl p-3 border border-emerald-100/50 flex flex-col items-center text-center">
+                  <MdCheckCircle className="text-emerald-500 mb-1" />
+                  <span className="text-lg font-black text-emerald-700">{comp.deliveredCount}</span>
+                  <span className="text-[9px] font-black text-emerald-400 uppercase tracking-tighter">Yetkazildi</span>
+                </div>
+                <div className="bg-red-50/50 rounded-xl p-3 border border-red-100/50 flex flex-col items-center text-center">
+                  <MdClose className="text-red-500 mb-1" />
+                  <span className="text-lg font-black text-red-700">{comp.cancelledCount}</span>
+                  <span className="text-[9px] font-black text-red-400 uppercase tracking-tighter">Bekor</span>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        )) : (
+          <div className="col-span-full py-16 text-center">
+            <div className="w-24 h-24 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-4">
+              <MdBusiness className="text-4xl text-slate-300" />
+            </div>
+            <h3 className="text-lg font-black text-slate-800">Korxonalar toplimadi</h3>
+            <p className="text-sm text-slate-500 mt-2 font-medium">Bozorda hozircha faol kompaniyalar qayd etilmagan</p>
+          </div>
+        )}
       </div>
     </div>
   );

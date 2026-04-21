@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { MdSearch, MdFilterList, MdBusiness, MdShoppingCart, MdArrowBack, MdAnalytics, MdCheckCircle, MdAssignment, MdPendingActions, MdLocalShipping, MdKeyboardArrowRight, MdClose, MdLocalMall } from 'react-icons/md';
+import { MdSearch, MdFilterList, MdBusiness, MdShoppingCart, MdArrowBack, MdAnalytics, MdCheckCircle, MdAssignment, MdPendingActions, MdLocalShipping, MdKeyboardArrowRight, MdClose, MdLocalMall, MdChevronLeft, MdChevronRight } from 'react-icons/md';
 import { ordersApi } from '@/lib/api';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -11,6 +11,8 @@ export default function AdminOrdersPage() {
   const [loading, setLoading] = useState(true);
   const [selectedCompany, setSelectedCompany] = useState<any>(null);
   const [statusFilter, setStatusFilter] = useState('ALL');
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 20;
 
   useEffect(() => {
     loadOrders();
@@ -95,6 +97,9 @@ export default function AdminOrdersPage() {
       statusFilter === 'ALL' || o.status === statusFilter
     ).sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
+    const totalPages = Math.ceil(filteredOrders.length / itemsPerPage);
+    const paginatedOrders = filteredOrders.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+
     return (
       <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="space-y-6">
         <button 
@@ -139,7 +144,8 @@ export default function AdminOrdersPage() {
         </div>
 
         <div className="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
-          <table className="w-full text-left">
+          <div className="overflow-x-auto">
+            <table className="w-full text-left">
             <thead>
               <tr className="bg-slate-50/80 border-b border-slate-100 text-slate-400 text-xs font-black uppercase tracking-widest">
                 <th className="py-5 px-8">Sana & ID</th>
@@ -150,7 +156,7 @@ export default function AdminOrdersPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {filteredOrders.length > 0 ? filteredOrders.map((order: any) => (
+              {paginatedOrders.length > 0 ? paginatedOrders.map((order: any) => (
                 <tr key={order.id} className="hover:bg-slate-50/50 transition-colors">
                   <td className="py-5 px-8">
                     <div className="flex flex-col">
@@ -188,6 +194,54 @@ export default function AdminOrdersPage() {
               )}
             </tbody>
           </table>
+          </div>
+
+          {totalPages > 1 && (
+            <div className="flex items-center justify-between px-6 py-4 border-t border-slate-100 bg-slate-50/50">
+              <span className="text-sm font-bold text-slate-500">
+                Jami: <span className="text-indigo-600">{filteredOrders.length}</span> ta ({currentPage} / {totalPages} sahifa)
+              </span>
+              <div className="flex items-center gap-2">
+                <button
+                  disabled={currentPage === 1}
+                  onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                  className="w-10 h-10 flex items-center justify-center rounded-xl border border-slate-200 text-slate-600 hover:bg-white disabled:opacity-50 disabled:hover:bg-transparent transition-all shadow-sm"
+                >
+                  <MdChevronLeft className="text-xl" />
+                </button>
+                <div className="flex gap-1">
+                  {[...Array(totalPages)].map((_, idx) => {
+                    const pageNum = idx + 1;
+                    if (pageNum === 1 || pageNum === totalPages || (pageNum >= currentPage - 1 && pageNum <= currentPage + 1)) {
+                      return (
+                        <button
+                          key={pageNum}
+                          onClick={() => setCurrentPage(pageNum)}
+                          className={`w-10 h-10 rounded-xl font-bold text-sm transition-all shadow-sm flex items-center justify-center ${
+                            currentPage === pageNum 
+                              ? 'bg-indigo-600 text-white border-indigo-600' 
+                              : 'bg-white border border-slate-200 text-slate-600 hover:border-indigo-300 hover:text-indigo-600'
+                          }`}
+                        >
+                          {pageNum}
+                        </button>
+                      );
+                    } else if (pageNum === currentPage - 2 || pageNum === currentPage + 2) {
+                      return <span key={pageNum} className="w-10 h-10 flex items-center justify-center text-slate-400">...</span>;
+                    }
+                    return null;
+                  })}
+                </div>
+                <button
+                  disabled={currentPage === totalPages}
+                  onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                  className="w-10 h-10 flex items-center justify-center rounded-xl border border-slate-200 text-slate-600 hover:bg-white disabled:opacity-50 disabled:hover:bg-transparent transition-all shadow-sm"
+                >
+                  <MdChevronRight className="text-xl" />
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </motion.div>
     );
@@ -221,7 +275,7 @@ export default function AdminOrdersPage() {
           <motion.div 
             key={comp.id}
             whileHover={{ y: -4, boxShadow: '0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1)' }}
-            onClick={() => setSelectedCompany(comp)}
+            onClick={() => { setSelectedCompany(comp); setCurrentPage(1); }}
             className="bg-white rounded-3xl p-6 border border-slate-100 shadow-sm cursor-pointer group transition-all"
           >
             <div className="flex justify-between items-start mb-6">

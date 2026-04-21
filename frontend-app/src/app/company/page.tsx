@@ -209,25 +209,25 @@ export default function CompanyDashboardPage() {
       id: 'ALL',
       title: period === 'daily' ? "Jami (Bugun)" : period === 'weekly' ? "Jami (Shu Hafta)" : "Jami (Shu Oy)", 
       value: periodOrders.length.toString(), 
-      trend: "Barcha qabul qilingan", up: true, icon: MdShoppingCart, color: "blue" 
+      trend: "Umumiy Tushum", up: true, icon: MdShoppingCart, color: "blue" 
     },
     { 
       id: 'NEW',
       title: "Yangi Kutayotgan", 
       value: newOrdersList.length.toString(), 
-      trend: "Hali biriktirilmagan", up: false, icon: MdPhoneInTalk, color: "rose" 
+      trend: "Kutish Holatida", up: false, icon: MdPhoneInTalk, color: "rose" 
     },
     { 
       id: 'IN_PROGRESS',
       title: "Jarayonda", 
       value: inProgressList.length.toString(), 
-      trend: "Yuvish/Quritish/Yo'lda", up: true, icon: MdTrendingUp, color: "emerald" 
+      trend: "Faol Jamoada", up: true, icon: MdTrendingUp, color: "emerald" 
     },
     { 
       id: 'EMPLOYEES',
       title: "Xodimlar (Faol)", 
       value: `${users.filter(u => u.status === 'ACTIVE').length} ta`, 
-      trend: "Hamma yo'nalishlar", up: true, icon: MdPeople, color: "indigo" 
+      trend: "Barcha Xodim", up: true, icon: MdPeople, color: "indigo" 
     },
   ];
 
@@ -302,29 +302,29 @@ export default function CompanyDashboardPage() {
           <button 
             key={i} 
             onClick={() => setActiveFilter(activeFilter === stat.id ? null : stat.id as any)}
-            className={`text-left relative bg-white p-6 rounded-2xl shadow-sm border transition-all outline-none overflow-hidden ${
+            className={`text-left relative bg-white p-6 rounded-2xl shadow-sm border transition-all outline-none overflow-hidden group ${
               activeFilter === stat.id 
                 ? `border-${stat.color}-400 ring-4 ring-${stat.color}-500/10 shadow-lg scale-[1.02] -translate-y-1` 
-                : 'border-slate-100 opacity-90 hover:opacity-100 hover:shadow-md hover:border-slate-200'
+                : 'border-slate-100 opacity-90 hover:opacity-100 hover:shadow-md hover:border-slate-300 focus:ring-4 focus:ring-slate-100'
             }`}
           >
             {activeFilter === stat.id && (
-               <div className={`absolute -right-6 -top-6 w-24 h-24 bg-${stat.color}-100 rounded-full blur-2xl opacity-50`}></div>
+               <div className={`absolute -right-6 -top-6 w-32 h-32 bg-${stat.color}-100 rounded-full blur-3xl opacity-50`}></div>
             )}
-            <div className="flex justify-between items-start relative z-10">
-              <div className={`p-3 rounded-xl bg-${stat.color}-50 text-${stat.color}-600 ${activeFilter === stat.id ? `bg-${stat.color}-100` : ''} transition-colors`}>
+            <div className="flex justify-between items-start relative z-10 gap-2">
+              <div className={`p-3 rounded-xl shadow-inner bg-${stat.color}-50 text-${stat.color}-600 ${activeFilter === stat.id ? `bg-${stat.color}-100` : 'group-hover:bg-slate-100'} transition-colors shrink-0`}>
                 <stat.icon className="text-2xl" />
               </div>
-              <span className={`flex items-center text-[10px] uppercase tracking-widest font-black ${stat.up ? 'text-emerald-600 bg-emerald-50' : 'text-rose-600 bg-rose-50'} px-2 py-1 rounded-md border border-white/50`}>
-                {stat.up ? <MdTrendingUp className="mr-1" /> : <MdTrendingDown className="mr-1" />}
-                {stat.trend}
+              <span className={`inline-flex items-center text-[8px] sm:text-[9px] uppercase tracking-[0.10em] font-black ${stat.up ? 'text-emerald-600 bg-emerald-50' : 'text-rose-600 bg-rose-50'} px-2 py-1.5 rounded-lg border border-white/50 max-w-[70%] truncate flex-1`}>
+                {stat.up ? <MdTrendingUp className="mr-1 shrink-0" /> : <MdTrendingDown className="mr-1 shrink-0" />}
+                <span className="truncate">{stat.trend}</span>
               </span>
             </div>
-            <div className="mt-4 relative z-10">
-              <h3 className={`text-4xl font-black tracking-tight ${activeFilter === stat.id ? `text-${stat.color}-600` : 'text-slate-800'}`}>
+            <div className="mt-5 relative z-10">
+              <h3 className={`text-4xl lg:text-5xl font-black tracking-tighter ${activeFilter === stat.id ? `text-${stat.color}-600 drop-shadow-sm` : 'text-slate-800'}`}>
                 {stat.value}
               </h3>
-              <p className="text-xs font-black uppercase text-slate-400 mt-1.5 tracking-wider">{stat.title}</p>
+              <p className="text-[10px] font-black uppercase text-slate-400 mt-2 tracking-[0.15em]">{stat.title}</p>
             </div>
           </button>
         ))}

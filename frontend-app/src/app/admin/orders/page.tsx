@@ -220,7 +220,7 @@ export default function AdminOrdersPage() {
         {companiesList.length > 0 ? companiesList.map(comp => (
           <motion.div 
             key={comp.id}
-            whileHover={{ y: -4, shadow: '0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1)' }}
+            whileHover={{ y: -4, boxShadow: '0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1)' }}
             onClick={() => setSelectedCompany(comp)}
             className="bg-white rounded-3xl p-6 border border-slate-100 shadow-sm cursor-pointer group transition-all"
           >

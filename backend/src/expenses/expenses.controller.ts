@@ -1,8 +1,10 @@
-import { Controller, Get, Post, Patch, Body, Param, Delete, Query } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Body, Param, Delete, Query, UseGuards } from '@nestjs/common';
 import { ExpensesService } from './expenses.service';
 import { Expense } from './entities/expense.entity';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
 @Controller('expenses')
+@UseGuards(JwtAuthGuard)
 export class ExpensesController {
   constructor(private readonly expensesService: ExpensesService) {}
 

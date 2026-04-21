@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import {
   MdAdd, MdSearch, MdSupportAgent, MdPhone,
-  MdLock, MdEdit, MdDeleteOutline, MdPerson
+  MdLock, MdEdit, MdDeleteOutline, MdPerson, MdBusiness
 } from 'react-icons/md';
 import Modal from '@/components/ui/Modal';
 import { usersApi, companiesApi } from '@/lib/api';
@@ -311,6 +311,23 @@ export default function OperatorsPage() {
               onChange={e => setFormData({ ...formData, password: e.target.value })}
             />
           </div>
+          
+          <div className="space-y-1">
+            <label className="text-xs font-black text-slate-500 uppercase tracking-widest flex items-center gap-1">
+              <MdBusiness className="text-indigo-400" /> Biriktirilgan Korxona
+            </label>
+            <select
+              className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-indigo-500 outline-none font-bold bg-white text-slate-700"
+              value={formData.companyId}
+              onChange={e => setFormData({ ...formData, companyId: e.target.value })}
+            >
+              <option value="">Alohida korxonaga bog'lanmagan (Umumiy Tizim)</option>
+              {companies.map(c => (
+                <option key={c.id} value={c.id}>{c.name}</option>
+              ))}
+            </select>
+          </div>
+          
           <div className="bg-slate-50 p-4 rounded-xl border border-slate-100">
             <label className="text-xs font-black text-slate-400 uppercase tracking-widest block mb-2">Holati</label>
             <div className="flex gap-2">

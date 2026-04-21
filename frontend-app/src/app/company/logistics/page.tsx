@@ -45,7 +45,9 @@ export default function LogisticsPage() {
                    pos = [parsed.y || parsed.lat, parsed.x || parsed.lng];
                  } catch(e) {}
                } else if (o.customer.location.includes(',')) {
-                 pos = o.customer.location.split(',').map(Number) as [number, number];
+                 const clean = o.customer.location.replace(/[()]/g, '');
+                 const parts = clean.split(',').map(Number);
+                 pos = [parts[1] || parts[0], parts[0] || parts[1]];
                }
             }
           }
@@ -69,7 +71,10 @@ export default function LogisticsPage() {
                 pos = [parsed.y || parsed.lat, parsed.x || parsed.lng];
               } catch(e) {}
             } else if (d.currentLocation.includes(',')) {
-              pos = d.currentLocation.split(',').map(Number) as [number, number];
+              const clean = d.currentLocation.replace(/[()]/g, '');
+              const parts = clean.split(',').map(Number);
+              // PostgreSQL point format is (x, y) meaning (longitude, latitude). Leaflet wants [latitude, longitude].
+              pos = [parts[1] || parts[0], parts[0] || parts[1]];
             }
           }
         }

@@ -111,13 +111,21 @@ export class UsersService {
         const [lat, lng] = dto.currentLocation.split(',').map(Number);
         newLat = lat;
         newLng = lng;
-        user.currentLocation = `(${lng},${lat})`;
+
+        // Geographic validation — O'zbekiston va Markaziy Osiyo mintaqasi (lat 34-46, lng 55-76)
+        // Chegaradan tashqaridagi koordinatalarni rad etish (GPS glitch / emulyator)
+        if (newLat < 34 || newLat > 46 || newLng < 55 || newLng > 76) {
+          console.warn(`[Location] Noto'g'ri koordinata rad etildi: lat=${newLat}, lng=${newLng} (userId=${id})`);
+        } else {
+          user.currentLocation = `(${lng},${lat})`;
+        }
       } else {
         user.currentLocation = dto.currentLocation;
       }
 
       // Save location history for mileage tracking
-      if (newLat && newLng && !isNaN(newLat) && !isNaN(newLng)) {
+      if (newLat && newLng && !isNaN(newLat) && !isNaN(newLng) &&
+          newLat >= 34 && newLat <= 46 && newLng >= 55 && newLng <= 76) {
         try {
           // Get last known location for distance calculation
           const lastEntry = await this.locationHistoryRepo.findOne({

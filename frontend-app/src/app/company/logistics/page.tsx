@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import dynamic from 'next/dynamic';
 import { 
   MdRoute, 
@@ -9,6 +9,13 @@ import {
   MdSpeed,
   MdCalendarToday,
   MdDateRange,
+  MdLocationOn,
+  MdPhone,
+  MdClose,
+  MdGpsFixed,
+  MdPerson,
+  MdBusiness,
+  MdMyLocation,
 } from 'react-icons/md';
 import { usersApi, ordersApi, getUser } from '@/lib/api';
 import toast from 'react-hot-toast';
@@ -24,6 +31,11 @@ export default function LogisticsPage() {
   const [drivers, setDrivers] = useState<any[]>([]);
   const [orderPoints, setOrderPoints] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  
+  // ─── Driver Detail Modal ─────────────────────────────────────
+  const [selectedDriver, setSelectedDriver] = useState<any | null>(null);
+  const [driverAddress, setDriverAddress] = useState<string>('');
+  const [addressLoading, setAddressLoading] = useState(false);
 
   // ─── Mileage Report State ─────────────────────────────────────
   const [mileageDriver, setMileageDriver] = useState<string | null>(null);
@@ -33,6 +45,36 @@ export default function LogisticsPage() {
   const [mileageData, setMileageData] = useState<{ totalKm: number; pointCount: number } | null>(null);
   const [mileageDaily, setMileageDaily] = useState<{ date: string; km: number; points: number }[]>([]);
   const [mileageLoading, setMileageLoading] = useState(false);
+
+  // ─── Reverse Geocode ─────────────────────────────────────────
+  const reverseGeocode = useCallback(async (lat: number, lng: number) => {
+    setAddressLoading(true);
+    setDriverAddress('');
+    try {
+      const res = await fetch(
+        `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json&accept-language=uz&zoom=18`,
+        { headers: { 'User-Agent': 'GilamApp/1.0' } }
+      );
+      if (res.ok) {
+        const data = await res.json();
+        setDriverAddress(data.display_name || 'Manzil topilmadi');
+      } else {
+        setDriverAddress('Manzilni aniqlashda xatolik');
+      }
+    } catch {
+      setDriverAddress('Internet aloqasi yo\'q');
+    } finally {
+      setAddressLoading(false);
+    }
+  }, []);
+
+  const openDriverDetail = useCallback((driver: any) => {
+    setSelectedDriver(driver);
+    setActiveDriver(driver.id);
+    if (driver.pos) {
+      reverseGeocode(driver.pos[0], driver.pos[1]);
+    }
+  }, [reverseGeocode]);
 
   const loadBackendData = async () => {
     try {
@@ -150,7 +192,7 @@ export default function LogisticsPage() {
             {drivers.map(driver => (
               <div 
                 key={driver.id} 
-                onClick={() => driver.pos ? setActiveDriver(driver.id) : toast.error("Haydovchidan GPS signali kelmayapti")}
+                onClick={() => openDriverDetail(driver)}
                 className={`p-4 cursor-pointer hover:bg-slate-50 transition-all ${activeDriver === driver.id ? 'bg-blue-50' : ''}`}
               >
                 <div className="flex items-center gap-3 w-full">
@@ -356,6 +398,119 @@ export default function LogisticsPage() {
           </div>
         )}
       </div>
+
+      {/* ─── Driver Detail Modal ─────────────────────────────────── */}
+      {selectedDriver && (
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in duration-200" onClick={() => setSelectedDriver(null)}>
+          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden animate-in slide-in-from-bottom-4 duration-300" onClick={(e) => e.stopPropagation()}>
+            {/* Header */}
+            <div className="relative bg-gradient-to-br from-blue-600 to-indigo-700 p-6 pb-8">
+              <button onClick={() => setSelectedDriver(null)} className="absolute top-4 right-4 w-8 h-8 bg-white/20 hover:bg-white/30 rounded-full flex items-center justify-center transition-all">
+                <MdClose className="text-white text-lg" />
+              </button>
+              <div className="flex items-center gap-4">
+                <div className="w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center text-2xl font-black text-white border-2 border-white/30">
+                  {selectedDriver.name?.[0] || '?'}
+                </div>
+                <div>
+                  <h3 className="text-xl font-black text-white">{selectedDriver.name}</h3>
+                  <p className="text-blue-200 text-sm font-bold flex items-center gap-1 mt-0.5">
+                    <MdPhone className="text-xs" /> {selectedDriver.car}
+                  </p>
+                  <div className="mt-2">
+                    {selectedDriver.pos ? (
+                      <span className="text-[10px] font-black tracking-wider text-emerald-300 bg-emerald-500/30 px-2 py-1 rounded-lg inline-flex items-center gap-1">
+                        <span className="relative flex h-2 w-2">
+                          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                          <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-400"></span>
+                        </span>
+                        GPS FAOL — LIVE
+                      </span>
+                    ) : (
+                      <span className="text-[10px] font-black tracking-wider text-red-300 bg-red-500/30 px-2 py-1 rounded-lg">GPS ALOQA YO'Q</span>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Content */}
+            <div className="p-6 space-y-4">
+              {/* Manzil */}
+              <div className="bg-slate-50 rounded-2xl p-4 border border-slate-100">
+                <div className="flex items-center gap-2 mb-2">
+                  <MdLocationOn className="text-red-500 text-lg" />
+                  <span className="text-[10px] font-black text-slate-500 uppercase tracking-wider">Hozirgi Manzil</span>
+                </div>
+                {selectedDriver.pos ? (
+                  <div>
+                    {addressLoading ? (
+                      <div className="flex items-center gap-2">
+                        <div className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+                        <span className="text-sm text-slate-400 font-medium">Manzil aniqlanmoqda...</span>
+                      </div>
+                    ) : (
+                      <p className="text-sm font-bold text-slate-700 leading-relaxed">{driverAddress}</p>
+                    )}
+                  </div>
+                ) : (
+                  <p className="text-sm text-slate-400 font-medium">Joylashuv ma'lumoti mavjud emas</p>
+                )}
+              </div>
+
+              {/* Koordinatalar */}
+              {selectedDriver.pos && (
+                <div className="bg-slate-50 rounded-2xl p-4 border border-slate-100">
+                  <div className="flex items-center gap-2 mb-2">
+                    <MdMyLocation className="text-blue-500 text-lg" />
+                    <span className="text-[10px] font-black text-slate-500 uppercase tracking-wider">Koordinatalar</span>
+                  </div>
+                  <div className="flex gap-4">
+                    <div>
+                      <span className="text-[10px] font-bold text-slate-400 uppercase">Lat</span>
+                      <p className="text-sm font-black text-slate-700">{selectedDriver.pos[0]?.toFixed(6)}</p>
+                    </div>
+                    <div>
+                      <span className="text-[10px] font-bold text-slate-400 uppercase">Lng</span>
+                      <p className="text-sm font-black text-slate-700">{selectedDriver.pos[1]?.toFixed(6)}</p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Status */}
+              <div className="grid grid-cols-2 gap-3">
+                <div className="bg-slate-50 rounded-2xl p-4 border border-slate-100">
+                  <div className="flex items-center gap-2 mb-1">
+                    <MdPerson className="text-indigo-500" />
+                    <span className="text-[10px] font-black text-slate-500 uppercase tracking-wider">Status</span>
+                  </div>
+                  <p className="text-sm font-black text-slate-700">{selectedDriver.status}</p>
+                </div>
+                <div className="bg-slate-50 rounded-2xl p-4 border border-slate-100">
+                  <div className="flex items-center gap-2 mb-1">
+                    <MdDirectionsCar className="text-amber-500" />
+                    <span className="text-[10px] font-black text-slate-500 uppercase tracking-wider">Buyurtmalar</span>
+                  </div>
+                  <p className="text-sm font-black text-slate-700">{selectedDriver.tasks} ta</p>
+                </div>
+              </div>
+
+              {/* Google Maps link */}
+              {selectedDriver.pos && (
+                <a
+                  href={`https://www.google.com/maps?q=${selectedDriver.pos[0]},${selectedDriver.pos[1]}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-full flex items-center justify-center gap-2 bg-blue-600 text-white px-5 py-3 rounded-xl font-black text-sm hover:bg-blue-700 hover:shadow-lg transition-all"
+                >
+                  <MdLocationOn className="text-lg" /> Google Maps'da ochish
+                </a>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

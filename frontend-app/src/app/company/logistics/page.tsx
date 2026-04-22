@@ -401,8 +401,8 @@ export default function LogisticsPage() {
 
       {/* ─── Driver Detail Modal ─────────────────────────────────── */}
       {selectedDriver && (
-        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in duration-200" onClick={() => setSelectedDriver(null)}>
-          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden animate-in slide-in-from-bottom-4 duration-300" onClick={(e) => e.stopPropagation()}>
+        <div style={{ zIndex: 10000 }} className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => setSelectedDriver(null)}>
+          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
             {/* Header */}
             <div className="relative bg-gradient-to-br from-blue-600 to-indigo-700 p-6 pb-8">
               <button onClick={() => setSelectedDriver(null)} className="absolute top-4 right-4 w-8 h-8 bg-white/20 hover:bg-white/30 rounded-full flex items-center justify-center transition-all">

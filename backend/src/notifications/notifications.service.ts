@@ -175,10 +175,10 @@ export class NotificationsService {
       );
 
       if (r.status === 200) {
-        console.log('[FCM] ✅ Push yuborildi!');
+        console.log('[FCM] ✅ Push yuborildi! Response:', r.body.substring(0, 150));
         return true;
       }
-      console.error('[FCM] ❌', r.status, r.body.substring(0, 200));
+      console.error('[FCM] ❌ Status:', r.status, 'Body:', r.body.substring(0, 300));
       return false;
     } catch (e: any) {
       console.error('[FCM] ❌ Exception:', e?.message);

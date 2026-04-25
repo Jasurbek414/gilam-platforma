@@ -7,6 +7,15 @@ import { Repository } from 'typeorm';
 import { User } from '../users/entities/user.entity';
 import { ChatGateway } from './messages.gateway';
 
+// Dublikat xabar oldini olish uchun kesh (3 soniya ichida bir xil xabarni bloklaydi)
+const recentMessages = new Map<string, number>();
+setInterval(() => {
+  const now = Date.now();
+  for (const [key, time] of recentMessages) {
+    if (now - time > 5000) recentMessages.delete(key);
+  }
+}, 10000);
+
 @Controller('messages')
 @UseGuards(JwtAuthGuard)
 export class MessagesController {
@@ -41,6 +50,15 @@ export class MessagesController {
     const senderId = req.user.id;
     const { recipientId, text, companyId } = body;
 
+    // Dublikat tekshirish — 3 soniya ichida bir xil xabar kelsa bloklash
+    const dedupeKey = `${senderId}:${recipientId}:${text}`;
+    const lastSent = recentMessages.get(dedupeKey);
+    if (lastSent && Date.now() - lastSent < 3000) {
+      console.log(`[HTTP] ⚠️ Dublikat xabar bloklandi: "${text?.substring(0, 30)}"`);
+      return { duplicate: true };
+    }
+    recentMessages.set(dedupeKey, Date.now());
+
     // 1. DB ga saqlash
     const message = await this.messagesService.create({
       senderId,
@@ -70,7 +88,7 @@ export class MessagesController {
       },
     };
 
-    // 3. Operator Socket.IO orqali REAL-TIME xabar olsin
+    // 3. Recipient ga Socket.IO orqali REAL-TIME xabar
     try {
       this.chatGateway.server.to(`user-${recipientId}`).emit('newMessage', enriched);
       console.log(`[HTTP→Socket] newMessage → user-${recipientId}`);
@@ -78,7 +96,7 @@ export class MessagesController {
       console.warn('[HTTP→Socket] Emit failed:', e);
     }
 
-    // 4. Push notification (fon xabari)
+    // 4. Push notification
     try {
       const recipient = await this.userRepo.findOne({ where: { id: recipientId } });
       if (recipient?.expoPushToken) {

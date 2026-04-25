@@ -44,7 +44,19 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
     });
 
     socketInstance.on('newMessage', (message: Message) => {
-      setMessages(prev => [...prev, message]);
+      setMessages(prev => {
+        // Dublikat oldini olish - xabar allaqachon mavjud bo'lsa qo'shmaymiz
+        if (prev.some(m => m.id === message.id)) return prev;
+        return [...prev, message];
+      });
+    });
+
+    // Operator o'zi yuborgan xabar qaytganda ham dublikat tekshiruvi
+    socketInstance.on('messageSent', (message: Message) => {
+      setMessages(prev => {
+        if (prev.some(m => m.id === message.id)) return prev;
+        return [...prev, message];
+      });
     });
 
     const initSocket = () => {
@@ -61,10 +73,8 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const sendMessage = useCallback((recipientId: string, text: string) => {
     if (socket) {
       const companyId = localStorage.getItem('companyId') || '';
-      socket.emit('sendMessage', { recipientId, text, companyId }, (response: Message) => {
-         // This is a callback from the server if returning the saved message
-         setMessages(prev => [...prev, response]);
-      });
+      socket.emit('sendMessage', { recipientId, text, companyId });
+      // Xabar 'messageSent' event orqali qaytadi — callbackda qo'shmaymiz
     }
   }, [socket]);
 

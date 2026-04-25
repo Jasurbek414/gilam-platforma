@@ -100,11 +100,11 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       const senderUser = await this.userRepository.findOne({ where: { id: senderId } });
       const enriched = { ...message, sender: senderUser };
 
-      // 1. Deliver to recipient's room (operator or driver on another device)
+      // 1. Deliver to recipient's room
       this.server.to(`user-${data.recipientId}`).emit('newMessage', enriched);
 
-      // 2. Echo DB-persisted message back to sender's room.
-      this.server.to(`user-${senderId}`).emit('messageSent', enriched);
+      // NOTE: senderga qaytarmaymiz — emit callback (return message) orqali qaytadi
+      // Aks holda Electron ilovada xabar 2 tadan ko'rinadi
 
       // 3. Always send push notification (mobile app will handle foreground suppression)
       try {
